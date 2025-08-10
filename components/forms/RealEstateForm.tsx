@@ -5,7 +5,8 @@ import {
   RealEstateService,
   type RealEstateDetails,
 } from "@/services/realEstate";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Mic, Square } from "lucide-react";
+import { AIService, type RealEstateDetailsPatch } from "@/services/ai";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -54,6 +55,15 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const specInputRef = useRef<HTMLInputElement>(null);
+  const [specFile, setSpecFile] = useState<File | null>(null);
+  const [notesText, setNotesText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
 
   function handleChange<
     K1 extends keyof RealEstateDetails,
@@ -104,8 +114,159 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
     };
   }, [images]);
 
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
+
   function removeImage(index: number) {
     setImages((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function mergeNonEmpty<T extends Record<string, any>>(
+    prev: T,
+    patch?: Partial<T>
+  ): T {
+    if (!patch) return prev;
+    const out: T = { ...prev };
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === null || value === undefined) continue;
+      if (Array.isArray(value)) {
+        if (value.length > 0) (out as any)[key] = value;
+        continue;
+      }
+      if (typeof value === "string") {
+        if (value.trim() !== "") (out as any)[key] = value;
+        continue;
+      }
+      (out as any)[key] = value;
+    }
+    return out;
+  }
+
+  function applyPatch(patch: RealEstateDetailsPatch) {
+    setDetails((prev) => {
+      // Normalize known_issues if it accidentally comes as a string
+      let housePatch = patch.house_details;
+      const ki: any = (housePatch as any)?.known_issues;
+      if (typeof ki === "string") {
+        const arr = ki
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean);
+        housePatch = { ...housePatch, known_issues: arr } as any;
+      }
+
+      const merged: RealEstateDetails = {
+        ...prev,
+        property_details: mergeNonEmpty(
+          prev.property_details,
+          patch.property_details
+        ),
+        report_dates: mergeNonEmpty(prev.report_dates, patch.report_dates),
+        house_details: mergeNonEmpty(prev.house_details, housePatch),
+        inspector_info: mergeNonEmpty(
+          prev.inspector_info,
+          patch.inspector_info
+        ),
+      };
+
+      return merged;
+    });
+  }
+
+  function handleSpecChange(files: FileList | null) {
+    if (!files || files.length === 0) {
+      setSpecFile(null);
+      return;
+    }
+    setSpecFile(files[0]);
+  }
+
+  async function analyzeSpec() {
+    if (!specFile) return;
+    try {
+      setAiLoading(true);
+      const patch = await AIService.fillFromSpecSheet(specFile);
+      applyPatch(patch);
+    } catch (e: any) {
+      setError(e?.message || "Failed to analyze spec sheet");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  async function fillFromText() {
+    const text = notesText.trim();
+    if (!text) return;
+    try {
+      setAiLoading(true);
+      const patch = await AIService.fillFromText(text);
+      applyPatch(patch);
+    } catch (e: any) {
+      setError(e?.message || "Failed to process text");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      chunksRef.current = [];
+      mr.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data);
+      };
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        setAudioBlob(blob);
+        setAudioUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(blob);
+        });
+        chunksRef.current = [];
+        stream.getTracks().forEach((t) => t.stop());
+      };
+      mr.start();
+      setError(null);
+      setAudioBlob(null);
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+      setIsRecording(true);
+    } catch (e: any) {
+      setError(e?.message || "Unable to access microphone");
+    }
+  }
+
+  function stopRecording() {
+    const mr = mediaRecorderRef.current;
+    if (mr && (mr.state === "recording" || mr.state === "paused")) {
+      mr.stop();
+    }
+    setIsRecording(false);
+  }
+
+  function clearRecording() {
+    setAudioBlob(null);
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    setAudioUrl(null);
+  }
+
+  async function useRecording() {
+    if (!audioBlob) return;
+    try {
+      setAiLoading(true);
+      const file = new File([audioBlob], "audio.webm", { type: "audio/webm" });
+      const patch = await AIService.fillFromAudio(file);
+      applyPatch(patch);
+    } catch (e: any) {
+      setError(e?.message || "Failed to process audio");
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -145,6 +306,117 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           {error}
         </div>
       )}
+
+      {/* Smart Fill (AI) */}
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium text-gray-900">
+          Smart Fill (optional)
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {/* Spec sheet image */}
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-gray-700">
+              Spec Sheet Image
+            </label>
+            <input
+              ref={specInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleSpecChange(e.target.files)}
+              className="sr-only"
+            />
+            <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white/50 p-3 text-center">
+              <p className="text-xs text-gray-600">
+                {specFile ? specFile.name : "No file selected"}
+              </p>
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => specInputRef.current?.click()}
+                  className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50"
+                >
+                  Select Image
+                </button>
+                <button
+                  type="button"
+                  onClick={analyzeSpec}
+                  disabled={!specFile || aiLoading}
+                  className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {aiLoading ? "Analyzing..." : "Analyze Image"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Text notes */}
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-gray-700">
+              Notes / Transcript
+            </label>
+            <textarea
+              className="mt-1 h-28 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              value={notesText}
+              onChange={(e) => setNotesText(e.target.value)}
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={fillFromText}
+                disabled={!notesText.trim() || aiLoading}
+                className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+              >
+                {aiLoading ? "Filling..." : "Fill From Text"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Voice record */}
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-gray-700">
+            Voice Record
+          </label>
+          <div className="flex items-center gap-2">
+            {!isRecording ? (
+              <button
+                type="button"
+                onClick={startRecording}
+                className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500"
+              >
+                <Mic className="mr-1 inline h-4 w-4" /> Start Recording
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={stopRecording}
+                className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500"
+              >
+                <Square className="mr-1 inline h-4 w-4" /> Stop
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={useRecording}
+              disabled={!audioBlob || aiLoading}
+              className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            >
+              {aiLoading ? "Processing..." : "Use Recording to Fill"}
+            </button>
+            <button
+              type="button"
+              onClick={clearRecording}
+              disabled={!audioBlob}
+              className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
+            >
+              Clear
+            </button>
+          </div>
+          {audioUrl && (
+            <audio src={audioUrl} controls className="mt-2 w-full" />
+          )}
+        </div>
+      </section>
 
       {/* Property Details */}
       <section className="space-y-3">
@@ -462,18 +734,6 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               }
             />
           </div>
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-gray-700">
-              Credentials
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.inspector_info.credentials}
-              onChange={(e) =>
-                handleChange("inspector_info", "credentials", e.target.value)
-              }
-            />
-          </div>
         </div>
       </section>
 
@@ -501,9 +761,13 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               Select Images
             </button>
           </div>
-          <p className="mt-1 text-xs text-gray-500">PNG, JPG. Up to 10 images.</p>
+          <p className="mt-1 text-xs text-gray-500">
+            PNG, JPG. Up to 10 images.
+          </p>
         </div>
-        <p className="text-xs text-gray-500">Selected: {images.length} file(s)</p>
+        <p className="text-xs text-gray-500">
+          Selected: {images.length} file(s)
+        </p>
         {images.length > 0 && (
           <div className="rounded-md border border-gray-200 p-2">
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
