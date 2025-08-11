@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import BottomDrawer from "@/components/BottomDrawer";
-import { ReportsService, type ReportStats } from "@/services/reports";
+import {
+  ReportsService,
+  type ReportStats,
+  type PdfReport,
+} from "@/services/reports";
 import { useAuthContext } from "@/context/AuthContext";
 import {
   FileBarChart2,
@@ -12,16 +16,19 @@ import {
   DollarSign,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 
 const RealEstateForm = dynamic(
   () => import("@/components/forms/RealEstateForm"),
-  { ssr: false, loading: () => (
-    <div className="text-sm text-gray-600">Loading form...</div>
-  ) }
+  {
+    ssr: false,
+    loading: () => <div className="text-sm text-gray-600">Loading form...</div>,
+  }
 );
 
 export default function DashboardPage() {
   const { user } = useAuthContext();
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerType, setDrawerType] = useState<
     "real-estate" | "salvage" | "asset" | null
@@ -40,6 +47,31 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<ReportStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
+
+  const [recent, setRecent] = useState<PdfReport[]>([]);
+  const [recentLoading, setRecentLoading] = useState(true);
+  const [recentError, setRecentError] = useState<string | null>(null);
+
+  const fetchRecent = useCallback(async () => {
+    setRecentLoading(true);
+    setRecentError(null);
+    try {
+      const data = await ReportsService.getMyReports();
+      const sorted = [...data].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setRecent(sorted.slice(0, 5));
+    } catch (err: any) {
+      setRecentError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to load recent reports"
+      );
+    } finally {
+      setRecentLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +96,15 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    fetchRecent();
+    const handler = () => fetchRecent();
+    window.addEventListener("cv:report-created", handler);
+    return () => {
+      window.removeEventListener("cv:report-created", handler);
+    };
+  }, [fetchRecent]);
 
   return (
     <div className="space-y-6">
@@ -165,9 +206,7 @@ export default function DashboardPage() {
             <div className="rounded-lg border border-gray-200 bg-white p-4 min-h-[6rem] h-full">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                  <p className="text-sm text-gray-500">
-                    Total FMV
-                  </p>
+                  <p className="text-sm text-gray-500">Total FMV</p>
                   <p className="mt-1 text-2xl font-semibold text-gray-900">
                     {new Intl.NumberFormat("en-US", {
                       style: "currency",
@@ -185,10 +224,46 @@ export default function DashboardPage() {
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          No recent activity. Start by creating or importing reports.
-        </p>
+        <h2 className="text-lg font-medium text-gray-900">Recent Reports</h2>
+        {recentLoading ? (
+          <div className="mt-3 space-y-2">
+            <div className="h-10 w-full animate-pulse rounded bg-gray-100" />
+            <div className="h-10 w-full animate-pulse rounded bg-gray-100" />
+            <div className="h-10 w-full animate-pulse rounded bg-gray-100" />
+          </div>
+        ) : recentError ? (
+          <div className="mt-2 rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+            {recentError}
+          </div>
+        ) : recent.length === 0 ? (
+          <p className="mt-2 text-sm text-gray-600">
+            No recent reports. Create one to see it here.
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-gray-100">
+            {recent.map((r) => (
+              <li key={r._id}>
+                <button
+                  onClick={() => router.push("/reports")}
+                  className="w-full text-left py-2 hover:bg-gray-50 rounded flex items-center justify-between"
+                  title="Go to reports"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                      {r.address}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-sm text-gray-700">
+                    {r.fairMarketValue}
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Bottom drawer */}

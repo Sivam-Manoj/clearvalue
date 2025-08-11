@@ -15,8 +15,51 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClearValue",
-  description: "ClearValue",
+  title: {
+    default: "ClearValue | Real Estate Valuation & Appraisal Reports",
+    template: "%s | ClearValue",
+  },
+  description:
+    "Generate professional real estate valuation and appraisal reports. Create, manage, and download property reports with fair market value insights.",
+  keywords: [
+    "real estate valuation",
+    "property appraisal",
+    "home valuation",
+    "fair market value",
+    "FMV report",
+    "real estate report",
+    "appraisal report",
+    "property assessment",
+    "real estate analytics",
+    "ClearValue",
+  ],
+  applicationName: "ClearValue",
+  category: "Real Estate",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "ClearValue | Real Estate Valuation & Appraisal Reports",
+    description:
+      "Generate professional real estate valuation and appraisal reports. Create, manage, and download property reports with fair market value insights.",
+    url: "/",
+    siteName: "ClearValue",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ClearValue | Real Estate Valuation & Appraisal Reports",
+    description:
+      "Generate professional real estate valuation and appraisal reports. Create, manage, and download property reports with fair market value insights.",
+  },
+  other: {
+    tags: "real estate valuation, property appraisal, home valuation, fair market value, FMV report, real estate report, appraisal report, property assessment, real estate analytics, ClearValue",
+  },
 };
 
 export default function RootLayout({

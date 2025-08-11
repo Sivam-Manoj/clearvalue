@@ -301,6 +301,10 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       const res = await RealEstateService.create(payload, images);
       const successMsg = res?.message || "Report created successfully";
       toast.success(successMsg);
+      // Notify other parts of the app (e.g., Dashboard) to refetch recents
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("cv:report-created"));
+      }
       onSuccess?.(res?.message);
     } catch (err: any) {
       const msg =
