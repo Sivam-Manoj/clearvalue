@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FileText, Download, Trash2 } from "lucide-react";
 import { ReportsService, type PdfReport } from "@/services/reports";
+import { toast } from "react-toastify";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<PdfReport[]>([]);
@@ -47,8 +48,11 @@ export default function ReportsPage() {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 500);
-    } catch (e) {
+      toast.success(`Download started: ${fileName}`);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || "Download failed";
       console.error("Download failed", e);
+      toast.error(msg);
     } finally {
       setDownloadingId(null);
     }
@@ -58,10 +62,13 @@ export default function ReportsPage() {
     if (!confirm("Delete this report? This cannot be undone.")) return;
     try {
       setDeletingId(id);
+      const r = reports.find((x) => x._id === id);
       await ReportsService.deleteReport(id);
       setReports((prev) => prev.filter((r) => r._id !== id));
+      toast.success(`Report deleted${r?.address ? `: ${r.address}` : ""}`);
     } catch (e: any) {
-      alert(e?.response?.data?.message || e?.message || "Delete failed");
+      const msg = e?.response?.data?.message || e?.message || "Delete failed";
+      toast.error(msg);
     } finally {
       setDeletingId(null);
     }

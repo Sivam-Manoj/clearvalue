@@ -8,6 +8,7 @@ import {
 } from "@/services/realEstate";
 import { X, Upload, Mic, Square } from "lucide-react";
 import { AIService, type RealEstateDetailsPatch } from "@/services/ai";
+import { toast } from "react-toastify";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -275,6 +276,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
     e.preventDefault();
     if (!details.property_details.address) {
       setError("Address is required.");
+      toast.error("Address is required.");
       return;
     }
     try {
@@ -297,13 +299,14 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         inspector_info: inspector,
       };
       const res = await RealEstateService.create(payload, images);
+      const successMsg = res?.message || "Report created successfully";
+      toast.success(successMsg);
       onSuccess?.(res?.message);
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to create report"
-      );
+      const msg =
+        err?.response?.data?.message || err?.message || "Failed to create report";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
