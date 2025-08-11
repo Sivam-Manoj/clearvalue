@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthService } from "@/services/auth";
-import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Loader2, User } from "lucide-react";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -13,6 +13,7 @@ export default function SignupForm() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [companyAddress, setCompanyAddress] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -31,6 +32,7 @@ export default function SignupForm() {
         contactEmail: contactEmail || undefined,
         contactPhone: contactPhone || undefined,
         companyAddress: companyAddress || undefined,
+        username,
       });
       setMessage(
         res.message ||
@@ -74,6 +76,21 @@ export default function SignupForm() {
         </div>
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1 sm:col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Username
+          </label>
+          <div className="relative">
+            <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Your username"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm placeholder-gray-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="space-y-1 sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700">
             Email

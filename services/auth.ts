@@ -5,6 +5,7 @@ import { setCookie, deleteCookie } from '@/lib/cookies';
 export type SignupPayload = {
   email: string;
   password: string;
+  username?: string;
   companyName?: string;
   contactEmail?: string;
   contactPhone?: string;

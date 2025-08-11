@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useAuthContext } from "@/context/AuthContext";
 import {
   RealEstateService,
   type RealEstateDetails,
@@ -16,6 +17,7 @@ type Props = {
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
 export default function RealEstateForm({ onSuccess, onCancel }: Props) {
+  const { user } = useAuthContext();
   const [details, setDetails] = useState<RealEstateDetails>({
     property_details: {
       owner_name: "",
@@ -278,6 +280,13 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
     try {
       setSubmitting(true);
       setError(null);
+      const inspector = {
+        inspector_name: (user as any)?.username || (user as any)?.name || "",
+        company_name: (user as any)?.companyName || "",
+        contact_email: (user as any)?.contactEmail || user?.email || "",
+        contact_phone: (user as any)?.contactPhone || "",
+        credentials: "",
+      };
       const payload: RealEstateDetails = {
         ...details,
         report_dates: {
@@ -285,6 +294,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           effective_date: details.report_dates.effective_date,
           inspection_date: details.report_dates.inspection_date,
         },
+        inspector_info: inspector,
       };
       const res = await RealEstateService.create(payload, images);
       onSuccess?.(res?.message);
@@ -681,61 +691,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         </div>
       </section>
 
-      {/* Inspector Info */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Inspector Info</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Inspector Name
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.inspector_info.inspector_name}
-              onChange={(e) =>
-                handleChange("inspector_info", "inspector_name", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Company Name
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.inspector_info.company_name}
-              onChange={(e) =>
-                handleChange("inspector_info", "company_name", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Contact Email
-            </label>
-            <input
-              type="email"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.inspector_info.contact_email}
-              onChange={(e) =>
-                handleChange("inspector_info", "contact_email", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Contact Phone
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.inspector_info.contact_phone}
-              onChange={(e) =>
-                handleChange("inspector_info", "contact_phone", e.target.value)
-              }
-            />
-          </div>
-        </div>
-      </section>
+      {/* Inspector Info is auto-filled from profile on submit */}
 
       {/* Images */}
       <section className="space-y-3">

@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const TRANSCRIBE_MODEL = process.env.OPENAI_TRANSCRIBE_MODEL || "whisper-1";
-const MODEL_TEXT = process.env.OPENAI_MODEL_TEXT || "gpt-4o-mini";
+const MODEL_TEXT = process.env.OPENAI_MODEL_TEXT || "gpt-4.1-mini";
 
 function buildInstruction() {
   return `Extract as many of these fields as possible and return ONLY JSON with this shape. Leave missing fields as empty strings or empty arrays.
