@@ -34,6 +34,14 @@ const SalvageForm = dynamic(
   }
 );
 
+const AssetForm = dynamic(
+  () => import("@/components/forms/AssetForm"),
+  {
+    ssr: false,
+    loading: () => <div className="text-sm text-rose-600">Loading form...</div>,
+  }
+);
+
 export default function DashboardPage() {
   const { user } = useAuthContext();
   const router = useRouter();
@@ -290,31 +298,11 @@ export default function DashboardPage() {
             onSuccess={() => setDrawerOpen(false)}
             onCancel={() => setDrawerOpen(false)}
           />
-        ) : drawerType ? (
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setDrawerOpen(false);
-            }}
-          >
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                {titles[drawerType]} Field
-              </label>
-              <input
-                type="text"
-                placeholder={placeholders[drawerType]}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-              />
-            </div>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-            >
-              Continue
-            </button>
-          </form>
+        ) : drawerType === "asset" ? (
+          <AssetForm
+            onSuccess={() => setDrawerOpen(false)}
+            onCancel={() => setDrawerOpen(false)}
+          />
         ) : null}
       </BottomDrawer>
     </div>
