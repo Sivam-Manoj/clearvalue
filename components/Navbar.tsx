@@ -47,14 +47,14 @@ export default function Navbar() {
     pathname === href || pathname?.startsWith(href + "/");
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <header className="sticky top-0 z-40 w-full border-b border-rose-100 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded bg-red-600 text-white font-semibold">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-rose-600 to-rose-500 text-white font-semibold shadow-sm ring-1 ring-rose-200 transition-transform duration-300 hover:scale-105">
             CV
           </div>
-          <span className="text-lg font-semibold tracking-tight">
+          <span className="text-lg font-semibold tracking-tight text-rose-700">
             ClearValue
           </span>
         </div>
@@ -67,13 +67,13 @@ export default function Navbar() {
               href={item.href}
               aria-current={isActive(item.href) ? "page" : undefined}
               className={classNames(
-                "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                "group inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all duration-200",
                 isActive(item.href)
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  ? "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
+                  : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
               )}
             >
-              {item.icon({ className: "h-4 w-4" })}
+              {item.icon({ className: "h-4 w-4 transition-transform duration-200 group-hover:scale-110" })}
               <span>{item.label}</span>
             </Link>
           ))}
@@ -83,16 +83,19 @@ export default function Navbar() {
         <button
           type="button"
           aria-label="Toggle menu"
-          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-200 bg-white/80 text-rose-700 hover:bg-rose-50 transition-all duration-200"
           onClick={() => setOpen((v) => !v)}
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
+      {/* Accent bar (desktop) */}
+      <div className="hidden md:block h-[2px] w-full bg-gradient-to-r from-rose-200 via-rose-400 to-rose-200" />
+
       {/* Mobile nav panel */}
       {open && (
-        <div className="md:hidden border-t border-gray-200 bg-white">
+        <div className="md:hidden border-t border-rose-100 bg-white/95 backdrop-blur-sm">
           <nav className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8 flex flex-col gap-1">
             {navItems.map((item) => (
               <Link
@@ -101,13 +104,13 @@ export default function Navbar() {
                 onClick={() => setOpen(false)}
                 aria-current={isActive(item.href) ? "page" : undefined}
                 className={classNames(
-                  "inline-flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                  "group inline-flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200",
                   isActive(item.href)
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    ? "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
+                    : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
                 )}
               >
-                {item.icon({ className: "h-5 w-5" })}
+                {item.icon({ className: "h-5 w-5 transition-transform duration-200 group-hover:scale-110" })}
                 <span>{item.label}</span>
               </Link>
             ))}

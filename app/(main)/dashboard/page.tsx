@@ -22,7 +22,15 @@ const RealEstateForm = dynamic(
   () => import("@/components/forms/RealEstateForm"),
   {
     ssr: false,
-    loading: () => <div className="text-sm text-gray-600">Loading form...</div>,
+    loading: () => <div className="text-sm text-rose-600">Loading form...</div>,
+  }
+);
+
+const SalvageForm = dynamic(
+  () => import("@/components/forms/SalvageForm"),
+  {
+    ssr: false,
+    loading: () => <div className="text-sm text-rose-600">Loading form...</div>,
   }
 );
 
@@ -112,7 +120,7 @@ export default function DashboardPage() {
         <p className="text-sm text-gray-600">
           Hello {user?.username || user?.email || "there"}
         </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">
+        <h1 className="mt-1 text-3xl font-extrabold tracking-tight bg-gradient-to-r from-rose-600 to-red-500 bg-clip-text text-transparent drop-shadow-sm">
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-gray-600">
@@ -128,7 +136,7 @@ export default function DashboardPage() {
             setDrawerType("real-estate");
             setDrawerOpen(true);
           }}
-          className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-left hover:bg-gray-50"
+          className="group flex items-center justify-between rounded-xl border border-rose-100 bg-gradient-to-b from-white to-rose-50/40 px-4 py-3 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
         >
           <div>
             <p className="text-sm font-medium text-gray-900">Real Estate</p>
@@ -136,7 +144,7 @@ export default function DashboardPage() {
               Create a new property record
             </p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-blue-500/10 text-blue-700">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-rose-500/10 text-rose-600 transition-colors duration-300 group-hover:bg-rose-500/15">
             <Building2 className="h-5 w-5" />
           </div>
         </button>
@@ -147,13 +155,13 @@ export default function DashboardPage() {
             setDrawerType("salvage");
             setDrawerOpen(true);
           }}
-          className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-left hover:bg-gray-50"
+          className="group flex items-center justify-between rounded-xl border border-rose-100 bg-gradient-to-b from-white to-rose-50/40 px-4 py-3 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
         >
           <div>
             <p className="text-sm font-medium text-gray-900">Salvage</p>
             <p className="text-xs text-gray-500">Start a new salvage entry</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-700">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-rose-500/10 text-rose-600 transition-colors duration-300 group-hover:bg-rose-500/15">
             <Car className="h-5 w-5" />
           </div>
         </button>
@@ -164,24 +172,24 @@ export default function DashboardPage() {
             setDrawerType("asset");
             setDrawerOpen(true);
           }}
-          className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-left hover:bg-gray-50"
+          className="group flex items-center justify-between rounded-xl border border-rose-100 bg-gradient-to-b from-white to-rose-50/40 px-4 py-3 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
         >
           <div>
             <p className="text-sm font-medium text-gray-900">Asset</p>
             <p className="text-xs text-gray-500">Add a general asset</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-amber-500/10 text-amber-700">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-rose-500/10 text-rose-600 transition-colors duration-300 group-hover:bg-rose-500/15">
             <Package className="h-5 w-5" />
           </div>
         </button>
       </div>
 
       {/* Report stats (horizontal & responsive, even on small screens) */}
-      <div className="grid auto-rows-fr grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {statsLoading ? (
           <>
-            <div className="min-h-[6rem] h-full w-full animate-pulse rounded-lg border border-gray-200 bg-gray-100" />
-            <div className="min-h-[6rem] h-full w-full animate-pulse rounded-lg border border-gray-200 bg-gray-100" />
+            <div className="min-h-[6rem] h-full w-full animate-pulse rounded-xl border border-rose-100 bg-rose-50" />
+            <div className="min-h-[6rem] h-full w-full animate-pulse rounded-xl border border-rose-100 bg-rose-50" />
           </>
         ) : statsError ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 col-span-2">
@@ -189,7 +197,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            <div className="rounded-lg border border-gray-200 bg-white p-4 min-h-[6rem] h-full">
+            <div className="rounded-xl border border-rose-100 bg-white/90 backdrop-blur-sm p-4 min-h-[6rem] h-full shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
                   <p className="text-sm text-gray-500">Total Reports</p>
@@ -197,13 +205,13 @@ export default function DashboardPage() {
                     {stats?.totalReports ?? 0}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-500/10 text-blue-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-rose-500/10 text-rose-600">
                   <FileBarChart2 className="h-5 w-5" />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-gray-200 bg-white p-4 min-h-[6rem] h-full">
+            <div className="rounded-xl border border-rose-100 bg-white/90 backdrop-blur-sm p-4 min-h-[6rem] h-full shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
                   <p className="text-sm text-gray-500">Total FMV</p>
@@ -214,7 +222,7 @@ export default function DashboardPage() {
                     }).format(stats?.totalFairMarketValue ?? 0)}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-rose-500/10 text-rose-600">
                   <DollarSign className="h-5 w-5" />
                 </div>
               </div>
@@ -223,13 +231,13 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="rounded-xl border border-rose-100 bg-white/95 p-4 shadow-sm backdrop-blur-sm">
         <h2 className="text-lg font-medium text-gray-900">Recent Reports</h2>
         {recentLoading ? (
           <div className="mt-3 space-y-2">
-            <div className="h-10 w-full animate-pulse rounded bg-gray-100" />
-            <div className="h-10 w-full animate-pulse rounded bg-gray-100" />
-            <div className="h-10 w-full animate-pulse rounded bg-gray-100" />
+            <div className="h-10 w-full animate-pulse rounded bg-rose-50" />
+            <div className="h-10 w-full animate-pulse rounded bg-rose-50" />
+            <div className="h-10 w-full animate-pulse rounded bg-rose-50" />
           </div>
         ) : recentError ? (
           <div className="mt-2 rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
@@ -240,12 +248,12 @@ export default function DashboardPage() {
             No recent reports. Create one to see it here.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-gray-100">
+          <ul className="mt-3 divide-y divide-rose-100">
             {recent.map((r) => (
               <li key={r._id}>
                 <button
                   onClick={() => router.push("/reports")}
-                  className="w-full text-left py-2 hover:bg-gray-50 rounded flex items-center justify-between"
+                  className="group w-full text-left px-2 py-2 rounded-lg flex items-center justify-between transition-all hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-500/20 hover:-translate-y-0.5"
                   title="Go to reports"
                 >
                   <div>
@@ -256,7 +264,7 @@ export default function DashboardPage() {
                       {new Date(r.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="text-sm text-gray-700">
+                  <div className="text-sm text-rose-700">
                     {r.fairMarketValue}
                   </div>
                 </button>
@@ -277,6 +285,11 @@ export default function DashboardPage() {
             onSuccess={() => setDrawerOpen(false)}
             onCancel={() => setDrawerOpen(false)}
           />
+        ) : drawerType === "salvage" ? (
+          <SalvageForm
+            onSuccess={() => setDrawerOpen(false)}
+            onCancel={() => setDrawerOpen(false)}
+          />
         ) : drawerType ? (
           <form
             className="space-y-4"
@@ -292,12 +305,12 @@ export default function DashboardPage() {
               <input
                 type="text"
                 placeholder={placeholders[drawerType]}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
               />
             </div>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-blue-500"
+              className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
             >
               Continue
             </button>
