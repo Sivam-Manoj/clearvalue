@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AssetService, type AssetCreateDetails, type AssetGroupingMode } from "@/services/asset";
+import {
+  AssetService,
+  type AssetCreateDetails,
+  type AssetGroupingMode,
+} from "@/services/asset";
 import { X, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuthContext } from "@/context/AuthContext";
@@ -13,7 +17,11 @@ type Props = {
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
-const GROUPING_OPTIONS: { value: AssetGroupingMode; label: string; desc: string }[] = [
+const GROUPING_OPTIONS: {
+  value: AssetGroupingMode;
+  label: string;
+  desc: string;
+}[] = [
   {
     value: "single_lot",
     label: "Single Lot",
@@ -22,12 +30,12 @@ const GROUPING_OPTIONS: { value: AssetGroupingMode; label: string; desc: string 
   {
     value: "per_item",
     label: "Per Item (AI groups)",
-    desc: "AI groups the same item across photos into one lot.",
+    desc: "Each item as a distinct lot.",
   },
   {
     value: "per_photo",
     label: "Per Photo",
-    desc: "Each photo becomes its own lot.",
+    desc: "Each image as a distinct lot.",
   },
 ];
 
@@ -44,8 +52,12 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   const [effectiveDate, setEffectiveDate] = useState(isoDate(new Date())); // YYYY-MM-DD
   const [appraisalPurpose, setAppraisalPurpose] = useState("");
   const [ownerName, setOwnerName] = useState("");
-  const [appraiser, setAppraiser] = useState((user as any)?.username || (user as any)?.name || "");
-  const [appraisalCompany, setAppraisalCompany] = useState((user as any)?.companyName || "");
+  const [appraiser, setAppraiser] = useState(
+    (user as any)?.username || (user as any)?.name || ""
+  );
+  const [appraisalCompany, setAppraisalCompany] = useState(
+    (user as any)?.companyName || ""
+  );
   const [industry, setIndustry] = useState("");
   const [inspectionDate, setInspectionDate] = useState(isoDate(new Date())); // YYYY-MM-DD
 
@@ -105,10 +117,14 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         grouping_mode: grouping,
         ...(clientName.trim() && { client_name: clientName.trim() }),
         ...(effectiveDate && { effective_date: effectiveDate }),
-        ...(appraisalPurpose.trim() && { appraisal_purpose: appraisalPurpose.trim() }),
+        ...(appraisalPurpose.trim() && {
+          appraisal_purpose: appraisalPurpose.trim(),
+        }),
         ...(ownerName.trim() && { owner_name: ownerName.trim() }),
         ...(appraiser.trim() && { appraiser: appraiser.trim() }),
-        ...(appraisalCompany.trim() && { appraisal_company: appraisalCompany.trim() }),
+        ...(appraisalCompany.trim() && {
+          appraisal_company: appraisalCompany.trim(),
+        }),
         ...(industry.trim() && { industry: industry.trim() }),
         ...(inspectionDate && { inspection_date: inspectionDate }),
       };
@@ -120,7 +136,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       }
       onSuccess?.(res?.message);
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Failed to create asset report";
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to create asset report";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -131,7 +150,9 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">{error}</div>
+        <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+          {error}
+        </div>
       )}
 
       {/* Grouping */}
@@ -142,7 +163,9 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
             <label
               key={opt.value}
               className={`relative flex cursor-pointer items-start gap-3 rounded-lg border p-3 shadow-sm transition hover:shadow ${
-                grouping === opt.value ? "border-rose-300 ring-1 ring-rose-300 bg-white" : "border-gray-200 bg-white"
+                grouping === opt.value
+                  ? "border-rose-300 ring-1 ring-rose-300 bg-white"
+                  : "border-gray-200 bg-white"
               }`}
             >
               <input
@@ -154,7 +177,9 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                 className="mt-1 h-4 w-4 text-rose-600 focus:ring-rose-500"
               />
               <div>
-                <div className="text-sm font-medium text-gray-900">{opt.label}</div>
+                <div className="text-sm font-medium text-gray-900">
+                  {opt.label}
+                </div>
                 <div className="text-xs text-gray-600">{opt.desc}</div>
               </div>
             </label>
@@ -271,9 +296,13 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               Select Images
             </button>
           </div>
-          <p className="mt-1 text-xs text-gray-500">PNG, JPG. Up to 10 images.</p>
+          <p className="mt-1 text-xs text-gray-500">
+            PNG, JPG. Up to 10 images.
+          </p>
         </div>
-        <p className="text-xs text-gray-500">Selected: {images.length} file(s)</p>
+        <p className="text-xs text-gray-500">
+          Selected: {images.length} file(s)
+        </p>
         {images.length > 0 && (
           <div className="rounded-md border border-gray-200 p-2">
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
