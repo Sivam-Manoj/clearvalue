@@ -76,225 +76,247 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
-          Settings
-        </h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Manage your profile and account.
-        </p>
-      </div>
+    <div className="relative isolate">
+      <div
+        className="pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 bg-gradient-to-b from-rose-100/80 to-transparent"
+        aria-hidden
+      />
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent drop-shadow-sm">
+            Settings
+          </h1>
+          <p className="mt-1 text-sm sm:text-base text-rose-800/70">
+            Manage your profile and account.
+          </p>
+        </div>
 
-      {/* Profile */}
-      <section className="rounded-lg border border-gray-200 bg-white p-4">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-lg font-semibold text-gray-700">
-            {initial}
-          </div>
-          <div>
-            <div className="flex items-center gap-2 text-gray-900">
-              <User className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium">Profile</span>
+        {/* Profile */}
+        <section className="rounded-2xl bg-white ring-1 ring-rose-100 p-5 shadow-[0_10px_30px_rgba(244,63,94,0.08)]">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-lg font-semibold text-rose-700 ring-1 ring-rose-200 shadow-inner">
+              {initial}
             </div>
-            <p className="text-sm text-gray-600">Your account information</p>
-          </div>
-        </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Username
-            </p>
-            <p className="mt-1 text-sm text-gray-900">
-              {(user as any)?.username ?? "-"}
-            </p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Email
-            </p>
-            <p className="mt-1 text-sm text-gray-900">{user?.email ?? "-"}</p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Company Name
-            </p>
-            <p className="mt-1 text-sm text-gray-900">
-              {(user as any)?.companyName ?? "-"}
-            </p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Company Address
-            </p>
-            <p className="mt-1 text-sm text-gray-900">
-              {(user as any)?.companyAddress ?? "-"}
-            </p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Contact Email
-            </p>
-            <p className="mt-1 text-sm text-gray-900">
-              {(user as any)?.contactEmail ?? "-"}
-            </p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Contact Phone
-            </p>
-            <p className="mt-1 text-sm text-gray-900">
-              {(user as any)?.contactPhone ?? "-"}
-            </p>
-          </div>
-
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Member Since
-            </p>
-            <p className="mt-1 text-sm text-gray-900">{memberSince}</p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Last Updated
-            </p>
-            <p className="mt-1 text-sm text-gray-900">{lastUpdated}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Session */}
-      <section className="rounded-lg border border-gray-200 bg-white p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">Session</h2>
-            <p className="mt-1 text-sm text-gray-600">Sign out of your account on this device.</p>
-          </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white shadow hover:bg-gray-800 disabled:opacity-50"
-          >
-            {loggingOut ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Logging out...
-              </>
-            ) : (
-              <>Log out</>
-            )}
-          </button>
-        </div>
-      </section>
-
-      {/* Danger Zone */}
-      <section className="rounded-lg border border-red-200 bg-red-50 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="flex items-center gap-2 text-base font-semibold text-red-800">
-              <Trash2 className="h-4 w-4" /> Delete Account
-            </h2>
-            <p className="mt-1 text-sm text-red-700">
-              This action is permanent. All your reports and data will be
-              removed.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={openDelete}
-            className="inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-red-500"
-          >
-            <Trash2 className="h-4 w-4" /> Delete Account
-          </button>
-        </div>
-      </section>
-
-      {/* Delete Modal */}
-      {isDeleteOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={closeDelete} />
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-lg">
-              <div className="flex items-center justify-between border-b px-4 py-3">
-                <h3 className="text-base font-semibold text-gray-900">Confirm Deletion</h3>
-                <button
-                  className="p-1 text-gray-500 hover:text-gray-700"
-                  onClick={closeDelete}
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+            <div>
+              <div className="flex items-center gap-2 text-rose-900">
+                <User className="h-4 w-4 text-rose-500" />
+                <span className="text-sm font-medium">Profile</span>
               </div>
-              <div className="px-4 py-4">
-                <p className="text-sm text-gray-600">
-                  This action will permanently delete your account and all data. Type
-                  <span className="px-1 font-semibold text-gray-900">DELETE</span>
-                  to confirm.
-                </p>
-                <div className="mt-3">
-                  <label className="block text-xs font-medium text-gray-700">Type DELETE to confirm</label>
-                  <input
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                    placeholder="DELETE"
-                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                  />
+              <p className="text-sm text-rose-700/70">
+                Your account information
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+              <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                Username
+              </p>
+              <p className="mt-1 text-sm text-rose-900">
+                {(user as any)?.username ?? "-"}
+              </p>
+            </div>
+            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+              <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                Email
+              </p>
+              <p className="mt-1 text-sm text-rose-900">{user?.email ?? "-"}</p>
+            </div>
+            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+              <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                Company Name
+              </p>
+              <p className="mt-1 text-sm text-rose-900">
+                {(user as any)?.companyName ?? "-"}
+              </p>
+            </div>
+            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+              <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                Company Address
+              </p>
+              <p className="mt-1 text-sm text-rose-900">
+                {(user as any)?.companyAddress ?? "-"}
+              </p>
+            </div>
+            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+              <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                Contact Email
+              </p>
+              <p className="mt-1 text-sm text-rose-900">
+                {(user as any)?.contactEmail ?? "-"}
+              </p>
+            </div>
+            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+              <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                Contact Phone
+              </p>
+              <p className="mt-1 text-sm text-rose-900">
+                {(user as any)?.contactPhone ?? "-"}
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+              <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                Member Since
+              </p>
+              <p className="mt-1 text-sm text-rose-900">{memberSince}</p>
+            </div>
+            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+              <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                Last Updated
+              </p>
+              <p className="mt-1 text-sm text-rose-900">{lastUpdated}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Session */}
+        <section className="rounded-2xl bg-white ring-1 ring-rose-100 p-5 shadow-[0_8px_24px_rgba(244,63,94,0.06)]">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-rose-900">Session</h2>
+              <p className="mt-1 text-sm text-rose-700/80">
+                Sign out of your account on this device.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-50"
+            >
+              {loggingOut ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Logging out...
+                </>
+              ) : (
+                <>Log out</>
+              )}
+            </button>
+          </div>
+        </section>
+
+        {/* Danger Zone */}
+        <section className="rounded-2xl ring-1 ring-rose-200 bg-rose-50 p-5 shadow-[0_8px_24px_rgba(244,63,94,0.06)]">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 text-base font-semibold text-rose-800">
+                <Trash2 className="h-4 w-4" /> Delete Account
+              </h2>
+              <p className="mt-1 text-sm text-rose-700">
+                This action is permanent. All your reports and data will be
+                removed.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={openDelete}
+              className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow-md hover:bg-rose-500"
+            >
+              <Trash2 className="h-4 w-4" /> Delete Account
+            </button>
+          </div>
+        </section>
+
+        {/* Delete Modal */}
+        {isDeleteOpen && (
+          <div className="fixed inset-0 z-50">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={closeDelete}
+            />
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white ring-1 ring-rose-100 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
+                <div className="flex items-center justify-between border-b border-rose-100 px-4 py-3">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    Confirm Deletion
+                  </h3>
+                  <button
+                    className="p-1 text-gray-500 hover:text-gray-700"
+                    onClick={closeDelete}
+                    aria-label="Close"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                {needsPassword && (
+                <div className="px-4 py-4">
+                  <p className="text-sm text-gray-600">
+                    This action will permanently delete your account and all
+                    data. Type
+                    <span className="px-1 font-semibold text-gray-900">
+                      DELETE
+                    </span>
+                    to confirm.
+                  </p>
                   <div className="mt-3">
-                    <label className="block text-xs font-medium text-gray-700">Password</label>
+                    <label className="block text-xs font-medium text-gray-700">
+                      Type DELETE to confirm
+                    </label>
                     <input
-                      type="password"
-                      value={deletePassword}
-                      onChange={(e) => setDeletePassword(e.target.value)}
-                      placeholder="Enter your password"
-                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                      placeholder="DELETE"
+                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                     />
                   </div>
-                )}
-                {error && (
-                  <div className="mt-3 rounded-md border border-red-300 bg-red-50 p-2 text-sm text-red-700">
-                    {error}
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end gap-2 border-t px-4 py-3">
-                <button
-                  type="button"
-                  onClick={closeDelete}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  disabled={deleting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmDelete}
-                  disabled={
-                    deleting ||
-                    confirmText !== "DELETE" ||
-                    (needsPassword && !deletePassword)
-                  }
-                  className="inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-red-500 disabled:opacity-50"
-                >
-                  {deleting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="h-4 w-4" /> Permanently Delete
-                    </>
+                  {needsPassword && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-gray-700">
+                        Password
+                      </label>
+                      <input
+                        type="password"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        placeholder="Enter your password"
+                        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                      />
+                    </div>
                   )}
-                </button>
+                  {error && (
+                    <div className="mt-3 rounded-md border border-rose-300 bg-rose-50 p-2 text-sm text-rose-700">
+                      {error}
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2 border-t px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={closeDelete}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    disabled={deleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmDelete}
+                    disabled={
+                      deleting ||
+                      confirmText !== "DELETE" ||
+                      (needsPassword && !deletePassword)
+                    }
+                    className="inline-flex items-center gap-2 rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-rose-500 disabled:opacity-50"
+                  >
+                    {deleting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4" /> Permanently Delete
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

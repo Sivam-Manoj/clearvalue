@@ -4,6 +4,15 @@ export type AssetGroupingMode = "single_lot" | "per_item" | "per_photo";
 
 export type AssetCreateDetails = {
   grouping_mode: AssetGroupingMode;
+  // Optional metadata fields
+  client_name?: string;
+  effective_date?: string; // ISO date string (YYYY-MM-DD)
+  appraisal_purpose?: string;
+  owner_name?: string;
+  appraiser?: string;
+  appraisal_company?: string;
+  industry?: string;
+  inspection_date?: string; // ISO date string (YYYY-MM-DD)
 };
 
 export type AssetCreateResponse = {

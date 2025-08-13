@@ -4,11 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { AssetService, type AssetCreateDetails, type AssetGroupingMode } from "@/services/asset";
 import { X, Upload } from "lucide-react";
 import { toast } from "react-toastify";
+import { useAuthContext } from "@/context/AuthContext";
 
 type Props = {
   onSuccess?: (message?: string) => void;
   onCancel?: () => void;
 };
+
+const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
 const GROUPING_OPTIONS: { value: AssetGroupingMode; label: string; desc: string }[] = [
   {
@@ -29,12 +32,22 @@ const GROUPING_OPTIONS: { value: AssetGroupingMode; label: string; desc: string 
 ];
 
 export default function AssetForm({ onSuccess, onCancel }: Props) {
+  const { user } = useAuthContext();
   const [grouping, setGrouping] = useState<AssetGroupingMode>("single_lot");
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Report metadata fields
+  const [clientName, setClientName] = useState("");
+  const [effectiveDate, setEffectiveDate] = useState(isoDate(new Date())); // YYYY-MM-DD
+  const [appraisalPurpose, setAppraisalPurpose] = useState("");
+  const [ownerName, setOwnerName] = useState("");
+  const [appraiser, setAppraiser] = useState((user as any)?.username || (user as any)?.name || "");
+  const [appraisalCompany, setAppraisalCompany] = useState((user as any)?.companyName || "");
+  const [industry, setIndustry] = useState("");
+  const [inspectionDate, setInspectionDate] = useState(isoDate(new Date())); // YYYY-MM-DD
 
   function handleImagesChange(files: FileList | null) {
     if (!files) return;
@@ -60,6 +73,16 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     };
   }, [images]);
 
+  // Backfill fields once user loads, without overwriting user edits
+  useEffect(() => {
+    if (!appraiser && user) {
+      setAppraiser((user as any)?.username || (user as any)?.name || "");
+    }
+    if (!appraisalCompany && (user as any)?.companyName) {
+      setAppraisalCompany((user as any)?.companyName || "");
+    }
+  }, [user]);
+
   function removeImage(index: number) {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
@@ -78,7 +101,17 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setSubmitting(true);
       setError(null);
 
-      const payload: AssetCreateDetails = { grouping_mode: grouping };
+      const payload: AssetCreateDetails = {
+        grouping_mode: grouping,
+        ...(clientName.trim() && { client_name: clientName.trim() }),
+        ...(effectiveDate && { effective_date: effectiveDate }),
+        ...(appraisalPurpose.trim() && { appraisal_purpose: appraisalPurpose.trim() }),
+        ...(ownerName.trim() && { owner_name: ownerName.trim() }),
+        ...(appraiser.trim() && { appraiser: appraiser.trim() }),
+        ...(appraisalCompany.trim() && { appraisal_company: appraisalCompany.trim() }),
+        ...(industry.trim() && { industry: industry.trim() }),
+        ...(inspectionDate && { inspection_date: inspectionDate }),
+      };
       const res = await AssetService.create(payload, images);
 
       toast.success(res?.message || "Asset report created");
@@ -126,6 +159,91 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               </div>
             </label>
           ))}
+        </div>
+      </section>
+
+      {/* Report Details */}
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium text-gray-900">Report Details</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">Client Name</label>
+            <input
+              type="text"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="e.g., Acme Corp"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">Effective Date</label>
+            <input
+              type="date"
+              value={effectiveDate}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">Appraisal Purpose</label>
+            <input
+              type="text"
+              value={appraisalPurpose}
+              onChange={(e) => setAppraisalPurpose(e.target.value)}
+              placeholder="e.g., Insurance"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">Owner Name</label>
+            <input
+              type="text"
+              value={ownerName}
+              onChange={(e) => setOwnerName(e.target.value)}
+              placeholder="e.g., John Doe"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">Appraiser</label>
+            <input
+              type="text"
+              value={appraiser}
+              onChange={(e) => setAppraiser(e.target.value)}
+              placeholder="e.g., Jane Smith"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">Appraisal Company</label>
+            <input
+              type="text"
+              value={appraisalCompany}
+              onChange={(e) => setAppraisalCompany(e.target.value)}
+              placeholder="e.g., ClearValue Appraisals"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">Industry</label>
+            <input
+              type="text"
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              placeholder="e.g., Manufacturing"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-600">Inspection Date</label>
+            <input
+              type="date"
+              value={inspectionDate}
+              onChange={(e) => setInspectionDate(e.target.value)}
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            />
+          </div>
         </div>
       </section>
 

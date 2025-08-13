@@ -75,88 +75,106 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
-            Reports
-          </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            manage your valuation reports.
-          </p>
+    <div className="relative isolate">
+      <div
+        className="pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 bg-gradient-to-b from-rose-100/80 to-transparent"
+        aria-hidden
+      />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent drop-shadow-sm">
+              Reports
+            </h1>
+            <p className="mt-1 text-sm sm:text-base text-rose-800/70">
+              Manage your valuation reports.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white">
-        {loading ? (
-          <div className="p-10">
-            <div className="h-6 w-40 animate-pulse rounded bg-gray-100" />
-            <div className="mt-4 h-24 w-full animate-pulse rounded bg-gray-100" />
-          </div>
-        ) : error ? (
-          <div className="p-4 text-sm text-red-700">{error}</div>
-        ) : reports.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-gray-600">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-              <FileText className="h-6 w-6" />
+        <div className="mt-6">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-36 rounded-2xl bg-white/80 ring-1 ring-rose-100 animate-pulse shadow-[0_8px_24px_rgba(244,63,94,0.15)]"
+                />
+              ))}
             </div>
-            <p className="text-sm">No reports yet.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Address
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Date
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    FMV
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {reports.map((r) => (
-                  <tr key={r._id}>
-                    <td className="px-4 py-3 text-sm text-gray-900">{r.address}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {new Date(r.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{r.fairMarketValue}</td>
-                    <td className="px-4 py-3 text-right text-sm">
-                      <div className="inline-flex gap-2">
-                        <button
-                          onClick={() => handleDownload(r._id)}
-                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                          disabled={downloadingId === r._id}
-                          title="Download"
-                        >
-                          <Download className="h-4 w-4" />
-                          {downloadingId === r._id ? "Downloading..." : "Download"}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(r._id)}
-                          className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
-                          disabled={deletingId === r._id}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          {deletingId === r._id ? "Deleting..." : "Delete"}
-                        </button>
+          ) : error ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm">
+              {error}
+            </div>
+          ) : reports.length === 0 ? (
+            <div className="relative overflow-hidden rounded-2xl border border-dashed border-rose-200 bg-white p-8 sm:p-10 text-center shadow-[0_10px_30px_rgba(244,63,94,0.08)]">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 shadow-inner">
+                <FileText className="h-7 w-7" />
+              </div>
+              <p className="text-sm sm:text-base text-rose-900">No reports yet.</p>
+              <p className="mt-1 text-xs sm:text-sm text-rose-700/70">
+                Create your first report to see it here.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {reports.map((r) => (
+                <div
+                  key={r._id}
+                  className="group relative rounded-2xl bg-white ring-1 ring-rose-100 shadow-[0_10px_30px_rgba(244,63,94,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(244,63,94,0.18)]"
+                >
+                  <div
+                    className="absolute inset-x-0 -top-px h-1.5 rounded-t-2xl bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600"
+                    aria-hidden
+                  />
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 shadow-inner">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <h3 className="truncate text-sm sm:text-base font-semibold text-rose-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
+                            {r.address || "Untitled report"}
+                          </h3>
+                        </div>
+                        <div className="mt-1 text-xs text-rose-700/70">
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                      <div className="shrink-0">
+                        <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm">
+                          FMV: {String(r.fairMarketValue ?? "")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => handleDownload(r._id)}
+                        disabled={downloadingId === r._id}
+                        className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-60"
+                        title="Download"
+                      >
+                        <Download className="h-4 w-4" />
+                        {downloadingId === r._id ? "Downloading..." : "Download"}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r._id)}
+                        disabled={deletingId === r._id}
+                        className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {deletingId === r._id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
