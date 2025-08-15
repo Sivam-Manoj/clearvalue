@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type { AuthUser, LoginPayload } from "@/services/auth";
 import { AuthService } from "@/services/auth";
 import { UserService } from "@/services/user";
@@ -37,12 +44,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = useCallback(async (payload: LoginPayload) => {
-    setError(null);
-    await AuthService.login(payload);
-    setCookie("cv_auth", "1", 7);
-    await refresh();
-  }, [refresh]);
+  const login = useCallback(
+    async (payload: LoginPayload) => {
+      setError(null);
+      await AuthService.login(payload);
+      setCookie("cv_auth", "1", 7);
+      await refresh();
+    },
+    [refresh]
+  );
 
   const logout = useCallback(async () => {
     await AuthService.logout();
@@ -52,14 +62,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // On mount, attempt to fetch user if we have a token
-    if (typeof window !== 'undefined' && getAccessToken()) {
+    if (typeof window !== "undefined" && getAccessToken()) {
       refresh().finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
   }, [refresh]);
 
-  const value = useMemo<AuthContextType>(() => ({ user, loading, error, refresh, login, logout }), [user, loading, error, refresh, login, logout]);
+  const value = useMemo<AuthContextType>(
+    () => ({ user, loading, error, refresh, login, logout }),
+    [user, loading, error, refresh, login, logout]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
