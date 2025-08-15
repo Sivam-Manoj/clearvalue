@@ -97,7 +97,7 @@ export default function ReportsPage() {
         aria-hidden
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4">
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent drop-shadow-sm">
               Reports
@@ -106,7 +106,7 @@ export default function ReportsPage() {
               Manage your valuation reports.
             </p>
           </div>
-          <div className="w-full max-w-xs">
+          <div className="w-full sm:max-w-xs">
             <label htmlFor="report-search" className="sr-only">
               Search
             </label>
@@ -157,101 +157,168 @@ export default function ReportsPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-rose-100 shadow-[0_10px_30px_rgba(244,63,94,0.08)]">
-              <table className="min-w-full divide-y divide-rose-100">
-                <thead className="bg-rose-50/50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold text-rose-800 uppercase tracking-wide"
-                    >
-                      Report
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold text-rose-800 uppercase tracking-wide"
-                    >
-                      Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold text-rose-800 uppercase tracking-wide"
-                    >
-                      FMV
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-right text-xs font-semibold text-rose-800 uppercase tracking-wide"
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-rose-100">
-                  {filteredReports.length === 0 && reports.length > 0 ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-4 py-6 text-center text-sm text-rose-700/80"
+            <div className="space-y-4">
+              {/* Mobile list view */}
+              <div className="sm:hidden">
+                {filteredReports.length === 0 && reports.length > 0 ? (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm">
+                    No matches for "{query}".
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredReports.map((r) => (
+                      <div
+                        key={r._id}
+                        className="rounded-2xl bg-white ring-1 ring-rose-100 p-4 shadow-[0_10px_30px_rgba(244,63,94,0.08)]"
                       >
-                        No matches for "{query}".
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredReports.map((r) => (
-                      <tr key={r._id} className="hover:bg-rose-50/40">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 shadow-inner">
-                              <FileText className="h-4 w-4" />
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 shadow-inner">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-rose-900 truncate">
+                              {r.address || "Untitled report"}
                             </div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold text-rose-900 truncate">
-                                {r.address || "Untitled report"}
-                              </div>
-                              <div className="text-xs text-rose-700/70 truncate">
-                                {r.filename || r._id}
-                              </div>
+                            <div className="mt-0.5 text-xs text-rose-700/70 truncate">
+                              {r.filename || r._id}
                             </div>
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-rose-900">
-                          {new Date(r.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3">
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-xs text-rose-900">
+                            {new Date(r.createdAt).toLocaleDateString()}
+                          </div>
                           <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm">
                             {String(r.fairMarketValue ?? "")}
                           </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => handleDownload(r._id)}
-                              disabled={downloadingId === r._id}
-                              className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-60"
-                              title="Download"
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => handleDownload(r._id)}
+                            disabled={downloadingId === r._id}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-60"
+                            title="Download"
+                          >
+                            <Download className="h-4 w-4" />
+                            {downloadingId === r._id ? "Downloading..." : "Download"}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r._id)}
+                            disabled={deletingId === r._id}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            {deletingId === r._id ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop/tablet table view */}
+              <div className="hidden sm:block">
+                <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-rose-100 shadow-[0_10px_30px_rgba(244,63,94,0.08)]">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-rose-100">
+                      <thead className="bg-rose-50/50">
+                        <tr>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-semibold text-rose-800 uppercase tracking-wide"
+                          >
+                            Report
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-semibold text-rose-800 uppercase tracking-wide"
+                          >
+                            Date
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-semibold text-rose-800 uppercase tracking-wide"
+                          >
+                            FMV
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-right text-xs font-semibold text-rose-800 uppercase tracking-wide"
+                          >
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-rose-100">
+                        {filteredReports.length === 0 && reports.length > 0 ? (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              className="px-4 py-6 text-center text-sm text-rose-700/80"
                             >
-                              <Download className="h-4 w-4" />
-                              {downloadingId === r._id
-                                ? "Downloading..."
-                                : "Download"}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(r._id)}
-                              disabled={deletingId === r._id}
-                              className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              {deletingId === r._id ? "Deleting..." : "Delete"}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                              No matches for "{query}".
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredReports.map((r) => (
+                            <tr key={r._id} className="hover:bg-rose-50/40">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 shadow-inner">
+                                    <FileText className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-rose-900 truncate">
+                                      {r.address || "Untitled report"}
+                                    </div>
+                                    <div className="text-xs text-rose-700/70 truncate">
+                                      {r.filename || r._id}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-rose-900">
+                                {new Date(r.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm">
+                                  {String(r.fairMarketValue ?? "")}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    onClick={() => handleDownload(r._id)}
+                                    disabled={downloadingId === r._id}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-60"
+                                    title="Download"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                    {downloadingId === r._id
+                                      ? "Downloading..."
+                                      : "Download"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(r._id)}
+                                    disabled={deletingId === r._id}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    {deletingId === r._id ? "Deleting..." : "Delete"}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
