@@ -17,30 +17,37 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import Loading from "@/components/common/Loading";
 
 const RealEstateForm = dynamic(
   () => import("@/components/forms/RealEstateForm"),
   {
     ssr: false,
-    loading: () => <div className="text-sm text-rose-600">Loading form...</div>,
+    loading: () => (
+      <div className="flex items-center justify-center py-8 min-h-[220px]">
+        <Loading message="Loading form..." height={140} width={140} />
+      </div>
+    ),
   }
 );
 
-const SalvageForm = dynamic(
-  () => import("@/components/forms/SalvageForm"),
-  {
-    ssr: false,
-    loading: () => <div className="text-sm text-rose-600">Loading form...</div>,
-  }
-);
+const SalvageForm = dynamic(() => import("@/components/forms/SalvageForm"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-8 min-h-[220px]">
+      <Loading message="Loading form..." height={140} width={140} />
+    </div>
+  ),
+});
 
-const AssetForm = dynamic(
-  () => import("@/components/forms/AssetForm"),
-  {
-    ssr: false,
-    loading: () => <div className="text-sm text-rose-600">Loading form...</div>,
-  }
-);
+const AssetForm = dynamic(() => import("@/components/forms/AssetForm"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-8 min-h-[220px]">
+      <Loading message="Loading form..." height={140} width={140} />
+    </div>
+  ),
+});
 
 export default function DashboardPage() {
   const { user } = useAuthContext();

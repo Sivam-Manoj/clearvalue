@@ -5,6 +5,7 @@ import { useAuthContext } from "@/context/AuthContext";
 import { SalvageService, type SalvageDetails } from "@/services/salvage";
 import { X, Upload } from "lucide-react";
 import { toast } from "react-toastify";
+import Loading from "@/components/common/Loading";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -129,14 +130,15 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
 
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
-      {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      <div className="relative">
+        {error && (
+          <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
-      {/* Report & File Info */}
-      <section className="space-y-3">
+        {/* Report & File Info */}
+        <section className="space-y-3">
         <h3 className="text-sm font-medium text-gray-900">Report Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
@@ -328,22 +330,28 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         )}
       </section>
 
-      <div className="flex items-center gap-2 pt-2">
-        <button
-          type="button"
-          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          onClick={onCancel}
-          disabled={submitting}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-blue-500 disabled:opacity-50"
-          disabled={submitting}
-        >
-          {submitting ? "Creating..." : "Create Report"}
-        </button>
+        <div className="flex items-center gap-2 pt-2">
+          <button
+            type="button"
+            className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            onClick={onCancel}
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-blue-500 disabled:opacity-50"
+            disabled={submitting}
+          >
+            {submitting ? "Creating..." : "Create Report"}
+          </button>
+        </div>
+        {submitting && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
+            <Loading message="Creating your report..." height={220} width={220} />
+          </div>
+        )}
       </div>
     </form>
   );
