@@ -34,14 +34,13 @@ export default function Page() {
             <SignupForm />
           </div>
 
-          {/* Left: Hero / Visuals */}
-          <div className="order-1 lg:order-1">
+          <div className="order-1 lg:order-1 md:mt-[-25rem]">
             <div className="relative rounded-3xl bg-white/80 p-6 sm:p-8 ring-1 ring-rose-100 shadow-[0_20px_60px_rgba(244,63,94,0.12)] backdrop-blur">
               {/* Soft glowing blobs */}
               <div className="pointer-events-none absolute -top-8 -left-8 h-40 w-40 rounded-full bg-rose-200/60 blur-3xl animate-pulse" />
               <div className="pointer-events-none absolute -bottom-10 -right-10 h-48 w-48 rounded-full bg-rose-300/50 blur-3xl animate-pulse" />
 
-              {/* Illustration */}
+              {/* Illustration block */}
               <div className="relative">
                 <div className="mx-auto flex h-40 w-full items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-100 via-rose-50 to-white ring-1 ring-rose-100 shadow-inner sm:h-48">
                   <div className="h-12 w-12 rounded-2xl bg-rose-500 shadow-lg shadow-rose-500/30" />
@@ -49,11 +48,11 @@ export default function Page() {
                 <ul className="mt-6 space-y-3 text-sm text-rose-900/90">
                   <li className="flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shadow-[0_0_0_3px_rgba(244,63,94,0.15)]" />
-                    Create reports with ease
+                    Fast, secure appraisals
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shadow-[0_0_0_3px_rgba(244,63,94,0.15)]" />
-                    Beautiful, secure workflows
+                    Smart workflows with a clean UI
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shadow-[0_0_0_3px_rgba(244,63,94,0.15)]" />

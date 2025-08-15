@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthContext } from "@/context/AuthContext";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
-import { LottiePlayer } from "lottie-react";
-import signinAnimation from "@/public/signinAnimation.json";
 
 export default function LoginForm() {
   const router = useRouter();
