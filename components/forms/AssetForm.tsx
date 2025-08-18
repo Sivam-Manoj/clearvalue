@@ -6,11 +6,9 @@ import {
   type AssetCreateDetails,
   type AssetGroupingMode,
 } from "@/services/asset";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuthContext } from "@/context/AuthContext";
-
-import Loading from "@/components/common/Loading";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -63,6 +61,73 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   const [industry, setIndustry] = useState("");
   const [inspectionDate, setInspectionDate] = useState(isoDate(new Date())); // YYYY-MM-DD
 
+  // Progress UI state
+  const PROG_WEIGHTS = {
+    client_upload: 0.25,
+    r2_upload: 0.15,
+    ai_analysis: 0.35,
+    generate_pdf: 0.2,
+    finalize: 0.05,
+  } as const;
+  const STEPS = [
+    { key: "client_upload", label: "Uploading images" },
+    { key: "r2_upload", label: "Storing images" },
+    { key: "ai_analysis", label: "Analyzing with AI" },
+    { key: "generate_pdf", label: "Generating PDF" },
+    { key: "finalize", label: "Finalizing" },
+  ] as const;
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [progressPhase, setProgressPhase] = useState<
+    "idle" | "upload" | "processing" | "done" | "error"
+  >("idle");
+  const [stepStates, setStepStates] = useState<
+    Record<string, "pending" | "active" | "done">
+  >(() => Object.fromEntries(STEPS.map((s) => [s.key, "pending"])));
+  const pollIntervalRef = useRef<any>(null);
+  const pollStartedRef = useRef(false);
+  const jobIdRef = useRef<string | null>(null);
+
+  // Threshold-based step state updates driven by progressPercent
+  useEffect(() => {
+    if (progressPhase === "idle") return;
+    setStepStates((prev) => {
+      const next = { ...prev } as Record<string, "pending" | "active" | "done">;
+      // Reset all to pending first
+      for (const s of STEPS) next[s.key] = "pending";
+      const p = progressPercent;
+      if (p < 25) {
+        next.client_upload = "active";
+      } else if (p < 40) {
+        next.client_upload = "done";
+        next.r2_upload = "active";
+      } else if (p < 75) {
+        next.client_upload = "done";
+        next.r2_upload = "done";
+        next.ai_analysis = "active";
+      } else if (p < 95) {
+        next.client_upload = "done";
+        next.r2_upload = "done";
+        next.ai_analysis = "done";
+        next.generate_pdf = "active";
+      } else if (p < 100) {
+        next.client_upload = "done";
+        next.r2_upload = "done";
+        next.ai_analysis = "done";
+        next.generate_pdf = "done";
+        next.finalize = "active";
+      } else {
+        for (const s of STEPS) next[s.key] = "done";
+      }
+      return next;
+    });
+  }, [progressPercent, progressPhase]);
+
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
+
   function handleImagesChange(files: FileList | null) {
     if (!files) return;
     const incoming = Array.from(files);
@@ -114,6 +179,24 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     try {
       setSubmitting(true);
       setError(null);
+      setProgressPhase("upload");
+      setProgressPercent(0);
+      setStepStates(() => ({
+        client_upload: "active",
+        r2_upload: "pending",
+        ai_analysis: "pending",
+        generate_pdf: "pending",
+        finalize: "pending",
+      }));
+      pollStartedRef.current = false;
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+
+      // Generate a job/progress id for server-side tracking
+      const jobId =
+        typeof crypto !== "undefined" && (crypto as any)?.randomUUID
+          ? (crypto as any).randomUUID()
+          : `cv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      jobIdRef.current = jobId;
 
       const payload: AssetCreateDetails = {
         grouping_mode: grouping,
@@ -129,22 +212,74 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         }),
         ...(industry.trim() && { industry: industry.trim() }),
         ...(inspectionDate && { inspection_date: inspectionDate }),
+        progress_id: jobId,
       };
-      const res = await AssetService.create(payload, images);
+
+      // Helper to start polling server progress after upload completes
+      const startPolling = () => {
+        if (!jobIdRef.current) return;
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = setInterval(async () => {
+          try {
+            const rec = await AssetService.progress(jobIdRef.current!);
+            // Map server 0..1 progress (server-side only) to overall 0..100 using client weight
+            const clientW = PROG_WEIGHTS.client_upload;
+            const server01 = Math.max(0, Math.min(1, rec?.serverProgress01 ?? 0));
+            const overall = (clientW + server01 * (1 - clientW)) * 100;
+            setProgressPhase(rec.phase === "error" ? "error" : rec.phase === "done" ? "done" : "processing");
+            setProgressPercent((prev) => (overall > prev ? overall : prev));
+            if (rec.phase === "done" || rec.phase === "error") {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+          } catch (e: any) {
+            // 404/Network during early phase: ignore and keep polling
+          }
+        }, 800);
+      };
+
+      const res = await AssetService.create(payload, images, {
+        onUploadProgress: (fraction: number) => {
+          const pct = Math.max(0, Math.min(1, fraction));
+          const weighted = pct * PROG_WEIGHTS.client_upload * 100;
+          setProgressPhase("upload");
+          setProgressPercent((prev) => (weighted > prev ? weighted : prev));
+          if (pct >= 1 && !pollStartedRef.current) {
+            pollStartedRef.current = true;
+            setProgressPhase("processing");
+            startPolling();
+          }
+        },
+      });
+
+      // Response received: complete progress
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      setProgressPercent(100);
+      setProgressPhase("done");
+      setStepStates(() => ({
+        client_upload: "done",
+        r2_upload: "done",
+        ai_analysis: "done",
+        generate_pdf: "done",
+        finalize: "done",
+      }));
 
       toast.success(res?.message || "Asset report created");
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("cv:report-created"));
       }
       onSuccess?.(res?.message);
+      // Let the user see 100% briefly
+      setTimeout(() => setSubmitting(false), 300);
     } catch (err: any) {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      setProgressPhase("error");
       const msg =
         err?.response?.data?.message ||
         err?.message ||
         "Failed to create asset report";
       setError(msg);
       toast.error(msg);
-    } finally {
       setSubmitting(false);
     }
   }
@@ -152,12 +287,82 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
       <div className="relative">
-        {error && (
+        {!submitting && error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">
             {error}
           </div>
         )}
 
+        {submitting && (
+          <div className="mb-3">
+            <div className="w-full max-w-xl mx-auto rounded-lg border border-rose-100 bg-white p-4 shadow-lg">
+              <div className="mb-3 text-sm font-semibold text-gray-900">
+                Creating report...
+              </div>
+              <div className="mb-4 flex items-center justify-between">
+                {STEPS.map((s, idx) => {
+                  const state = stepStates[s.key];
+                  const isDone = state === "done";
+                  const isActive = state === "active";
+                  return (
+                    <div key={s.key} className="flex flex-1 items-center">
+                      <div
+                        className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold ${
+                          isDone
+                            ? "border-rose-600 bg-rose-600 text-white"
+                            : isActive
+                            ? "border-rose-600 text-rose-600 animate-pulse"
+                            : "border-gray-300 text-gray-400"
+                        }`}
+                        title={s.label}
+                      >
+                        {isDone ? <Check className="h-4 w-4" /> : idx + 1}
+                      </div>
+                      {idx < STEPS.length - 1 && (
+                        <div className="mx-2 h-0.5 flex-1 rounded bg-gray-200">
+                          <div
+                            className={`h-0.5 rounded ${
+                              isDone
+                                ? "bg-rose-600"
+                                : isActive
+                                ? "bg-rose-400"
+                                : "bg-gray-200"
+                            }`}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div>
+                <div className="h-2 w-full rounded bg-gray-200">
+                  <div
+                    className="h-2 rounded bg-rose-600 transition-all duration-300"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(0, progressPercent)
+                      ).toFixed(0)}%`,
+                    }}
+                  ></div>
+                </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  {progressPhase === "upload"
+                    ? "Uploading images..."
+                    : progressPhase === "processing"
+                    ? "Analyzing images and generating PDF..."
+                    : progressPhase === "done"
+                    ? "Finalizing..."
+                    : "Starting..."}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!submitting && (
+          <>
         {/* Grouping */}
         <section className="space-y-3">
           <h3 className="text-sm font-medium text-gray-900">Grouping Mode</h3>
@@ -349,14 +554,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
             {submitting ? "Creating..." : "Create Report"}
           </button>
         </div>
-        {submitting && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
-            <Loading
-              message="Creating your report..."
-              height={220}
-              width={220}
-            />
-          </div>
+          </>
         )}
       </div>
     </form>
