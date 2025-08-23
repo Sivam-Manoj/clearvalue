@@ -29,7 +29,7 @@ const GROUPING_OPTIONS: {
   },
   {
     value: "per_item",
-    label: "Per Item (AI groups)",
+    label: "Per Item",
     desc: "Each item as a distinct lot.",
   },
   {
