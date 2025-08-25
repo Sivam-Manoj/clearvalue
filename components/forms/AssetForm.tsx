@@ -244,33 +244,20 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
           const weighted = pct * PROG_WEIGHTS.client_upload * 100;
           setProgressPhase("upload");
           setProgressPercent((prev) => (weighted > prev ? weighted : prev));
-          if (pct >= 1 && !pollStartedRef.current) {
-            pollStartedRef.current = true;
-            setProgressPhase("processing");
-            startPolling();
-          }
         },
       });
 
-      // Response received: complete progress
+      // Response received: notify and end. Backend will email when ready.
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-      setProgressPercent(100);
-      setProgressPhase("done");
-      setStepStates(() => ({
-        client_upload: "done",
-        r2_upload: "done",
-        ai_analysis: "done",
-        generate_pdf: "done",
-        finalize: "done",
-      }));
-
-      toast.success(res?.message || "Asset report created");
+      const msg =
+        res?.message ||
+        "Your report is being processed. You will receive an email when it's ready.";
+      toast.info(msg);
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("cv:report-created"));
       }
-      onSuccess?.(res?.message);
-      // Let the user see 100% briefly
-      setTimeout(() => setSubmitting(false), 300);
+      onSuccess?.(msg);
+      setSubmitting(false);
     } catch (err: any) {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       setProgressPhase("error");

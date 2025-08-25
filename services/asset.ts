@@ -20,7 +20,11 @@ export type AssetCreateDetails = {
 
 export type AssetCreateResponse = {
   message: string;
-  filePath: string;
+  // Background job ack fields (202 Accepted)
+  jobId?: string;
+  phase?: "upload" | "processing" | "done" | "error";
+  // Legacy immediate response fields (if any)
+  filePath?: string;
   data?: any;
 };
 
