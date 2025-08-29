@@ -2,13 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  Camera,
-  Image as ImageIcon,
-  Trash2,
-  Plus,
-  X,
-} from "lucide-react";
+import { Camera, Image as ImageIcon, Trash2, Plus, X } from "lucide-react";
 import { toast } from "react-toastify";
 
 export type CatalogueLot = {
@@ -194,9 +188,13 @@ export default function CatalogueSection({
       canvas.toBlob(
         (blob) => {
           if (!blob) return resolve();
-          const file = new File([blob], `lot-${activeIdx + 1}-${Date.now()}.jpg`, {
-            type: "image/jpeg",
-          });
+          const file = new File(
+            [blob],
+            `lot-${activeIdx + 1}-${Date.now()}.jpg`,
+            {
+              type: "image/jpeg",
+            }
+          );
           appendToActiveLot([file]);
           resolve();
         },
@@ -239,7 +237,7 @@ export default function CatalogueSection({
             }}
             className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
           >
-            <Plus className="h-4 w-4" /> Add Lot Camera
+            <Plus className="h-4 w-4" /> Lot from camera
           </button>
           <button
             type="button"
@@ -300,7 +298,7 @@ export default function CatalogueSection({
               }}
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
-              Add Lot
+              Add Lot from camera
             </button>
             <button
               type="button"
@@ -382,8 +380,9 @@ export default function CatalogueSection({
           )}
 
           <div className="mt-2 text-[11px] text-gray-500">
-            Tip: Use "Open Camera" or "Upload from device" to add images.
-            Use "Add Lot" to start a new lot. Use "Done" to finish catalogue capture.
+            Tip: Use "Open Camera" or "Upload from device" to add images. Use
+            "Add Lot" to start a new lot. Use "Done" to finish catalogue
+            capture.
           </div>
         </div>
       )}
@@ -485,7 +484,8 @@ export default function CatalogueSection({
                 <div className="flex items-center justify-between text-[12px] text-white/90">
                   <div className="font-medium">Lot #{activeIdx + 1}</div>
                   <div>
-                    {(lots[activeIdx]?.files.length ?? 0)}/{maxImagesPerLot} images
+                    {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}{" "}
+                    images
                   </div>
                 </div>
 
