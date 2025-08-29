@@ -214,7 +214,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       extraDetails = {
         catalogue_lots: catalogueLots.map((l) => ({
           count: l.files.length,
-          cover_index: Math.max(0, Math.min(l.files.length - 1, l.coverIndex || 0)),
+          cover_index: Math.max(
+            0,
+            Math.min(l.files.length - 1, l.coverIndex || 0)
+          ),
         })),
       } as Partial<AssetCreateDetails>;
     } else {
@@ -542,7 +545,9 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
             {/* Images / Catalogue */}
             {grouping !== "catalogue" ? (
               <section className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-900">Images (max 10)</h3>
+                <h3 className="text-sm font-medium text-gray-900">
+                  Images (max 10)
+                </h3>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -564,9 +569,13 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                       Select Images
                     </button>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">PNG, JPG. Up to 10 images.</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    PNG, JPG. Up to 10 images.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500">Selected: {images.length} file(s)</p>
+                <p className="text-xs text-gray-500">
+                  Selected: {images.length} file(s)
+                </p>
                 {images.length > 0 && (
                   <div className="rounded-md border border-gray-200 p-2">
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -594,8 +603,15 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               </section>
             ) : (
               <section className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-900">Catalogue Listing</h3>
-                <CatalogueSection value={catalogueLots} onChange={setCatalogueLots} maxImagesPerLot={20} maxTotalImages={100} />
+                <h3 className="text-sm font-medium text-gray-900">
+                  Catalogue Listing
+                </h3>
+                <CatalogueSection
+                  value={catalogueLots}
+                  onChange={setCatalogueLots}
+                  maxImagesPerLot={20}
+                  maxTotalImages={500}
+                />
               </section>
             )}
 
