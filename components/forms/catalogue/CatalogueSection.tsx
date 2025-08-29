@@ -122,6 +122,17 @@ export default function CatalogueSection({
     appendToActiveLot(incoming);
   }
 
+  function startManualUpload(createIfNone: boolean = true) {
+    if (createIfNone && activeIdx < 0) {
+      // Create a lot first so uploads have a destination
+      createLot();
+      // Defer click so state updates before selection dialog returns
+      setTimeout(() => fileInputRef.current?.click(), 0);
+      return;
+    }
+    fileInputRef.current?.click();
+  }
+
   async function startInAppCamera() {
     try {
       setCameraError(null);
@@ -218,16 +229,25 @@ export default function CatalogueSection({
             {lots.length} lot(s), {totalImages} image(s) total
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            createLot();
-            startInAppCamera();
-          }}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
-        >
-          <Plus className="h-4 w-4" /> Add Lot
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              createLot();
+              startInAppCamera();
+            }}
+            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+          >
+            <Plus className="h-4 w-4" /> Add Lot
+          </button>
+          <button
+            type="button"
+            onClick={() => startManualUpload(true)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+          >
+            <ImageIcon className="h-4 w-4" /> Upload from device
+          </button>
+        </div>
       </div>
 
       {/* Hidden camera/file input */}
@@ -236,7 +256,6 @@ export default function CatalogueSection({
         type="file"
         accept="image/*"
         multiple
-        capture="environment"
         onChange={(e) => {
           handleFilesSelected(e.target.files);
           // reset input so selecting same files again still triggers
@@ -252,10 +271,8 @@ export default function CatalogueSection({
             <div className="text-sm font-semibold text-gray-900">
               Lot #{activeIdx + 1}
             </div>
-            <div className="flex items-center gap-3 text-xs text-gray-600">
-              <span>
-                {activeLot?.files.length}/{maxImagesPerLot} images
-              </span>
+            <div className="text-xs text-gray-600">
+              {activeLot?.files.length}/{maxImagesPerLot} images
             </div>
           </div>
 
@@ -269,7 +286,17 @@ export default function CatalogueSection({
             </button>
             <button
               type="button"
-              onClick={() => { createLot(); startInAppCamera(); }}
+              onClick={() => startManualUpload(false)}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+            >
+              <ImageIcon className="h-4 w-4" /> Upload from device
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                createLot();
+                startInAppCamera();
+              }}
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
               Add Lot
@@ -288,9 +315,12 @@ export default function CatalogueSection({
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {activeLot.files.map((file, i) => {
                   const url = URL.createObjectURL(file);
-                  const isCover = activeLot.coverIndex === i;
+                  const isCover = i === activeLot.coverIndex;
                   return (
-                    <div key={i} className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl">
+                    <div
+                      key={i}
+                      className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={url}
@@ -336,6 +366,13 @@ export default function CatalogueSection({
                 >
                   <Camera className="h-4 w-4" /> Open Camera
                 </button>
+                <button
+                  type="button"
+                  onClick={() => startManualUpload(false)}
+                  className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                >
+                  <ImageIcon className="h-4 w-4" /> Upload from device
+                </button>
               </div>
               <p className="mt-1 text-xs text-gray-500">
                 PNG, JPG. Up to {maxImagesPerLot} images in this lot.
@@ -344,8 +381,8 @@ export default function CatalogueSection({
           )}
 
           <div className="mt-2 text-[11px] text-gray-500">
-            Tip: Use "Add Lot" to start a new lot. Use "Done" to finish
-            catalogue capture.
+            Tip: Use "Open Camera" or "Upload from device" to add images.
+            Use "Add Lot" to start a new lot. Use "Done" to finish catalogue capture.
           </div>
         </div>
       )}
@@ -478,7 +515,14 @@ export default function CatalogueSection({
                 </button>
               </div>
 
-              <div className="mt-3 flex justify-center">
+              <div className="mt-3 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => startManualUpload(false)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                >
+                  <ImageIcon className="h-4 w-4" /> Upload from device
+                </button>
                 <button
                   type="button"
                   onClick={stopInAppCamera}
