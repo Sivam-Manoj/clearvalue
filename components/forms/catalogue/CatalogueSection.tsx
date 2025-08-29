@@ -451,12 +451,12 @@ export default function CatalogueSection({
 
       {/* In-app camera overlay */}
       {cameraOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="relative w-[94%] max-w-sm rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto p-4">
+          <div className="relative w-[94%] max-w-sm max-h-[96vh] overflow-y-auto flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
             <button
               type="button"
               onClick={stopInAppCamera}
-              className="absolute right-2 top-2 rounded-full bg-white/90 p-1.5 text-gray-900 shadow hover:bg-white"
+              className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1.5 text-gray-900 shadow hover:bg-white"
               aria-label="Done"
             >
               <X className="h-4 w-4" />
@@ -468,7 +468,7 @@ export default function CatalogueSection({
                 autoPlay
                 playsInline
                 muted
-                className="block h-auto w-full aspect-[3/4] object-cover"
+                className="block h-auto w-full aspect-[3/4] object-cover pointer-events-none"
               />
               <canvas ref={canvasRef} className="hidden" />
             </div>
@@ -515,14 +515,7 @@ export default function CatalogueSection({
                 </button>
               </div>
 
-              <div className="mt-3 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => startManualUpload(false)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
-                >
-                  <ImageIcon className="h-4 w-4" /> Upload from device
-                </button>
+              <div className="mt-3 flex items-center justify-end">
                 <button
                   type="button"
                   onClick={stopInAppCamera}
