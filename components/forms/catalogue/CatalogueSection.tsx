@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Image as ImageIcon, Trash2, Plus, X } from "lucide-react";
+import { Camera, Image as ImageIcon, Trash2, Plus, X, Check } from "lucide-react";
 import { toast } from "react-toastify";
 
 export type CatalogueLot = {
@@ -34,6 +34,8 @@ export default function CatalogueSection({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  // When true, after a manual device upload we should move to the next lot automatically
+  const advanceAfterUploadRef = useRef(false);
 
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
@@ -115,6 +117,11 @@ export default function CatalogueSection({
     if (files == null) return;
     const incoming = Array.from(files);
     appendToActiveLot(incoming);
+    if (advanceAfterUploadRef.current) {
+      // reset the flag and proceed to next lot
+      advanceAfterUploadRef.current = false;
+      goNextLot();
+    }
   }
 
   function startManualUpload(createIfNone: boolean = true) {
@@ -289,6 +296,16 @@ export default function CatalogueSection({
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
               <ImageIcon className="h-4 w-4" /> Upload from device
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                advanceAfterUploadRef.current = true;
+                startManualUpload(false);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+            >
+              <ImageIcon className="h-4 w-4" /> Upload & Next
             </button>
             <button
               type="button"
@@ -517,13 +534,16 @@ export default function CatalogueSection({
                   </button>
                 </div>
 
-                <div className="mt-3 flex items-center justify-end">
+                <div className="mt-4 flex items-center justify-center">
                   <button
                     type="button"
                     onClick={stopInAppCamera}
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                    className="group relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] focus:outline-none"
+                    aria-label="Done"
+                    title="Done"
                   >
-                    Done
+                    <Check className="h-7 w-7 sm:h-8 sm:w-8" />
+                    <span className="sr-only">Done</span>
                   </button>
                 </div>
               </div>

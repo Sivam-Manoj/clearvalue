@@ -23,6 +23,8 @@ type Props = {
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
+const DRAFT_KEY = "cv_asset_draft";
+
 const GROUPING_OPTIONS: {
   value: AssetGroupingMode;
   label: string;
@@ -183,6 +185,57 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function clearForm() {
+    try {
+      setGrouping("single_lot");
+      setImages([]);
+      setPreviews([]);
+      setCatalogueLots([]);
+      setError(null);
+      setClientName("");
+      setEffectiveDate(isoDate(new Date()));
+      setAppraisalPurpose("");
+      setOwnerName("");
+      setAppraiser("");
+      setAppraisalCompany("");
+      setIndustry("");
+      setInspectionDate(isoDate(new Date()));
+      onCancel?.();
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      toast.info("Form cleared.");
+    } catch {}
+  }
+
+  function saveDraft() {
+    try {
+      const draft = {
+        grouping,
+        clientName,
+        effectiveDate,
+        appraisalPurpose,
+        ownerName,
+        appraiser,
+        appraisalCompany,
+        industry,
+        inspectionDate,
+        // Store catalogue meta (counts and covers) but not binary images
+        catalogueLots: catalogueLots.map((l) => ({
+          coverIndex: l.coverIndex,
+          count: l.files.length,
+        })),
+        imagesCount: images.length,
+        savedAt: new Date().toISOString(),
+      };
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        toast.success("Draft saved for later.");
+      }
+      onCancel?.();
+    } catch (e) {
+      toast.error("Failed to save draft.");
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -316,6 +369,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         res?.message ||
         "Your report is being processed. You will receive an email when it's ready.";
       toast.info(msg);
+      try {
+        if (typeof localStorage !== "undefined") {
+          localStorage.removeItem(DRAFT_KEY);
+        }
+      } catch {}
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("cv:report-created"));
       }
@@ -580,7 +638,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                       {previews.map((src, idx) => (
-                        <div key={idx} className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl">
+                        <div
+                          key={idx}
+                          className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={src}
@@ -619,7 +680,15 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               <button
                 type="button"
                 className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
-                onClick={onCancel}
+                onClick={saveDraft}
+                disabled={submitting}
+              >
+                Save for later
+              </button>
+              <button
+                type="button"
+                className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+                onClick={clearForm}
                 disabled={submitting}
               >
                 Cancel
