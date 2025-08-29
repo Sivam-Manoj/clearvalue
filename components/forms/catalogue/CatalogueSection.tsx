@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Camera,
   Image as ImageIcon,
@@ -238,7 +239,7 @@ export default function CatalogueSection({
             }}
             className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
           >
-            <Plus className="h-4 w-4" /> Add Lot
+            <Plus className="h-4 w-4" /> Add Lot Camera
           </button>
           <button
             type="button"
@@ -450,84 +451,86 @@ export default function CatalogueSection({
       </div>
 
       {/* In-app camera overlay */}
-      {cameraOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="relative w-[94%] max-w-sm max-h-[96vh] overflow-y-auto flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
-            <button
-              type="button"
-              onClick={stopInAppCamera}
-              className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1.5 text-gray-900 shadow hover:bg-white"
-              aria-label="Done"
-            >
-              <X className="h-4 w-4" />
-            </button>
+      {cameraOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto p-4">
+            <div className="relative w-[94%] max-w-sm max-h-[96vh] overflow-y-auto flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
+              <button
+                type="button"
+                onClick={stopInAppCamera}
+                className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1.5 text-gray-900 shadow hover:bg-white"
+                aria-label="Done"
+              >
+                <X className="h-4 w-4" />
+              </button>
 
-            <div className="overflow-hidden rounded-t-2xl">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="block h-auto w-full aspect-[3/4] object-cover pointer-events-none"
-              />
-              <canvas ref={canvasRef} className="hidden" />
-            </div>
-
-            {cameraError && (
-              <div className="m-2 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-                {cameraError}
+              <div className="overflow-hidden rounded-t-2xl">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="block h-auto w-full aspect-[3/4] object-cover pointer-events-none"
+                />
+                <canvas ref={canvasRef} className="hidden" />
               </div>
-            )}
 
-            <div className="p-3">
-              <div className="flex items-center justify-between text-[12px] text-white/90">
-                <div className="font-medium">Lot #{activeIdx + 1}</div>
-                <div>
-                  {(lots[activeIdx]?.files.length ?? 0)}/{maxImagesPerLot} images
+              {cameraError && (
+                <div className="m-2 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+                  {cameraError}
+                </div>
+              )}
+
+              <div className="p-3">
+                <div className="flex items-center justify-between text-[12px] text-white/90">
+                  <div className="font-medium">Lot #{activeIdx + 1}</div>
+                  <div>
+                    {(lots[activeIdx]?.files.length ?? 0)}/{maxImagesPerLot} images
+                  </div>
+                </div>
+
+                <div className="mt-2 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={goPrevLot}
+                    disabled={activeIdx <= 0}
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Prev Lot
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={captureFromStream}
+                    className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-xl active:scale-95"
+                    aria-label="Capture photo"
+                  >
+                    <span className="absolute inset-1 rounded-full border-4 border-black/30"></span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={goNextLot}
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)]"
+                  >
+                    Next Lot
+                  </button>
+                </div>
+
+                <div className="mt-3 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={stopInAppCamera}
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                  >
+                    Done
+                  </button>
                 </div>
               </div>
-
-              <div className="mt-2 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={goPrevLot}
-                  disabled={activeIdx <= 0}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Prev Lot
-                </button>
-
-                <button
-                  type="button"
-                  onClick={captureFromStream}
-                  className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-xl active:scale-95"
-                  aria-label="Capture photo"
-                >
-                  <span className="absolute inset-1 rounded-full border-4 border-black/30"></span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={goNextLot}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)]"
-                >
-                  Next Lot
-                </button>
-              </div>
-
-              <div className="mt-3 flex items-center justify-end">
-                <button
-                  type="button"
-                  onClick={stopInAppCamera}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
-                >
-                  Done
-                </button>
-              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
