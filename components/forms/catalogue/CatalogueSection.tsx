@@ -2,15 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Upload,
   Camera,
   Image as ImageIcon,
   Trash2,
-  Star,
-  StarOff,
   Plus,
-  ChevronLeft,
-  ChevronRight,
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -43,9 +38,7 @@ export default function CatalogueSection({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [isStartingCamera, setIsStartingCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [autoAdvance, setAutoAdvance] = useState(true);
 
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
@@ -62,12 +55,12 @@ export default function CatalogueSection({
     [lots]
   );
 
-  function createLot(openCamera = true) {
+  function createLot() {
     const id = `lot-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const nextLots = [...lots, { id, files: [], coverIndex: 0 }];
     setLots(nextLots);
     setActiveIdx(nextLots.length - 1);
-    if (openCamera) fileInputRef.current?.click();
+    // do not trigger native file input anymore; in-app camera will be used
   }
 
   function removeLot(idx: number) {
@@ -127,17 +120,11 @@ export default function CatalogueSection({
     if (files == null) return;
     const incoming = Array.from(files);
     appendToActiveLot(incoming);
-    // Option 2: auto-move to next lot after native camera picker closes
-    if (!cameraOpen && incoming.length > 0 && autoAdvance) {
-      createLot(false);
-    }
   }
 
   async function startInAppCamera() {
     try {
-      if (activeIdx < 0) createLot(false);
       setCameraError(null);
-      setIsStartingCamera(true);
       setCameraOpen(true);
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -157,8 +144,6 @@ export default function CatalogueSection({
       );
       setCameraOpen(false);
       setTimeout(() => fileInputRef.current?.click(), 50);
-    } finally {
-      setIsStartingCamera(false);
     }
   }
 
@@ -209,17 +194,16 @@ export default function CatalogueSection({
     });
   }
 
-  function goNextLotCamera() {
-    if (lots[activeIdx]?.files.length >= maxImagesPerLot) {
-      // Already full, just move on
-      createLot(false);
-    } else {
-      createLot(false);
-    }
+  function goPrevLot() {
+    setActiveIdx((i) => Math.max(0, i - 1));
   }
 
-  function goPrevLotCamera() {
-    setActiveIdx((i) => (i > 0 ? i - 1 : 0));
+  function goNextLot() {
+    if (activeIdx >= lots.length - 1) {
+      createLot();
+    } else {
+      setActiveIdx((i) => Math.min(i + 1, lots.length - 1));
+    }
   }
 
   const activeLot = lots[activeIdx];
@@ -236,7 +220,10 @@ export default function CatalogueSection({
         </div>
         <button
           type="button"
-          onClick={() => createLot(true)}
+          onClick={() => {
+            createLot();
+            startInAppCamera();
+          }}
           className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
         >
           <Plus className="h-4 w-4" /> Add Lot
@@ -266,15 +253,6 @@ export default function CatalogueSection({
               Lot #{activeIdx + 1}
             </div>
             <div className="flex items-center gap-3 text-xs text-gray-600">
-              <label className="inline-flex items-center gap-1 select-none">
-                <input
-                  type="checkbox"
-                  className="h-3.5 w-3.5 rounded accent-rose-600"
-                  checked={autoAdvance}
-                  onChange={(e) => setAutoAdvance(e.target.checked)}
-                />
-                Auto-next lot
-              </label>
               <span>
                 {activeLot?.files.length}/{maxImagesPerLot} images
               </span>
@@ -291,22 +269,15 @@ export default function CatalogueSection({
             </button>
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]"
+              onClick={() => { createLot(); startInAppCamera(); }}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
-              <Camera className="h-4 w-4" /> Add Photos
-            </button>
-            <button
-              type="button"
-              onClick={() => createLot(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
-            >
-              Next Lot
+              Add Lot
             </button>
             <button
               type="button"
               onClick={() => setActiveIdx(-1)}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
               Done
             </button>
@@ -360,10 +331,10 @@ export default function CatalogueSection({
               <div className="mt-3">
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]"
+                  onClick={startInAppCamera}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                 >
-                  <Upload className="h-4 w-4" /> Capture / Upload
+                  <Camera className="h-4 w-4" /> Open Camera
                 </button>
               </div>
               <p className="mt-1 text-xs text-gray-500">
@@ -373,8 +344,8 @@ export default function CatalogueSection({
           )}
 
           <div className="mt-2 text-[11px] text-gray-500">
-            Tip: Click "Next Lot" to continue capturing for a new lot. Use
-            "Done" to finish catalogue capture.
+            Tip: Use "Add Lot" to start a new lot. Use "Done" to finish
+            catalogue capture.
           </div>
         </div>
       )}
@@ -472,14 +443,21 @@ export default function CatalogueSection({
             )}
 
             <div className="p-3">
-              <div className="flex items-center justify-between text-white/90">
+              <div className="flex items-center justify-between text-[12px] text-white/90">
+                <div className="font-medium">Lot #{activeIdx + 1}</div>
+                <div>
+                  {(lots[activeIdx]?.files.length ?? 0)}/{maxImagesPerLot} images
+                </div>
+              </div>
+
+              <div className="mt-2 flex items-center justify-between">
                 <button
                   type="button"
-                  onClick={goPrevLotCamera}
-                  className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-medium backdrop-blur hover:bg-white/15"
+                  onClick={goPrevLot}
                   disabled={activeIdx <= 0}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <ChevronLeft className="h-4 w-4" /> Back
+                  Prev Lot
                 </button>
 
                 <button
@@ -493,16 +471,21 @@ export default function CatalogueSection({
 
                 <button
                   type="button"
-                  onClick={goNextLotCamera}
-                  className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-medium backdrop-blur hover:bg-white/15"
+                  onClick={goNextLot}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)]"
                 >
-                  Next Lot <ChevronRight className="h-4 w-4" />
+                  Next Lot
                 </button>
               </div>
 
-              <div className="mt-2 text-center text-[11px] text-white/80">
-                Lot #{activeIdx + 1}: {lots[activeIdx]?.files.length ?? 0}/
-                {maxImagesPerLot} images
+              <div className="mt-3 flex justify-center">
+                <button
+                  type="button"
+                  onClick={stopInAppCamera}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                >
+                  Done
+                </button>
               </div>
             </div>
           </div>
