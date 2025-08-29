@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Upload, Camera, Image as ImageIcon, Trash2, Star, StarOff, Plus } from "lucide-react";
+import {
+  Upload,
+  Camera,
+  Image as ImageIcon,
+  Trash2,
+  Star,
+  StarOff,
+  Plus,
+} from "lucide-react";
 import { toast } from "react-toastify";
 
 export type CatalogueLot = {
@@ -18,15 +26,25 @@ type Props = {
   maxTotalImages?: number; // default 100 (server upload limit)
 };
 
-export default function CatalogueSection({ value, onChange, maxImagesPerLot = 20, maxTotalImages = 100 }: Props) {
+export default function CatalogueSection({
+  value,
+  onChange,
+  maxImagesPerLot = 20,
+  maxTotalImages = 500,
+}: Props) {
   const [lots, setLots] = useState<CatalogueLot[]>(value || []);
-  const [activeIdx, setActiveIdx] = useState<number>(value?.length ? value.length - 1 : -1);
+  const [activeIdx, setActiveIdx] = useState<number>(
+    value?.length ? value.length - 1 : -1
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
 
-  const totalImages = useMemo(() => lots.reduce((s, l) => s + l.files.length, 0), [lots]);
+  const totalImages = useMemo(
+    () => lots.reduce((s, l) => s + l.files.length, 0),
+    [lots]
+  );
 
   function createLot(openCamera = true) {
     const id = `lot-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -43,16 +61,23 @@ export default function CatalogueSection({ value, onChange, maxImagesPerLot = 20
   }
 
   function setCover(idx: number, imgIdx: number) {
-    setLots((prev) => prev.map((l, i) => (i === idx ? { ...l, coverIndex: imgIdx } : l)));
+    setLots((prev) =>
+      prev.map((l, i) => (i === idx ? { ...l, coverIndex: imgIdx } : l))
+    );
   }
 
   function removeImage(idx: number, imgIdx: number) {
-    setLots((prev) => prev.map((l, i) => {
-      if (i !== idx) return l;
-      const files = l.files.filter((_, j) => j !== imgIdx);
-      const coverIndex = Math.max(0, Math.min(files.length - 1, l.coverIndex));
-      return { ...l, files, coverIndex };
-    }));
+    setLots((prev) =>
+      prev.map((l, i) => {
+        if (i !== idx) return l;
+        const files = l.files.filter((_, j) => j !== imgIdx);
+        const coverIndex = Math.max(
+          0,
+          Math.min(files.length - 1, l.coverIndex)
+        );
+        return { ...l, files, coverIndex };
+      })
+    );
   }
 
   function handleFilesSelected(files: FileList | null) {
@@ -70,7 +95,9 @@ export default function CatalogueSection({ value, onChange, maxImagesPerLot = 20
       const remainingLot = Math.max(0, maxImagesPerLot - cur.files.length);
       const allowed = Math.min(remainingTotal, remainingLot, incoming.length);
       if (allowed < incoming.length) {
-        toast.warn(`Only ${allowed} images allowed (caps: ${maxImagesPerLot}/lot, ${maxTotalImages} total).`);
+        toast.warn(
+          `Only ${allowed} images allowed (caps: ${maxImagesPerLot}/lot, ${maxTotalImages} total).`
+        );
       }
       const toAdd = incoming.slice(0, allowed);
       const filesNew = [...cur.files, ...toAdd];
@@ -87,7 +114,9 @@ export default function CatalogueSection({ value, onChange, maxImagesPerLot = 20
       <div className="flex items-center justify-between">
         <div>
           <div className="text-sm font-medium text-gray-900">Lots</div>
-          <div className="text-xs text-gray-600">{lots.length} lot(s), {totalImages} image(s) total</div>
+          <div className="text-xs text-gray-600">
+            {lots.length} lot(s), {totalImages} image(s) total
+          </div>
         </div>
         <button
           type="button"
@@ -117,9 +146,13 @@ export default function CatalogueSection({ value, onChange, maxImagesPerLot = 20
       {activeIdx >= 0 && (
         <div className="rounded-lg border border-rose-200 bg-white p-3 shadow-sm">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-semibold text-gray-900">Lot #{activeIdx + 1}</div>
+            <div className="text-sm font-semibold text-gray-900">
+              Lot #{activeIdx + 1}
+            </div>
             <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span>{activeLot?.files.length}/{maxImagesPerLot} images</span>
+              <span>
+                {activeLot?.files.length}/{maxImagesPerLot} images
+              </span>
             </div>
           </div>
 
@@ -156,12 +189,21 @@ export default function CatalogueSection({ value, onChange, maxImagesPerLot = 20
                   return (
                     <div key={i} className="relative group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt={file.name} className="h-24 w-full rounded object-cover" onLoad={() => URL.revokeObjectURL(url)} />
+                      <img
+                        src={url}
+                        alt={file.name}
+                        className="h-24 w-full rounded object-cover"
+                        onLoad={() => URL.revokeObjectURL(url)}
+                      />
                       <div className="absolute inset-x-1 bottom-1 flex items-center justify-between gap-1">
                         <button
                           type="button"
                           onClick={() => setCover(activeIdx, i)}
-                          className={`rounded px-1.5 py-0.5 text-[10px] font-medium shadow ${isCover ? "bg-rose-600 text-white" : "bg-black/60 text-white"}`}
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-medium shadow ${
+                            isCover
+                              ? "bg-rose-600 text-white"
+                              : "bg-black/60 text-white"
+                          }`}
                         >
                           {isCover ? "Cover" : "Set cover"}
                         </button>
@@ -192,11 +234,16 @@ export default function CatalogueSection({ value, onChange, maxImagesPerLot = 20
                   <Upload className="h-4 w-4" /> Capture / Upload
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">PNG, JPG. Up to {maxImagesPerLot} images in this lot.</p>
+              <p className="mt-1 text-xs text-gray-500">
+                PNG, JPG. Up to {maxImagesPerLot} images in this lot.
+              </p>
             </div>
           )}
 
-          <div className="mt-2 text-[11px] text-gray-500">Tip: Click "Next Lot" to continue capturing for a new lot. Use "Done" to finish catalogue capture.</div>
+          <div className="mt-2 text-[11px] text-gray-500">
+            Tip: Click "Next Lot" to continue capturing for a new lot. Use
+            "Done" to finish catalogue capture.
+          </div>
         </div>
       )}
 
@@ -208,16 +255,32 @@ export default function CatalogueSection({ value, onChange, maxImagesPerLot = 20
               const cover = lot.files[lot.coverIndex];
               const coverUrl = cover ? URL.createObjectURL(cover) : undefined;
               return (
-                <div key={lot.id} className={`flex items-center gap-3 rounded-md border p-2 ${idx === activeIdx ? "border-rose-300" : "border-gray-200"}`}>
+                <div
+                  key={lot.id}
+                  className={`flex items-center gap-3 rounded-md border p-2 ${
+                    idx === activeIdx ? "border-rose-300" : "border-gray-200"
+                  }`}
+                >
                   {cover ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={coverUrl} alt={`Lot ${idx + 1}`} className="h-16 w-16 rounded object-cover" onLoad={() => coverUrl && URL.revokeObjectURL(coverUrl)} />
+                    <img
+                      src={coverUrl}
+                      alt={`Lot ${idx + 1}`}
+                      className="h-16 w-16 rounded object-cover"
+                      onLoad={() => coverUrl && URL.revokeObjectURL(coverUrl)}
+                    />
                   ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded bg-gray-100 text-gray-400">#{idx + 1}</div>
+                    <div className="flex h-16 w-16 items-center justify-center rounded bg-gray-100 text-gray-400">
+                      #{idx + 1}
+                    </div>
                   )}
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">Lot #{idx + 1}</div>
-                    <div className="text-xs text-gray-600">{lot.files.length} image(s)</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      Lot #{idx + 1}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {lot.files.length} image(s)
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -242,7 +305,10 @@ export default function CatalogueSection({ value, onChange, maxImagesPerLot = 20
         </div>
       )}
 
-      <div className="text-xs text-gray-500">Limits: up to {maxImagesPerLot} images per lot; {maxTotalImages} images total per report.</div>
+      <div className="text-xs text-gray-500">
+        Limits: up to {maxImagesPerLot} images per lot; {maxTotalImages} images
+        total per report.
+      </div>
     </div>
   );
 }

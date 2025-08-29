@@ -148,11 +148,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     const incoming = Array.from(files);
     setImages((prev) => {
       const combined = [...prev, ...incoming];
-      const trimmed = combined.slice(0, 100);
-      if (combined.length > 100) {
-        setError("You can upload up to 100 images. Extra files were ignored.");
+      const trimmed = combined.slice(0, 500);
+      if (combined.length > 500) {
+        setError("You can upload up to 500 images. Extra files were ignored.");
         toast.warn(
-          "You can upload up to 100 images. Extra files were ignored."
+          "You can upload up to 500 images. Extra files were ignored."
         );
       } else {
         setError(null);
