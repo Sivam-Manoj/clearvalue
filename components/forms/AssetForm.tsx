@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   AssetService,
   type AssetCreateDetails,
@@ -9,6 +10,11 @@ import {
 import { X, Upload, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuthContext } from "@/context/AuthContext";
+
+// Code-split the CatalogueSection for camera-based lot capture
+const CatalogueSection = dynamic(() => import("./catalogue/CatalogueSection"), {
+  ssr: false,
+});
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -37,6 +43,11 @@ const GROUPING_OPTIONS: {
     label: "Per Photo",
     desc: "Each image as a distinct lot.",
   },
+  {
+    value: "catalogue",
+    label: "Catalogue Listing",
+    desc: "Capture images per lot (max 20 per lot).",
+  },
 ];
 
 export default function AssetForm({ onSuccess, onCancel }: Props) {
@@ -44,6 +55,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   const [grouping, setGrouping] = useState<AssetGroupingMode>("single_lot");
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  // Catalogue mode state
+  const [catalogueLots, setCatalogueLots] = useState<
+    { id: string; files: File[]; coverIndex: number }[]
+  >([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -171,11 +186,44 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (images.length === 0) {
-      const msg = "Please add at least one image.";
-      setError(msg);
-      toast.error(msg);
-      return;
+    // Prepare files + details depending on grouping
+    let filesToSend: File[] = images;
+    let extraDetails: Partial<AssetCreateDetails> = {};
+    if (grouping === "catalogue") {
+      const total = catalogueLots.reduce((s, l) => s + l.files.length, 0);
+      if (total === 0) {
+        const msg = "Please add at least one image (Catalogue).";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (total > 100) {
+        const msg = "Maximum 100 images allowed across all lots.";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      const perLotOk = catalogueLots.every((l) => l.files.length <= 20);
+      if (!perLotOk) {
+        const msg = "Each lot can have up to 20 images.";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      filesToSend = catalogueLots.flatMap((l) => l.files);
+      extraDetails = {
+        catalogue_lots: catalogueLots.map((l) => ({
+          count: l.files.length,
+          cover_index: Math.max(0, Math.min(l.files.length - 1, l.coverIndex || 0)),
+        })),
+      } as Partial<AssetCreateDetails>;
+    } else {
+      if (images.length === 0) {
+        const msg = "Please add at least one image.";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
     }
 
     try {
@@ -215,6 +263,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         ...(industry.trim() && { industry: industry.trim() }),
         ...(inspectionDate && { inspection_date: inspectionDate }),
         progress_id: jobId,
+        ...(grouping === "catalogue" ? extraDetails : {}),
       };
 
       // Helper to start polling server progress after upload completes
@@ -249,7 +298,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         }, 800);
       };
 
-      const res = await AssetService.create(payload, images, {
+      const res = await AssetService.create(payload, filesToSend, {
         onUploadProgress: (fraction: number) => {
           const pct = Math.max(0, Math.min(1, fraction));
           const weighted = pct * PROG_WEIGHTS.client_upload * 100;
@@ -490,64 +539,65 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               </div>
             </section>
 
-            {/* Images */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium text-gray-900">
-                Images (max 10)
-              </h3>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => handleImagesChange(e.target.files)}
-                className="sr-only"
-              />
-              <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white/50 p-4 text-center">
-                <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-700">Add images</p>
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white shadow hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
-                  >
-                    <Upload className="h-4 w-4" />
-                    Select Images
-                  </button>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  PNG, JPG. Up to 10 images.
-                </p>
-              </div>
-              <p className="text-xs text-gray-500">
-                Selected: {images.length} file(s)
-              </p>
-              {images.length > 0 && (
-                <div className="rounded-md border border-gray-200 p-2">
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                    {previews.map((src, idx) => (
-                      <div key={idx} className="relative group">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={src}
-                          alt={images[idx]?.name || `image-${idx + 1}`}
-                          className="h-24 w-full rounded object-cover"
-                        />
-                        <button
-                          type="button"
-                          aria-label="Remove image"
-                          onClick={() => removeImage(idx)}
-                          className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white shadow"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
+            {/* Images / Catalogue */}
+            {grouping !== "catalogue" ? (
+              <section className="space-y-3">
+                <h3 className="text-sm font-medium text-gray-900">Images (max 10)</h3>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleImagesChange(e.target.files)}
+                  className="sr-only"
+                />
+                <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white/50 p-4 text-center">
+                  <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-700">Add images</p>
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white shadow hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+                    >
+                      <Upload className="h-4 w-4" />
+                      Select Images
+                    </button>
                   </div>
+                  <p className="mt-1 text-xs text-gray-500">PNG, JPG. Up to 10 images.</p>
                 </div>
-              )}
-            </section>
+                <p className="text-xs text-gray-500">Selected: {images.length} file(s)</p>
+                {images.length > 0 && (
+                  <div className="rounded-md border border-gray-200 p-2">
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {previews.map((src, idx) => (
+                        <div key={idx} className="relative group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={src}
+                            alt={images[idx]?.name || `image-${idx + 1}`}
+                            className="h-24 w-full rounded object-cover"
+                          />
+                          <button
+                            type="button"
+                            aria-label="Remove image"
+                            onClick={() => removeImage(idx)}
+                            className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white shadow"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            ) : (
+              <section className="space-y-3">
+                <h3 className="text-sm font-medium text-gray-900">Catalogue Listing</h3>
+                <CatalogueSection value={catalogueLots} onChange={setCatalogueLots} maxImagesPerLot={20} maxTotalImages={100} />
+              </section>
+            )}
 
             <div className="flex items-center gap-2 pt-2">
               <button

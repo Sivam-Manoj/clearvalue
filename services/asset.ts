@@ -1,7 +1,7 @@
 import API from "@/lib/api";
 import type { AxiosProgressEvent } from "axios";
 
-export type AssetGroupingMode = "single_lot" | "per_item" | "per_photo";
+export type AssetGroupingMode = "single_lot" | "per_item" | "per_photo" | "catalogue";
 
 export type AssetCreateDetails = {
   grouping_mode: AssetGroupingMode;
@@ -16,6 +16,11 @@ export type AssetCreateDetails = {
   inspection_date?: string; // ISO date string (YYYY-MM-DD)
   // Real-time progress
   progress_id?: string;
+  // Catalogue mode: describe how files map to lots (flattened in order)
+  catalogue_lots?: Array<{
+    count: number; // number of images in this lot (max 20)
+    cover_index?: number; // 0-based index within this lot to use as cover (defaults to 0)
+  }>;
 };
 
 export type AssetCreateResponse = {
@@ -54,7 +59,9 @@ export const AssetService = {
   ): Promise<AssetCreateResponse> {
     const fd = new FormData();
     fd.append("details", JSON.stringify(details));
-    images.slice(0, 10).forEach((file) => fd.append("images", file));
+    const filesToSend =
+      details.grouping_mode === "catalogue" ? images : images.slice(0, 10);
+    filesToSend.forEach((file) => fd.append("images", file));
 
     const { data } = await API.post<AssetCreateResponse>("/asset", fd, {
       onUploadProgress: (e: AxiosProgressEvent) => {
