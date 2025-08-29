@@ -9,6 +9,9 @@ import {
   Star,
   StarOff,
   Plus,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -37,9 +40,22 @@ export default function CatalogueSection({
     value?.length ? value.length - 1 : -1
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [isStartingCamera, setIsStartingCamera] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [autoAdvance, setAutoAdvance] = useState(true);
 
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
+  useEffect(() => {
+    return () => {
+      const stream = videoRef.current?.srcObject as MediaStream | null;
+      stream?.getTracks().forEach((t) => t.stop());
+      if (videoRef.current) (videoRef.current as any).srcObject = null;
+    };
+  }, []);
 
   const totalImages = useMemo(
     () => lots.reduce((s, l) => s + l.files.length, 0),
@@ -80,30 +96,130 @@ export default function CatalogueSection({
     );
   }
 
-  function handleFilesSelected(files: FileList | null) {
-    if (files == null || activeIdx < 0) return;
-    const incoming = Array.from(files);
-
-    if (incoming.length === 0) return;
-
+  function appendToActiveLot(newFiles: File[]) {
+    if (activeIdx < 0 || newFiles.length === 0) return;
     setLots((prev) => {
       const out = [...prev];
       const cur = out[activeIdx];
       if (!cur) return prev;
-
-      const remainingTotal = Math.max(0, maxTotalImages - totalImages);
+      const prevTotal = prev.reduce((s, l) => s + l.files.length, 0);
+      const remainingTotal = Math.max(0, maxTotalImages - prevTotal);
       const remainingLot = Math.max(0, maxImagesPerLot - cur.files.length);
-      const allowed = Math.min(remainingTotal, remainingLot, incoming.length);
-      if (allowed < incoming.length) {
+      const allowed = Math.min(remainingTotal, remainingLot, newFiles.length);
+      if (allowed <= 0) {
+        toast.warn(
+          `Limit reached (caps: ${maxImagesPerLot}/lot, ${maxTotalImages} total).`
+        );
+        return prev;
+      }
+      if (allowed < newFiles.length) {
         toast.warn(
           `Only ${allowed} images allowed (caps: ${maxImagesPerLot}/lot, ${maxTotalImages} total).`
         );
       }
-      const toAdd = incoming.slice(0, allowed);
-      const filesNew = [...cur.files, ...toAdd];
-      out[activeIdx] = { ...cur, files: filesNew };
+      const toAdd = newFiles.slice(0, allowed);
+      out[activeIdx] = { ...cur, files: [...cur.files, ...toAdd] };
       return out;
     });
+  }
+
+  function handleFilesSelected(files: FileList | null) {
+    if (files == null) return;
+    const incoming = Array.from(files);
+    appendToActiveLot(incoming);
+    // Option 2: auto-move to next lot after native camera picker closes
+    if (!cameraOpen && incoming.length > 0 && autoAdvance) {
+      createLot(false);
+    }
+  }
+
+  async function startInAppCamera() {
+    try {
+      if (activeIdx < 0) createLot(false);
+      setCameraError(null);
+      setIsStartingCamera(true);
+      setCameraOpen(true);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream as any;
+        await videoRef.current.play().catch(() => {});
+      }
+    } catch (err: any) {
+      setCameraError(
+        err?.message || "Unable to access camera. Using file capture instead."
+      );
+      setCameraOpen(false);
+      setTimeout(() => fileInputRef.current?.click(), 50);
+    } finally {
+      setIsStartingCamera(false);
+    }
+  }
+
+  function stopInAppCamera() {
+    try {
+      const stream = videoRef.current?.srcObject as MediaStream | null;
+      stream?.getTracks().forEach((t) => t.stop());
+      if (videoRef.current) (videoRef.current as any).srcObject = null;
+    } finally {
+      setCameraOpen(false);
+    }
+  }
+
+  async function captureFromStream() {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
+    // Respect caps before drawing
+    const cur = lots[activeIdx];
+    if (!cur) return;
+    const totalCount = lots.reduce((s, l) => s + l.files.length, 0);
+    if (cur.files.length >= maxImagesPerLot || totalCount >= maxTotalImages) {
+      toast.warn(
+        `Limit reached (caps: ${maxImagesPerLot}/lot, ${maxTotalImages} total).`
+      );
+      return;
+    }
+    canvas.width = vw;
+    canvas.height = vh;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, vw, vh);
+    await new Promise<void>((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return resolve();
+          const file = new File([blob], `lot-${activeIdx + 1}-${Date.now()}.jpg`, {
+            type: "image/jpeg",
+          });
+          appendToActiveLot([file]);
+          resolve();
+        },
+        "image/jpeg",
+        0.92
+      );
+    });
+  }
+
+  function goNextLotCamera() {
+    if (lots[activeIdx]?.files.length >= maxImagesPerLot) {
+      // Already full, just move on
+      createLot(false);
+    } else {
+      createLot(false);
+    }
+  }
+
+  function goPrevLotCamera() {
+    setActiveIdx((i) => (i > 0 ? i - 1 : 0));
   }
 
   const activeLot = lots[activeIdx];
@@ -111,7 +227,7 @@ export default function CatalogueSection({
   return (
     <div className="space-y-4">
       {/* Summary/header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between rounded-2xl border border-rose-100 bg-gradient-to-br from-white to-rose-50/60 p-3 shadow-lg ring-1 ring-black/5">
         <div>
           <div className="text-sm font-medium text-gray-900">Lots</div>
           <div className="text-xs text-gray-600">
@@ -121,7 +237,7 @@ export default function CatalogueSection({
         <button
           type="button"
           onClick={() => createLot(true)}
-          className="inline-flex items-center gap-2 rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-rose-500"
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
         >
           <Plus className="h-4 w-4" /> Add Lot
         </button>
@@ -144,12 +260,21 @@ export default function CatalogueSection({
 
       {/* Active capture panel */}
       {activeIdx >= 0 && (
-        <div className="rounded-lg border border-rose-200 bg-white p-3 shadow-sm">
+        <div className="rounded-2xl border border-rose-100 bg-white/80 p-3 shadow-xl ring-1 ring-black/5 backdrop-blur">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-sm font-semibold text-gray-900">
               Lot #{activeIdx + 1}
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-600">
+            <div className="flex items-center gap-3 text-xs text-gray-600">
+              <label className="inline-flex items-center gap-1 select-none">
+                <input
+                  type="checkbox"
+                  className="h-3.5 w-3.5 rounded accent-rose-600"
+                  checked={autoAdvance}
+                  onChange={(e) => setAutoAdvance(e.target.checked)}
+                />
+                Auto-next lot
+              </label>
               <span>
                 {activeLot?.files.length}/{maxImagesPerLot} images
               </span>
@@ -159,50 +284,57 @@ export default function CatalogueSection({
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={startInAppCamera}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+            >
+              <Camera className="h-4 w-4" /> Open Camera
+            </button>
+            <button
+              type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]"
             >
               <Camera className="h-4 w-4" /> Add Photos
             </button>
             <button
               type="button"
               onClick={() => createLot(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
             >
               Next Lot
             </button>
             <button
               type="button"
               onClick={() => setActiveIdx(-1)}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
             >
               Done
             </button>
           </div>
 
           {activeLot?.files.length ? (
-            <div className="mt-3 rounded-md border border-gray-200 p-2">
+            <div className="mt-3 rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {activeLot.files.map((file, i) => {
                   const url = URL.createObjectURL(file);
                   const isCover = activeLot.coverIndex === i;
                   return (
-                    <div key={i} className="relative group">
+                    <div key={i} className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={url}
                         alt={file.name}
-                        className="h-24 w-full rounded object-cover"
+                        className="h-28 w-full object-cover"
                         onLoad={() => URL.revokeObjectURL(url)}
                       />
                       <div className="absolute inset-x-1 bottom-1 flex items-center justify-between gap-1">
                         <button
                           type="button"
                           onClick={() => setCover(activeIdx, i)}
-                          className={`rounded px-1.5 py-0.5 text-[10px] font-medium shadow ${
+                          className={`rounded-md px-2 py-1 text-[10px] font-semibold shadow-lg backdrop-blur-sm ${
                             isCover
-                              ? "bg-rose-600 text-white"
-                              : "bg-black/60 text-white"
+                              ? "bg-rose-600/90 text-white"
+                              : "bg-black/50 text-white"
                           }`}
                         >
                           {isCover ? "Cover" : "Set cover"}
@@ -210,7 +342,7 @@ export default function CatalogueSection({
                         <button
                           type="button"
                           onClick={() => removeImage(activeIdx, i)}
-                          className="rounded bg-black/60 p-1 text-white"
+                          className="rounded-full bg-black/60 p-1.5 text-white shadow-lg hover:bg-black/70 transition"
                           aria-label="Remove image"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -222,14 +354,14 @@ export default function CatalogueSection({
               </div>
             </div>
           ) : (
-            <div className="mt-3 rounded-lg border-2 border-dashed border-gray-300 bg-white/50 p-4 text-center">
+            <div className="mt-3 rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
               <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
               <p className="mt-2 text-sm text-gray-700">No images yet</p>
               <div className="mt-3">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]"
                 >
                   <Upload className="h-4 w-4" /> Capture / Upload
                 </button>
@@ -249,7 +381,7 @@ export default function CatalogueSection({
 
       {/* Lots summary */}
       {lots.length > 0 && (
-        <div className="rounded-md border border-gray-200 p-2">
+        <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-3 shadow ring-1 ring-black/5 backdrop-blur">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {lots.map((lot, idx) => {
               const cover = lot.files[lot.coverIndex];
@@ -257,20 +389,20 @@ export default function CatalogueSection({
               return (
                 <div
                   key={lot.id}
-                  className={`flex items-center gap-3 rounded-md border p-2 ${
+                  className={`flex items-center gap-3 rounded-xl border p-2 bg-white/80 shadow-sm transition active:translate-y-0.5 ${
                     idx === activeIdx ? "border-rose-300" : "border-gray-200"
-                  }`}
+                  } hover:shadow-md`}
                 >
                   {cover ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={coverUrl}
                       alt={`Lot ${idx + 1}`}
-                      className="h-16 w-16 rounded object-cover"
+                      className="h-16 w-16 rounded-xl object-cover shadow"
                       onLoad={() => coverUrl && URL.revokeObjectURL(coverUrl)}
                     />
                   ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded bg-gray-100 text-gray-400">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-100 text-gray-400 shadow-inner">
                       #{idx + 1}
                     </div>
                   )}
@@ -286,14 +418,14 @@ export default function CatalogueSection({
                     <button
                       type="button"
                       onClick={() => setActiveIdx(idx)}
-                      className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                      className="rounded-lg border border-gray-200 bg-white/80 px-2.5 py-1.5 text-xs text-gray-700 shadow hover:bg-white transition"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => removeLot(idx)}
-                      className="rounded-md border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                      className="rounded-lg border border-red-200 bg-white/80 px-2.5 py-1.5 text-xs text-red-600 shadow hover:bg-red-50 transition"
                     >
                       Remove
                     </button>
@@ -304,11 +436,78 @@ export default function CatalogueSection({
           </div>
         </div>
       )}
-
       <div className="text-xs text-gray-500">
         Limits: up to {maxImagesPerLot} images per lot; {maxTotalImages} images
         total per report.
       </div>
+
+      {/* In-app camera overlay */}
+      {cameraOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="relative w-[94%] max-w-sm rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
+            <button
+              type="button"
+              onClick={stopInAppCamera}
+              className="absolute right-2 top-2 rounded-full bg-white/90 p-1.5 text-gray-900 shadow hover:bg-white"
+              aria-label="Done"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="overflow-hidden rounded-t-2xl">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="block h-auto w-full aspect-[3/4] object-cover"
+              />
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+
+            {cameraError && (
+              <div className="m-2 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+                {cameraError}
+              </div>
+            )}
+
+            <div className="p-3">
+              <div className="flex items-center justify-between text-white/90">
+                <button
+                  type="button"
+                  onClick={goPrevLotCamera}
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-medium backdrop-blur hover:bg-white/15"
+                  disabled={activeIdx <= 0}
+                >
+                  <ChevronLeft className="h-4 w-4" /> Back
+                </button>
+
+                <button
+                  type="button"
+                  onClick={captureFromStream}
+                  className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-xl active:scale-95"
+                  aria-label="Capture photo"
+                >
+                  <span className="absolute inset-1 rounded-full border-4 border-black/30"></span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={goNextLotCamera}
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-medium backdrop-blur hover:bg-white/15"
+                >
+                  Next Lot <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mt-2 text-center text-[11px] text-white/80">
+                Lot #{activeIdx + 1}: {lots[activeIdx]?.files.length ?? 0}/
+                {maxImagesPerLot} images
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

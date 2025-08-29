@@ -338,14 +338,14 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     <form className="space-y-4" onSubmit={onSubmit}>
       <div className="relative">
         {!submitting && error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200/70 bg-red-50/80 p-3 text-sm text-red-700 shadow ring-1 ring-black/5 backdrop-blur">
             {error}
           </div>
         )}
 
         {submitting && (
           <div className="mb-3">
-            <div className="w-full max-w-xl mx-auto rounded-lg border border-rose-100 bg-white p-4 shadow-lg">
+            <div className="w-full max-w-xl mx-auto rounded-2xl border border-rose-100/70 bg-white/80 p-4 shadow-2xl ring-1 ring-black/5 backdrop-blur">
               <div className="mb-3 text-sm font-semibold text-gray-900">
                 Creating report...
               </div>
@@ -357,11 +357,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   return (
                     <div key={s.key} className="flex flex-1 items-center">
                       <div
-                        className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold ${
+                        className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold shadow ${
                           isDone
-                            ? "border-rose-600 bg-rose-600 text-white"
+                            ? "border-rose-600 bg-rose-600 text-white shadow-[0_3px_0_0_rgba(190,18,60,0.5)]"
                             : isActive
-                            ? "border-rose-600 text-rose-600 animate-pulse"
+                            ? "border-rose-600 text-rose-600 ring-2 ring-rose-300 animate-pulse"
                             : "border-gray-300 text-gray-400"
                         }`}
                         title={s.label}
@@ -369,14 +369,14 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                         {isDone ? <Check className="h-4 w-4" /> : idx + 1}
                       </div>
                       {idx < STEPS.length - 1 && (
-                        <div className="mx-2 h-0.5 flex-1 rounded bg-gray-200">
+                        <div className="mx-2 h-0.5 flex-1 rounded bg-gradient-to-r from-gray-200 to-gray-100">
                           <div
                             className={`h-0.5 rounded ${
                               isDone
-                                ? "bg-rose-600"
+                                ? "bg-gradient-to-r from-rose-500 to-rose-600"
                                 : isActive
-                                ? "bg-rose-400"
-                                : "bg-gray-200"
+                                ? "bg-gradient-to-r from-rose-300 to-rose-400"
+                                : "bg-transparent"
                             }`}
                           ></div>
                         </div>
@@ -386,9 +386,9 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                 })}
               </div>
               <div>
-                <div className="h-2 w-full rounded bg-gray-200">
+                <div className="h-2 w-full overflow-hidden rounded bg-gray-200">
                   <div
-                    className="h-2 rounded bg-rose-600 transition-all duration-300"
+                    className="h-2 rounded bg-gradient-to-r from-rose-500 to-rose-600 transition-all duration-300 shadow-inner"
                     style={{
                       width: `${Math.min(
                         100,
@@ -418,14 +418,14 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               <h3 className="text-sm font-medium text-gray-900">
                 Grouping Mode
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {GROUPING_OPTIONS.map((opt) => (
                   <label
                     key={opt.value}
-                    className={`relative flex cursor-pointer items-start gap-3 rounded-lg border p-3 shadow-sm transition hover:shadow ${
+                    className={`relative flex cursor-pointer items-start gap-3 rounded-2xl border p-3 shadow-sm transition hover:shadow-md ring-1 ring-black/5 backdrop-blur ${
                       grouping === opt.value
-                        ? "border-rose-300 ring-1 ring-rose-300 bg-white"
-                        : "border-gray-200 bg-white"
+                        ? "border-rose-300 ring-rose-200 bg-gradient-to-br from-white to-rose-50"
+                        : "border-gray-200 bg-white/80"
                     }`}
                   >
                     <input
@@ -460,7 +460,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
                     placeholder="e.g., Acme Corp"
-                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
                 <div className="space-y-1">
@@ -471,7 +471,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     type="date"
                     value={effectiveDate}
                     onChange={(e) => setEffectiveDate(e.target.value)}
-                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
                 <div className="space-y-1">
@@ -483,7 +483,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     value={appraisalPurpose}
                     onChange={(e) => setAppraisalPurpose(e.target.value)}
                     placeholder="e.g., Insurance"
-                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
                 <div className="space-y-1">
@@ -493,7 +493,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     value={ownerName}
                     onChange={(e) => setOwnerName(e.target.value)}
                     placeholder="e.g., John Doe"
-                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
                 <div className="space-y-1">
@@ -503,7 +503,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     value={appraiser}
                     onChange={(e) => setAppraiser(e.target.value)}
                     placeholder="e.g., Jane Smith"
-                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
                 <div className="space-y-1">
@@ -515,7 +515,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     value={appraisalCompany}
                     onChange={(e) => setAppraisalCompany(e.target.value)}
                     placeholder="e.g., ClearValue Appraisals"
-                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
                 <div className="space-y-1">
@@ -525,7 +525,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
                     placeholder="e.g., Manufacturing"
-                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
                 <div className="space-y-1">
@@ -536,7 +536,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     type="date"
                     value={inspectionDate}
                     onChange={(e) => setInspectionDate(e.target.value)}
-                    className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
               </div>
@@ -556,14 +556,14 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   onChange={(e) => handleImagesChange(e.target.files)}
                   className="sr-only"
                 />
-                <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white/50 p-4 text-center">
+                <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
                   <Upload className="mx-auto h-8 w-8 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-700">Add images</p>
                   <div className="mt-3">
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white shadow hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] focus:outline-none"
                     >
                       <Upload className="h-4 w-4" />
                       Select Images
@@ -577,21 +577,21 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   Selected: {images.length} file(s)
                 </p>
                 {images.length > 0 && (
-                  <div className="rounded-md border border-gray-200 p-2">
+                  <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                       {previews.map((src, idx) => (
-                        <div key={idx} className="relative group">
+                        <div key={idx} className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={src}
                             alt={images[idx]?.name || `image-${idx + 1}`}
-                            className="h-24 w-full rounded object-cover"
+                            className="h-28 w-full object-cover"
                           />
                           <button
                             type="button"
                             aria-label="Remove image"
                             onClick={() => removeImage(idx)}
-                            className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white shadow"
+                            className="absolute right-1 top-1 rounded-full bg-black/70 p-1.5 text-white shadow-lg hover:bg-black/80 transition"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -618,7 +618,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="button"
-                className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
                 onClick={onCancel}
                 disabled={submitting}
               >
@@ -626,7 +626,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-rose-500 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50"
                 disabled={submitting}
               >
                 {submitting ? "Creating..." : "Create Report"}
