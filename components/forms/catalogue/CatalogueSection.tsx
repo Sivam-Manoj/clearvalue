@@ -568,70 +568,38 @@ export default function CatalogueSection({
       {/* In-app camera overlay */}
       {cameraOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-hidden p-4 pt-6 sm:pt-8">
-            <div className="relative w-full sm:w-[92%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-[92dvh] max-h-[92dvh] overflow-y-auto overscroll-contain flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
-              {/* Sticky top bar so Close is always accessible */}
-              <div className="sticky top-[env(safe-area-inset-top)] z-20 flex items-center justify-end gap-2 rounded-t-2xl border-b border-white/10 bg-black/40 p-2 backdrop-blur-sm">
-                <button
-                  type="button"
-                  onClick={stopInAppCamera}
-                  className="rounded-full bg-white/90 p-1.5 text-gray-900 shadow hover:bg-white"
-                  aria-label="Done"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="relative overflow-hidden">
-                <div
-                  className="relative w-full max-h-[78vh] overflow-hidden"
-                  style={{
-                    aspectRatio: videoAR
-                      ? String(videoAR)
-                      : orientation === "landscape"
-                      ? "16 / 9"
-                      : "9 / 16",
+          <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-hidden p-2 pt-4 sm:p-4 sm:pt-6">
+            <div className="relative w-full sm:w-[98%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-[96dvh] max-h-[96dvh] overflow-hidden flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
+              <div className="relative flex-1 min-h-0 bg-black">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  onLoadedMetadata={() => {
+                    const v = videoRef.current;
+                    if (!v) return;
+                    const w = v.videoWidth || 0;
+                    const h = v.videoHeight || 0;
+                    if (w > 0 && h > 0) setVideoAR(w / h);
                   }}
-                >
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    onLoadedMetadata={() => {
-                      const v = videoRef.current;
-                      if (!v) return;
-                      const w = v.videoWidth || 0;
-                      const h = v.videoHeight || 0;
-                      if (w > 0 && h > 0) setVideoAR(w / h);
-                    }}
-                    className="absolute inset-0 h-full w-full object-contain pointer-events-none"
-                    style={
-                      zoom > 1
-                        ? {
-                            transform: `scale(${zoom})`,
-                            transformOrigin: "center",
-                          }
-                        : undefined
-                    }
-                  />
-                  {/* Simulated flash overlay */}
-                  {isSimulatingFlash && (
-                    <div className="absolute inset-0 bg-white/80 animate-pulse" />
-                  )}
-                </div>
-                <canvas ref={canvasRef} className="hidden" />
-              </div>
+                  className="absolute inset-0 h-full w-full object-contain pointer-events-none"
+                  style={
+                    zoom > 1
+                      ? {
+                          transform: `scale(${zoom})`,
+                          transformOrigin: "center",
+                        }
+                      : undefined
+                  }
+                />
+                {/* Simulated flash overlay */}
+                {isSimulatingFlash && (
+                  <div className="absolute inset-0 bg-white/80 animate-pulse" />
+                )}
 
-              {cameraError && (
-                <div className="m-2 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-                  {cameraError}
-                </div>
-              )}
-
-              <div className="p-3 pb-24">
-                {/* Top control row: orientation, counters, flash */}
-                <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
+                {/* Top overlay: orientation, counters, flash */}
+                <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
                   <button
                     type="button"
                     onClick={() =>
@@ -684,8 +652,11 @@ export default function CatalogueSection({
                   </button>
                 </div>
 
-                {/* Zoom control */}
-                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-white/10 p-2 ring-1 ring-white/20 backdrop-blur">
+                {/* Zoom overlay */}
+                <div
+                  className="pointer-events-auto absolute left-2 right-2 z-20 rounded-xl bg-white/10 p-2 ring-1 ring-white/20 backdrop-blur flex flex-wrap items-center gap-2"
+                  style={{ bottom: `calc(76px + env(safe-area-inset-bottom))` }}
+                >
                   <ZoomOut className="h-4 w-4 text-white/90" />
                   <input
                     type="range"
@@ -702,12 +673,8 @@ export default function CatalogueSection({
                   </div>
                 </div>
 
-                <div
-                  className="flex-1"
-                  onTouchStart={(e) => e.stopPropagation()}
-                ></div>
-
-                <div className="sticky bottom-0 z-20 -mx-3 mt-3 flex items-center justify-between gap-2 border-t border-white/10 bg-black/40 px-3 py-2 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+                {/* Bottom controls overlay */}
+                <div className="pointer-events-auto absolute bottom-0 inset-x-0 z-20 flex items-center justify-between gap-2 border-t border-white/10 bg-black/40 px-3 py-2 backdrop-blur pb-[env(safe-area-inset-bottom)]">
                   <button
                     type="button"
                     onClick={goPrevLot}
@@ -741,6 +708,15 @@ export default function CatalogueSection({
                     <span className="sr-only">Done</span>
                   </button>
                 </div>
+
+                {/* Error overlay */}
+                {cameraError && (
+                  <div className="pointer-events-auto absolute left-2 right-2 top-14 z-30 rounded-lg border border-red-200 bg-red-50/95 p-2 text-xs text-red-700">
+                    {cameraError}
+                  </div>
+                )}
+
+                <canvas ref={canvasRef} className="hidden" />
               </div>
             </div>
           </div>,
