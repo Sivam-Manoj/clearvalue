@@ -569,7 +569,7 @@ export default function CatalogueSection({
       {cameraOpen &&
         createPortal(
           <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-hidden p-2 pt-4 sm:p-4 sm:pt-6">
-            <div className="relative w-full sm:w-[98%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-[96dvh] max-h-[96dvh] overflow-hidden flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
+            <div className="relative w-full sm:w-[98%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-[100svh] sm:h-[96dvh] max-h-[100svh] sm:max-h-[96dvh] overflow-hidden flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
               <div className="relative flex-1 min-h-0 bg-black">
                 <video
                   ref={videoRef}
@@ -655,7 +655,7 @@ export default function CatalogueSection({
                 {/* Zoom overlay */}
                 <div
                   className="pointer-events-auto absolute left-2 right-2 z-20 rounded-xl bg-white/10 p-2 ring-1 ring-white/20 backdrop-blur flex flex-wrap items-center gap-2"
-                  style={{ bottom: `calc(76px + env(safe-area-inset-bottom))` }}
+                  style={{ bottom: `calc(96px + env(safe-area-inset-bottom))` }}
                 >
                   <ZoomOut className="h-4 w-4 text-white/90" />
                   <input
@@ -674,14 +674,18 @@ export default function CatalogueSection({
                 </div>
 
                 {/* Bottom controls overlay */}
-                <div className="pointer-events-auto absolute bottom-0 inset-x-0 z-20 flex items-center justify-between gap-2 border-t border-white/10 bg-black/40 px-3 py-2 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+                <div
+                  className="pointer-events-auto absolute inset-x-0 z-20 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur"
+                  style={{ bottom: 'env(safe-area-inset-bottom)', paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
+                >
                   <button
                     type="button"
                     onClick={goPrevLot}
                     disabled={activeIdx <= 0}
                     className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    aria-label="Previous lot"
                   >
-                    <ChevronLeft className="h-4 w-4" /> Prev
+                    <ChevronLeft className="h-4 w-4" /> <span className="hidden sm:inline">Prev</span>
                   </button>
                   <button
                     type="button"
@@ -694,8 +698,9 @@ export default function CatalogueSection({
                     type="button"
                     onClick={goNextLot}
                     className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20"
+                    aria-label="Next lot"
                   >
-                    Next <ChevronRight className="h-4 w-4" />
+                    <span className="hidden sm:inline">Next</span> <ChevronRight className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
