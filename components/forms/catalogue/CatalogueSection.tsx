@@ -611,7 +611,7 @@ export default function CatalogueSection({
                     title="Toggle orientation"
                   >
                     <RotateCw className="h-3.5 w-3.5" />
-                    <span className="capitalize">{orientation}</span>
+                    <span className="capitalize">Change to {orientation}</span>
                   </button>
                   <div className="flex flex-wrap items-center gap-3">
                     <div>

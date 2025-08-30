@@ -152,7 +152,7 @@ export default function DashboardPage() {
             setDrawerType("real-estate");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-2xl border border-emerald-200 bg-gradient-to-b from-white/90 to-emerald-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(16,185,129,0.12)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(16,185,129,0.25)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(16,185,129,0.35)] cursor-pointer"
+          className="group flex items-center justify-between rounded-2xl border border-emerald-800 bg-gradient-to-b from-white/90 to-emerald-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(16,185,129,0.12)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(16,185,129,0.25)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(16,185,129,0.35)] cursor-pointer"
         >
           <div>
             <p className="text-xl font-bold text-gray-900">Real Estate</p>
@@ -160,7 +160,7 @@ export default function DashboardPage() {
               Create a new property record
             </p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-200 transition-colors duration-300 group-hover:bg-emerald-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-800 transition-colors duration-300 group-hover:bg-emerald-500/15">
             <Building2 className="h-5 w-5" />
           </div>
         </button>
@@ -172,13 +172,13 @@ export default function DashboardPage() {
             setDrawerType("salvage");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-2xl border border-amber-200 bg-gradient-to-b from-white/90 to-amber-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(245,158,11,0.4)] cursor-pointer"
+          className="group flex items-center justify-between rounded-2xl border border-red-800 bg-gradient-to-b from-white/90 to-red-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(245,158,11,0.4)] cursor-pointer"
         >
           <div>
             <p className="text-xl font-bold text-gray-900">Salvage</p>
             <p className="text-xs text-gray-500">Start a new salvage entry</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 ring-1 ring-amber-200 transition-colors duration-300 group-hover:bg-amber-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/10 text-red-600 ring-1 ring-red-800 transition-colors duration-300 group-hover:bg-red-500/15">
             <Car className="h-5 w-5" />
           </div>
         </button>
@@ -190,13 +190,13 @@ export default function DashboardPage() {
             setDrawerType("asset");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-2xl border border-sky-200 bg-gradient-to-b from-white/90 to-sky-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(14,165,233,0.3)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(14,165,233,0.4)] cursor-pointer"
+          className="group flex items-center justify-between rounded-2xl border border-sky-600 bg-gradient-to-b from-white/90 to-sky-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(14,165,233,0.3)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(14,165,233,0.4)] cursor-pointer"
         >
           <div>
             <p className="text-xl font-bold text-gray-900">Asset</p>
             <p className="text-xs text-gray-500">Add a general asset</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 ring-1 ring-sky-200 transition-colors duration-300 group-hover:bg-sky-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 ring-1 ring-sky-800 transition-colors duration-300 group-hover:bg-sky-500/15">
             <Package className="h-5 w-5" />
           </div>
         </button>
@@ -223,7 +223,7 @@ export default function DashboardPage() {
                     {stats?.totalReports ?? 0}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 ring-1 ring-rose-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 ring-1 ring-rose-800">
                   <FileBarChart2 className="h-5 w-5" />
                 </div>
               </div>
