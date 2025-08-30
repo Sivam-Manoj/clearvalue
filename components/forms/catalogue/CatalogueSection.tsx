@@ -304,14 +304,14 @@ export default function CatalogueSection({
   return (
     <div className="space-y-4">
       {/* Summary/header */}
-      <div className="flex items-center justify-between rounded-2xl border border-rose-100 bg-gradient-to-br from-white to-rose-50/60 p-3 shadow-lg ring-1 ring-black/5">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-rose-100 bg-gradient-to-br from-white to-rose-50/60 p-3 shadow-lg ring-1 ring-black/5">
         <div>
           <div className="text-sm font-medium text-gray-900">Lots</div>
           <div className="text-xs text-gray-600">
             {lots.length} lot(s), {totalImages}/{maxTotalImages} image(s) total
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => {
@@ -358,7 +358,7 @@ export default function CatalogueSection({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={startInAppCamera}
@@ -450,7 +450,7 @@ export default function CatalogueSection({
             <div className="mt-3 rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
               <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
               <p className="mt-2 text-sm text-gray-700">No images yet</p>
-              <div className="mt-3">
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={startInAppCamera}
@@ -461,7 +461,7 @@ export default function CatalogueSection({
                 <button
                   type="button"
                   onClick={() => startManualUpload(false)}
-                  className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                 >
                   <ImageIcon className="h-4 w-4" /> Upload from device
                 </button>
@@ -545,18 +545,21 @@ export default function CatalogueSection({
       {/* In-app camera overlay */}
       {cameraOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto p-4">
+          <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-hidden p-4 pt-6 sm:pt-8">
             <div className="relative w-full sm:w-[92%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl max-h-[96vh] overflow-y-auto flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
-              <button
-                type="button"
-                onClick={stopInAppCamera}
-                className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1.5 text-gray-900 shadow hover:bg-white"
-                aria-label="Done"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              {/* Sticky top bar so Close is always accessible */}
+              <div className="sticky top-0 z-20 flex items-center justify-end gap-2 rounded-t-2xl border-b border-white/10 bg-black/40 p-2 backdrop-blur-sm">
+                <button
+                  type="button"
+                  onClick={stopInAppCamera}
+                  className="rounded-full bg-white/90 p-1.5 text-gray-900 shadow hover:bg-white"
+                  aria-label="Done"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
-              <div className="relative overflow-hidden rounded-t-2xl">
+              <div className="relative overflow-hidden">
                 <div className="relative w-full h-[72vh] sm:h-[78vh] overflow-hidden">
                   <video
                     ref={videoRef}
@@ -586,7 +589,7 @@ export default function CatalogueSection({
 
               <div className="p-3">
                 {/* Top control row: orientation, counters, flash */}
-                <div className="flex items-center justify-between text-[12px] text-white/90">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
                   <button
                     type="button"
                     onClick={() => setOrientation((o) => (o === "portrait" ? "landscape" : "portrait"))}
@@ -596,7 +599,7 @@ export default function CatalogueSection({
                     <RotateCw className="h-3.5 w-3.5" />
                     <span className="capitalize">{orientation}</span>
                   </button>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div>
                       Total: {totalImages}/{maxTotalImages}
                     </div>
@@ -632,7 +635,7 @@ export default function CatalogueSection({
                 </div>
 
                 {/* Zoom control */}
-                <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/10 p-2 ring-1 ring-white/20 backdrop-blur">
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-white/10 p-2 ring-1 ring-white/20 backdrop-blur">
                   <ZoomOut className="h-4 w-4 text-white/90" />
                   <input
                     type="range"
@@ -641,7 +644,7 @@ export default function CatalogueSection({
                     step={0.1}
                     value={zoom}
                     onChange={(e) => setZoom(parseFloat(e.target.value))}
-                    className="flex-1 accent-rose-500"
+                    className="flex-1 min-w-[140px] accent-rose-500"
                   />
                   <ZoomIn className="h-4 w-4 text-white/90" />
                   <div className="ml-2 w-10 text-right text-[11px] text-white/90">{zoom.toFixed(1)}x</div>
