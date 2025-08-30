@@ -611,7 +611,10 @@ export default function CatalogueSection({
                     title="Toggle orientation"
                   >
                     <RotateCw className="h-3.5 w-3.5" />
-                    <span className="capitalize">Change to {orientation}</span>
+                    <span className="capitalize">
+                      Change to{" "}
+                      {orientation == "portrait" ? "Full Screen" : "Half Screen"}
+                    </span>
                   </button>
                   <div className="flex flex-wrap items-center gap-3">
                     <div>
@@ -676,7 +679,10 @@ export default function CatalogueSection({
                 {/* Bottom controls overlay */}
                 <div
                   className="pointer-events-auto absolute inset-x-0 z-20 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur"
-                  style={{ bottom: 'env(safe-area-inset-bottom)', paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
+                  style={{
+                    bottom: "env(safe-area-inset-bottom)",
+                    paddingBottom: "max(env(safe-area-inset-bottom), 12px)",
+                  }}
                 >
                   <button
                     type="button"
@@ -685,7 +691,8 @@ export default function CatalogueSection({
                     className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                     aria-label="Previous lot"
                   >
-                    <ChevronLeft className="h-4 w-4" /> <span className="hidden sm:inline">Prev</span>
+                    <ChevronLeft className="h-4 w-4" />{" "}
+                    <span className="hidden sm:inline">Prev</span>
                   </button>
                   <button
                     type="button"
@@ -700,7 +707,8 @@ export default function CatalogueSection({
                     className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20"
                     aria-label="Next lot"
                   >
-                    <span className="hidden sm:inline">Next</span> <ChevronRight className="h-4 w-4" />
+                    <span className="hidden sm:inline">Next</span>{" "}
+                    <ChevronRight className="h-4 w-4" />
                   </button>
                   <button
                     type="button"

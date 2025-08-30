@@ -152,7 +152,7 @@ export default function DashboardPage() {
             setDrawerType("real-estate");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-2xl border border-emerald-800 bg-gradient-to-b from-white/90 to-emerald-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(16,185,129,0.12)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(16,185,129,0.25)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(16,185,129,0.35)] cursor-pointer"
+          className="group flex items-center justify-between rounded-2xl border border-emerald-800 bg-gradient-to-b from-emerald-50/90 to-emerald-50/80 px-4 py-3 text-left shadow-[0_10px_30px_rgba(16,185,129,0.12)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(16,185,129,0.25)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(16,185,129,0.35)] cursor-pointer"
         >
           <div>
             <p className="text-xl font-bold text-gray-900">Real Estate</p>
@@ -172,7 +172,7 @@ export default function DashboardPage() {
             setDrawerType("salvage");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-2xl border border-red-800 bg-gradient-to-b from-white/90 to-red-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(245,158,11,0.4)] cursor-pointer"
+          className="group flex items-center justify-between rounded-2xl border border-red-800 bg-gradient-to-b from-red-50/90 to-red-50/80 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(245,158,11,0.4)] cursor-pointer"
         >
           <div>
             <p className="text-xl font-bold text-gray-900">Salvage</p>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
             setDrawerType("asset");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-2xl border border-sky-600 bg-gradient-to-b from-white/90 to-sky-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(14,165,233,0.3)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(14,165,233,0.4)] cursor-pointer"
+          className="group flex items-center justify-between rounded-2xl border border-sky-600 bg-gradient-to-b from-sky-50/90 to-sky-50/80 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(14,165,233,0.3)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(14,165,233,0.4)] cursor-pointer"
         >
           <div>
             <p className="text-xl font-bold text-gray-900">Asset</p>
