@@ -2,7 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Image as ImageIcon, Trash2, Plus, X, Check } from "lucide-react";
+import {
+  Camera,
+  Image as ImageIcon,
+  Trash2,
+  Plus,
+  X,
+  Check,
+  ZoomIn,
+  ZoomOut,
+  Zap,
+  ZapOff,
+  RotateCw,
+} from "lucide-react";
 import { toast } from "react-toastify";
 
 export type CatalogueLot = {
@@ -16,7 +28,7 @@ type Props = {
   onChange: (lots: CatalogueLot[]) => void;
   // caps (defaults align with backend today)
   maxImagesPerLot?: number; // default 20
-  maxTotalImages?: number; // default 100 (server upload limit)
+  maxTotalImages?: number; // default 500
 };
 
 export default function CatalogueSection({
@@ -36,6 +48,14 @@ export default function CatalogueSection({
   const [cameraError, setCameraError] = useState<string | null>(null);
   // When true, after a manual device upload we should move to the next lot automatically
   const advanceAfterUploadRef = useRef(false);
+  // Camera UX controls
+  const [zoom, setZoom] = useState<number>(1); // 1x - 5x (digital zoom)
+  const [flashOn, setFlashOn] = useState<boolean>(false);
+  const [orientation, setOrientation] = useState<"portrait" | "landscape">(
+    "portrait"
+  );
+  const [isTorchSupported, setIsTorchSupported] = useState<boolean>(false);
+  const [isSimulatingFlash, setIsSimulatingFlash] = useState<boolean>(false);
 
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
@@ -46,6 +66,20 @@ export default function CatalogueSection({
       if (videoRef.current) (videoRef.current as any).srcObject = null;
     };
   }, []);
+
+  // Re-apply constraints when orientation changes while camera is open
+  useEffect(() => {
+    if (!cameraOpen) return;
+    const stream = videoRef.current?.srcObject as MediaStream | null;
+    const track = stream?.getVideoTracks?.()[0] as any;
+    try {
+      track?.applyConstraints({
+        width: { ideal: orientation === "landscape" ? 1920 : 1080 },
+        height: { ideal: orientation === "landscape" ? 1080 : 1920 },
+        aspectRatio: { ideal: orientation === "landscape" ? 16 / 9 : 9 / 16 },
+      });
+    } catch {}
+  }, [orientation, cameraOpen]);
 
   const totalImages = useMemo(
     () => lots.reduce((s, l) => s + l.files.length, 0),
@@ -139,11 +173,16 @@ export default function CatalogueSection({
     try {
       setCameraError(null);
       setCameraOpen(true);
+      if (activeIdx < 0) {
+        // ensure there is a lot to receive captures
+        createLot();
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: orientation === "landscape" ? 1920 : 1080 },
+          height: { ideal: orientation === "landscape" ? 1080 : 1920 },
+          aspectRatio: { ideal: orientation === "landscape" ? 16 / 9 : 9 / 16 },
         },
         audio: false,
       });
@@ -151,6 +190,16 @@ export default function CatalogueSection({
         videoRef.current.srcObject = stream as any;
         await videoRef.current.play().catch(() => {});
       }
+      // Detect torch support and apply if flashOn
+      try {
+        const track = (stream.getVideoTracks?.() || [])[0];
+        const caps = (track as any)?.getCapabilities?.() || {};
+        const torchSupported = !!caps.torch;
+        setIsTorchSupported(torchSupported);
+        if (flashOn && torchSupported) {
+          await (track as any)?.applyConstraints?.({ advanced: [{ torch: true }] });
+        }
+      } catch {}
     } catch (err: any) {
       setCameraError(
         err?.message || "Unable to access camera. Using file capture instead."
@@ -186,11 +235,37 @@ export default function CatalogueSection({
       );
       return;
     }
-    canvas.width = vw;
-    canvas.height = vh;
+    // Target aspect ratio based on orientation (portrait 9:16, landscape 16:9)
+    const targetAR = orientation === "portrait" ? 9 / 16 : 16 / 9;
+    const videoAR = vw / vh;
+
+    // Determine crop size honoring zoom
+    let cropW: number;
+    let cropH: number;
+    if (videoAR > targetAR) {
+      // video is wider than target
+      cropH = vh / zoom;
+      cropW = cropH * targetAR;
+    } else {
+      // video is narrower/taller than target
+      cropW = vw / zoom;
+      cropH = cropW / targetAR;
+    }
+    const sx = Math.max(0, (vw - cropW) / 2);
+    const sy = Math.max(0, (vh - cropH) / 2);
+
+    // Output canvas at 1080p dimensions respecting orientation
+    const outW = orientation === "landscape" ? 1920 : 1080;
+    const outH = orientation === "landscape" ? 1080 : 1920;
+    canvas.width = outW;
+    canvas.height = outH;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.drawImage(video, 0, 0, vw, vh);
+    if (flashOn && !isTorchSupported) {
+      setIsSimulatingFlash(true);
+      setTimeout(() => setIsSimulatingFlash(false), 120);
+    }
+    ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, outW, outH);
     await new Promise<void>((resolve) => {
       canvas.toBlob(
         (blob) => {
@@ -232,7 +307,7 @@ export default function CatalogueSection({
         <div>
           <div className="text-sm font-medium text-gray-900">Lots</div>
           <div className="text-xs text-gray-600">
-            {lots.length} lot(s), {totalImages} image(s) total
+            {lots.length} lot(s), {totalImages}/{maxTotalImages} image(s) total
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -480,14 +555,27 @@ export default function CatalogueSection({
                 <X className="h-4 w-4" />
               </button>
 
-              <div className="overflow-hidden rounded-t-2xl">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="block h-auto w-full aspect-[3/4] object-cover pointer-events-none"
-                />
+              <div className="relative overflow-hidden rounded-t-2xl">
+                <div
+                  className={
+                    orientation === "portrait"
+                      ? "relative w-full aspect-[9/16] overflow-hidden"
+                      : "relative w-full aspect-[16/9] overflow-hidden"
+                  }
+                >
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="absolute inset-0 h-full w-full object-cover"
+                    style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
+                  />
+                  {/* Simulated flash overlay */}
+                  {isSimulatingFlash && (
+                    <div className="absolute inset-0 bg-white/80 animate-pulse" />
+                  )}
+                </div>
                 <canvas ref={canvasRef} className="hidden" />
               </div>
 
@@ -498,15 +586,69 @@ export default function CatalogueSection({
               )}
 
               <div className="p-3">
+                {/* Top control row: orientation, counters, flash */}
                 <div className="flex items-center justify-between text-[12px] text-white/90">
-                  <div className="font-medium">Lot #{activeIdx + 1}</div>
-                  <div>
-                    {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}{" "}
-                    images
+                  <button
+                    type="button"
+                    onClick={() => setOrientation((o) => (o === "portrait" ? "landscape" : "portrait"))}
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
+                    title="Toggle orientation"
+                  >
+                    <RotateCw className="h-3.5 w-3.5" />
+                    <span className="capitalize">{orientation}</span>
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      Total: {totalImages}/{maxTotalImages}
+                    </div>
+                    <div>
+                      Lot {activeIdx + 1}: {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setFlashOn((v) => !v);
+                      try {
+                        const stream = videoRef.current?.srcObject as MediaStream | null;
+                        const track = stream?.getVideoTracks?.()[0] as any;
+                        if (track?.getCapabilities?.()?.torch) {
+                          await track.applyConstraints({ advanced: [{ torch: !flashOn }] });
+                          setIsTorchSupported(true);
+                        } else {
+                          setIsTorchSupported(false);
+                        }
+                      } catch {}
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
+                    title="Flash"
+                  >
+                    {flashOn ? (
+                      <Zap className="h-3.5 w-3.5 text-yellow-300" />
+                    ) : (
+                      <ZapOff className="h-3.5 w-3.5" />
+                    )}
+                    <span>{flashOn ? "On" : "Off"}</span>
+                  </button>
                 </div>
 
-                <div className="mt-2 flex items-center justify-between">
+                {/* Zoom control */}
+                <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/10 p-2 ring-1 ring-white/20 backdrop-blur">
+                  <ZoomOut className="h-4 w-4 text-white/90" />
+                  <input
+                    type="range"
+                    min={1}
+                    max={5}
+                    step={0.1}
+                    value={zoom}
+                    onChange={(e) => setZoom(parseFloat(e.target.value))}
+                    className="flex-1 accent-rose-500"
+                  />
+                  <ZoomIn className="h-4 w-4 text-white/90" />
+                  <div className="ml-2 w-10 text-right text-[11px] text-white/90">{zoom.toFixed(1)}x</div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={goPrevLot}

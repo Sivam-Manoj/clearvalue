@@ -24,6 +24,7 @@ type Props = {
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
 const DRAFT_KEY = "cv_asset_draft";
+const MAX_NON_CAT_IMAGES = 10;
 
 const GROUPING_OPTIONS: {
   value: AssetGroupingMode;
@@ -150,11 +151,13 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     const incoming = Array.from(files);
     setImages((prev) => {
       const combined = [...prev, ...incoming];
-      const trimmed = combined.slice(0, 500);
-      if (combined.length > 500) {
-        setError("You can upload up to 500 images. Extra files were ignored.");
+      const trimmed = combined.slice(0, MAX_NON_CAT_IMAGES);
+      if (combined.length > MAX_NON_CAT_IMAGES) {
+        setError(
+          `You can upload up to ${MAX_NON_CAT_IMAGES} images. Extra files were ignored.`
+        );
         toast.warn(
-          "You can upload up to 500 images. Extra files were ignored."
+          `You can upload up to ${MAX_NON_CAT_IMAGES} images. Extra files were ignored.`
         );
       } else {
         setError(null);
@@ -230,12 +233,74 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
         toast.success("Draft saved for later.");
       }
-      onCancel?.();
     } catch (e) {
       toast.error("Failed to save draft.");
     }
   }
 
+  // Restore a saved draft: only metadata (images are not persisted)
+  function restoreDraft(draft: any) {
+    try {
+      if (!draft) return;
+      if (draft.grouping) setGrouping(draft.grouping);
+      if (typeof draft.clientName === "string") setClientName(draft.clientName);
+      if (typeof draft.effectiveDate === "string")
+        setEffectiveDate(draft.effectiveDate);
+      if (typeof draft.appraisalPurpose === "string")
+        setAppraisalPurpose(draft.appraisalPurpose);
+      if (typeof draft.ownerName === "string") setOwnerName(draft.ownerName);
+      if (typeof draft.appraiser === "string") setAppraiser(draft.appraiser);
+      if (typeof draft.appraisalCompany === "string")
+        setAppraisalCompany(draft.appraisalCompany);
+      if (typeof draft.industry === "string") setIndustry(draft.industry);
+      if (typeof draft.inspectionDate === "string")
+        setInspectionDate(draft.inspectionDate);
+      toast.success("Draft restored.");
+    } catch {}
+  }
+  const restorePromptedRef = useRef(false);
+  useEffect(() => {
+    if (restorePromptedRef.current) return;
+    try {
+      if (typeof localStorage === "undefined") return;
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      restorePromptedRef.current = true;
+      const draft = JSON.parse(raw);
+      const savedAt = draft?.savedAt ? new Date(draft.savedAt) : null;
+      const timeStr = savedAt ? savedAt.toLocaleString() : "";
+      const tid = toast.info(
+        <div className="space-y-2">
+          <div className="text-sm">
+            Found a saved draft {timeStr && `from ${timeStr}`}. Restore it?
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="rounded-md border border-gray-200 bg-white/90 px-2 py-1 text-xs text-gray-700 shadow"
+              onClick={() => {
+                restoreDraft(draft);
+                toast.dismiss(tid);
+              }}
+            >
+              Restore
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-gray-200 bg-white/90 px-2 py-1 text-xs text-gray-700 shadow"
+              onClick={() => {
+                localStorage.removeItem(DRAFT_KEY);
+                toast.dismiss(tid);
+              }}
+            >
+              Discard
+            </button>
+          </div>
+        </div>,
+        { autoClose: false }
+      ) as any;
+    } catch {}
+  }, []);
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -276,6 +341,12 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     } else {
       if (images.length === 0) {
         const msg = "Please add at least one image.";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (images.length > MAX_NON_CAT_IMAGES) {
+        const msg = `Maximum ${MAX_NON_CAT_IMAGES} images allowed.`;
         setError(msg);
         toast.error(msg);
         return;
@@ -611,7 +682,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => handleImagesChange(e.target.files)}
+                  onChange={(e) => {
+                    handleImagesChange(e.target.files);
+                    e.currentTarget.value = "";
+                  }}
                   className="sr-only"
                 />
                 <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
