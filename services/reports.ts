@@ -11,6 +11,7 @@ export type PdfReport = {
   address: string;
   fairMarketValue: string;
   createdAt: string; // ISO string
+  type?: string;
 };
 
 export const ReportsService = {

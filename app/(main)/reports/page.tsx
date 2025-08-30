@@ -12,6 +12,12 @@ export default function ReportsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [sortBy, setSortBy] = useState<
+    "date-desc" | "date-asc" | "value-desc" | "value-asc"
+  >("date-desc");
+  const [typeFilter, setTypeFilter] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
@@ -39,16 +45,95 @@ export default function ReportsPage() {
 
   const filteredReports = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return reports;
-    return reports.filter((r) => {
-      const address = String(r.address ?? "").toLowerCase();
-      const filename = String((r as any).filename ?? "").toLowerCase();
-      const id = String(r._id ?? "").toLowerCase();
-      const fmv = String(r.fairMarketValue ?? "").toLowerCase();
-      const dateStr = new Date(r.createdAt).toLocaleDateString().toLowerCase();
-      return [address, filename, id, fmv, dateStr].some((s) => s.includes(q));
+    let arr = reports as PdfReport[];
+
+    if (q) {
+      arr = arr.filter((r) => {
+        const address = String(r.address ?? "").toLowerCase();
+        const filename = String((r as any).filename ?? "").toLowerCase();
+        const id = String(r._id ?? "").toLowerCase();
+        const fmv = String(r.fairMarketValue ?? "").toLowerCase();
+        const dateStr = new Date(r.createdAt)
+          .toLocaleDateString()
+          .toLowerCase();
+        return [address, filename, id, fmv, dateStr].some((s) => s.includes(q));
+      });
+    }
+
+    if (typeFilter) {
+      arr = arr.filter(
+        (r) => String((r as any).type ?? "") === String(typeFilter)
+      );
+    }
+
+    const parseVal = (v: string) => {
+      if (!v) return NaN;
+      const num = Number(String(v).replace(/[^0-9.-]+/g, ""));
+      return Number.isFinite(num) ? num : NaN;
+    };
+
+    const sorted = [...arr].sort((a, b) => {
+      switch (sortBy) {
+        case "date-asc":
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        case "date-desc":
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        case "value-asc": {
+          const av = parseVal(a.fairMarketValue);
+          const bv = parseVal(b.fairMarketValue);
+          const aa = Number.isNaN(av) ? Infinity : av;
+          const bb = Number.isNaN(bv) ? Infinity : bv;
+          return aa - bb;
+        }
+        case "value-desc": {
+          const av = parseVal(a.fairMarketValue);
+          const bv = parseVal(b.fairMarketValue);
+          const aa = Number.isNaN(av) ? -Infinity : av;
+          const bb = Number.isNaN(bv) ? -Infinity : bv;
+          return bb - aa;
+        }
+        default:
+          return 0;
+      }
     });
-  }, [reports, query]);
+
+    return sorted;
+  }, [reports, query, typeFilter, sortBy]);
+
+  const availableTypes = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of reports) {
+      const t = (r as any)?.type;
+      if (t) s.add(String(t));
+    }
+    return Array.from(s);
+  }, [reports]);
+
+  // Pagination derivations
+  const totalItems = filteredReports.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const clampedPage = Math.min(page, totalPages);
+  const startIndex = totalItems === 0 ? 0 : (clampedPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+  const paginatedReports = useMemo(
+    () => filteredReports.slice(startIndex, endIndex),
+    [filteredReports, startIndex, endIndex]
+  );
+
+  // Reset/clamp page when filters or page size change
+  useEffect(() => {
+    setPage(1);
+  }, [query, typeFilter]);
+
+  useEffect(() => {
+    const tp = Math.max(1, Math.ceil(filteredReports.length / pageSize));
+    if (page > tp) setPage(tp);
+  }, [filteredReports.length, pageSize, page]);
 
   async function handleDownload(id: string) {
     try {
@@ -119,6 +204,54 @@ export default function ReportsPage() {
             />
           </div>
         </div>
+        {/* Top filters row */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-rose-800">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <label htmlFor="sort-by-top" className="sr-only">Sort by</label>
+              <select
+                id="sort-by-top"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="rounded-lg border border-rose-200 bg-white px-2 py-1 text-xs text-rose-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-rose-500/30 cursor-pointer"
+              >
+                <option value="date-desc">Date: Newest</option>
+                <option value="date-asc">Date: Oldest</option>
+                <option value="value-desc">Value: High → Low</option>
+                <option value="value-asc">Value: Low → High</option>
+              </select>
+            </div>
+            {availableTypes.length > 0 && (
+              <div className="flex items-center gap-1">
+                <label htmlFor="type-filter-top" className="sr-only">Type</label>
+                <select
+                  id="type-filter-top"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="rounded-lg border border-rose-200 bg-white px-2 py-1 text-xs text-rose-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-rose-500/30 cursor-pointer"
+                >
+                  <option value="">All types</option>
+                  {availableTypes.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <label htmlFor="page-size-top" className="sr-only">Page size</label>
+              <select
+                id="page-size-top"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="rounded-lg border border-rose-200 bg-white px-2 py-1 text-xs text-rose-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-rose-500/30 cursor-pointer"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-6">
           {loading ? (
@@ -127,14 +260,14 @@ export default function ReportsPage() {
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-3 p-4 animate-pulse"
+                    className="flex items-center justify-between gap-3 p-3 animate-pulse"
                   >
-                    <div className="h-4 w-1/3 rounded bg-rose-100" />
+                    <div className="h-3 w-1/3 rounded bg-rose-100" />
+                    <div className="h-3 w-24 rounded bg-rose-100" />
                     <div className="h-4 w-24 rounded bg-rose-100" />
-                    <div className="h-6 w-24 rounded bg-rose-100" />
                     <div className="flex gap-2">
-                      <div className="h-8 w-24 rounded bg-rose-100" />
-                      <div className="h-8 w-20 rounded bg-rose-100" />
+                      <div className="h-7 w-24 rounded bg-rose-100" />
+                      <div className="h-7 w-20 rounded bg-rose-100" />
                     </div>
                   </div>
                 ))}
@@ -158,6 +291,34 @@ export default function ReportsPage() {
             </div>
           ) : (
             <div className="space-y-4">
+              {filteredReports.length > 0 && (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-rose-800">
+                  <div>
+                    Showing {totalItems === 0 ? 0 : startIndex + 1}–{endIndex} of {totalItems}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={clampedPage <= 1}
+                      className="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs text-rose-700 shadow-sm transition enabled:hover:bg-rose-50 disabled:opacity-50 cursor-pointer"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-[11px] text-rose-700/80">
+                      Page {clampedPage} / {Math.max(1, Math.ceil(totalItems / pageSize))}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={clampedPage >= totalPages}
+                      className="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs text-rose-700 shadow-sm transition enabled:hover:bg-rose-50 disabled:opacity-50 cursor-pointer"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* Mobile list view */}
               <div className="sm:hidden">
                 {filteredReports.length === 0 && reports.length > 0 ? (
@@ -165,55 +326,57 @@ export default function ReportsPage() {
                     No matches for "{query}".
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {filteredReports.map((r) => (
-                      <div
-                        key={r._id}
-                        className="rounded-2xl bg-white ring-1 ring-rose-100 p-4 shadow-[0_10px_30px_rgba(244,63,94,0.08)]"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 shadow-inner">
-                            <FileText className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-rose-900 truncate">
-                              {r.address || "Untitled report"}
+                  <div className="max-h-[70vh] overflow-y-auto pr-1">
+                    <div className="space-y-3">
+                      {paginatedReports.map((r) => (
+                        <div
+                          key={r._id}
+                          className="rounded-2xl bg-white ring-1 ring-rose-100 p-3 shadow-[0_10px_30px_rgba(244,63,94,0.08)]"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 shadow-inner">
+                              <FileText className="h-3 w-3" />
                             </div>
-                            <div className="mt-0.5 text-xs text-rose-700/70 truncate">
-                              {r.filename || r._id}
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-semibold text-rose-900 truncate">
+                                {r.address || "Untitled report"}
+                              </div>
+                              <div className="mt-0.5 text-[11px] text-rose-700/70 truncate">
+                                {r.filename || r._id}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                          <div className="text-xs text-rose-900">
-                            {new Date(r.createdAt).toLocaleDateString()}
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                            <div className="text-[11px] text-rose-900">
+                              {new Date(r.createdAt).toLocaleDateString()}
+                            </div>
+                            <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm">
+                              {String(r.fairMarketValue ?? "")}
+                            </span>
                           </div>
-                          <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm">
-                            {String(r.fairMarketValue ?? "")}
-                          </span>
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              onClick={() => handleDownload(r._id)}
+                              disabled={downloadingId === r._id}
+                              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-white px-2.5 py-1.5 text-xs font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
+                              title="Download"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              {downloadingId === r._id ? "Downloading..." : "Download"}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(r._id)}
+                              disabled={deletingId === r._id}
+                              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              {deletingId === r._id ? "Deleting..." : "Delete"}
+                            </button>
+                          </div>
                         </div>
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={() => handleDownload(r._id)}
-                            disabled={downloadingId === r._id}
-                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-60"
-                            title="Download"
-                          >
-                            <Download className="h-4 w-4" />
-                            {downloadingId === r._id ? "Downloading..." : "Download"}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(r._id)}
-                            disabled={deletingId === r._id}
-                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            {deletingId === r._id ? "Deleting..." : "Delete"}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -221,81 +384,82 @@ export default function ReportsPage() {
               {/* Desktop/tablet table view */}
               <div className="hidden sm:block">
                 <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-rose-100 shadow-[0_10px_30px_rgba(244,63,94,0.08)]">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-rose-100">
-                      <thead className="bg-rose-50/50">
-                        <tr>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-semibold text-rose-800 uppercase tracking-wide"
-                          >
-                            Report
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-semibold text-rose-800 uppercase tracking-wide"
-                          >
-                            Date
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-semibold text-rose-800 uppercase tracking-wide"
-                          >
-                            FMV
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-right text-xs font-semibold text-rose-800 uppercase tracking-wide"
-                          >
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
+                  <div className="max-h-[70vh] overflow-y-auto">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-rose-100">
+                        <thead className="bg-rose-50/50">
+                          <tr>
+                            <th
+                              scope="col"
+                              className="px-3 py-2 text-left text-[11px] font-semibold text-rose-800 uppercase tracking-wide"
+                            >
+                              Report
+                            </th>
+                            <th
+                              scope="col"
+                              className="px-3 py-2 text-left text-[11px] font-semibold text-rose-800 uppercase tracking-wide"
+                            >
+                              Date
+                            </th>
+                            <th
+                              scope="col"
+                              className="px-3 py-2 text-left text-[11px] font-semibold text-rose-800 uppercase tracking-wide"
+                            >
+                              FMV
+                            </th>
+                            <th
+                              scope="col"
+                              className="px-3 py-2 text-right text-[11px] font-semibold text-rose-800 uppercase tracking-wide"
+                            >
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
                       <tbody className="divide-y divide-rose-100">
                         {filteredReports.length === 0 && reports.length > 0 ? (
                           <tr>
                             <td
                               colSpan={4}
-                              className="px-4 py-6 text-center text-sm text-rose-700/80"
+                              className="px-3 py-5 text-center text-sm text-rose-700/80"
                             >
                               No matches for "{query}".
                             </td>
                           </tr>
                         ) : (
-                          filteredReports.map((r) => (
+                          paginatedReports.map((r) => (
                             <tr key={r._id} className="hover:bg-rose-50/40">
-                              <td className="px-4 py-3">
+                              <td className="px-3 py-2">
                                 <div className="flex items-center gap-2">
-                                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 shadow-inner">
-                                    <FileText className="h-4 w-4" />
+                                  <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 shadow-inner">
+                                    <FileText className="h-3 w-3" />
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-sm font-semibold text-rose-900 truncate">
+                                    <div className="text-xs font-semibold text-rose-900 truncate">
                                       {r.address || "Untitled report"}
                                     </div>
-                                    <div className="text-xs text-rose-700/70 truncate">
+                                    <div className="text-[11px] text-rose-700/70 truncate">
                                       {r.filename || r._id}
                                     </div>
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-sm text-rose-900">
+                              <td className="px-3 py-2 text-xs text-rose-900">
                                 {new Date(r.createdAt).toLocaleDateString()}
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="px-3 py-2">
                                 <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm">
                                   {String(r.fairMarketValue ?? "")}
                                 </span>
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="px-3 py-2">
                                 <div className="flex justify-end gap-2">
                                   <button
                                     onClick={() => handleDownload(r._id)}
                                     disabled={downloadingId === r._id}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-60"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-white px-2.5 py-1.5 text-xs font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
                                     title="Download"
                                   >
-                                    <Download className="h-4 w-4" />
+                                    <Download className="h-3.5 w-3.5" />
                                     {downloadingId === r._id
                                       ? "Downloading..."
                                       : "Download"}
@@ -303,10 +467,10 @@ export default function ReportsPage() {
                                   <button
                                     onClick={() => handleDelete(r._id)}
                                     disabled={deletingId === r._id}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
                                     title="Delete"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-3.5 w-3.5" />
                                     {deletingId === r._id ? "Deleting..." : "Delete"}
                                   </button>
                                 </div>
@@ -316,9 +480,38 @@ export default function ReportsPage() {
                         )}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 </div>
               </div>
+              {filteredReports.length > 0 && (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-rose-800">
+                  <div>
+                    Showing {totalItems === 0 ? 0 : startIndex + 1}–{endIndex} of {totalItems}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={clampedPage <= 1}
+                      className="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs text-rose-700 shadow-sm transition enabled:hover:bg-rose-50 disabled:opacity-50 cursor-pointer"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-[11px] text-rose-700/80">
+                      Page {clampedPage} / {Math.max(1, Math.ceil(totalItems / pageSize))}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={clampedPage >= totalPages}
+                      className="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs text-rose-700 shadow-sm transition enabled:hover:bg-rose-50 disabled:opacity-50 cursor-pointer"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

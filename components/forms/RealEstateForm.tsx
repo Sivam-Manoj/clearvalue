@@ -321,239 +321,234 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
     <form className="space-y-4" onSubmit={onSubmit}>
       <div className="relative">
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200/70 bg-red-50/80 p-3 text-sm text-red-700 shadow ring-1 ring-black/5 backdrop-blur">
             {error}
           </div>
         )}
 
         {/* Smart Fill (AI) */}
         <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">
-          Smart Fill (optional)
-        </h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {/* Spec sheet image */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-gray-700">
-              Spec Sheet Image
-            </label>
-            <input
-              ref={specInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleSpecChange(e.target.files)}
-              className="sr-only"
-            />
-            <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white/50 p-3 text-center">
-              <p className="text-xs text-gray-600">
-                {specFile ? specFile.name : "No file selected"}
-              </p>
-              <div className="mt-2 flex items-center justify-center gap-2">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-gray-700">
+                Spec Sheet Image
+              </label>
+              <input
+                ref={specInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleSpecChange(e.target.files)}
+                className="sr-only"
+              />
+              <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
+                <p className="text-xs text-gray-600">
+                  {specFile ? specFile.name : "No file selected"}
+                </p>
+                <div className="mt-2 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => specInputRef.current?.click()}
+                    className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+                  >
+                    Select Image
+                  </button>
+                  <button
+                    type="button"
+                    onClick={analyzeSpec}
+                    disabled={!specFile || aiLoading}
+                    className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50 focus:outline-none"
+                  >
+                    {aiLoading ? "Analyzing..." : "Analyze Image"}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-gray-700">
+                Notes / Transcript
+              </label>
+              <textarea
+                className="mt-1 h-28 w-full rounded-2xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={notesText}
+                onChange={(e) => setNotesText(e.target.value)}
+              />
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => specInputRef.current?.click()}
-                  className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50"
+                  onClick={fillFromText}
+                  disabled={!notesText.trim() || aiLoading}
+                  className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50 focus:outline-none"
                 >
-                  Select Image
-                </button>
-                <button
-                  type="button"
-                  onClick={analyzeSpec}
-                  disabled={!specFile || aiLoading}
-                  className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
-                >
-                  {aiLoading ? "Analyzing..." : "Analyze Image"}
+                  {aiLoading ? "Filling..." : "Fill From Text"}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Text notes */}
+          {/* Voice record */}
           <div className="space-y-2">
             <label className="block text-xs font-medium text-gray-700">
-              Notes / Transcript
+              Voice Record
             </label>
-            <textarea
-              className="mt-1 h-28 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={notesText}
-              onChange={(e) => setNotesText(e.target.value)}
-            />
             <div className="flex items-center gap-2">
+              {!isRecording ? (
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]"
+                >
+                  <Mic className="mr-1 inline h-4 w-4" /> Start Recording
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  className="rounded-xl bg-gradient-to-b from-red-500 to-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(220,38,38,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(220,38,38,0.5)]"
+                >
+                  <Square className="mr-1 inline h-4 w-4" /> Stop
+                </button>
+              )}
               <button
                 type="button"
-                onClick={fillFromText}
-                disabled={!notesText.trim() || aiLoading}
-                className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
+                onClick={useRecording}
+                disabled={!audioBlob || aiLoading}
+                className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50"
               >
-                {aiLoading ? "Filling..." : "Fill From Text"}
+                {aiLoading ? "Processing..." : "Use Recording to Fill"}
+              </button>
+              <button
+                type="button"
+                onClick={clearRecording}
+                disabled={!audioBlob}
+                className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5 disabled:opacity-50"
+              >
+                Clear
               </button>
             </div>
-          </div>
-        </div>
-
-        {/* Voice record */}
-        <div className="space-y-2">
-          <label className="block text-xs font-medium text-gray-700">
-            Voice Record
-          </label>
-          <div className="flex items-center gap-2">
-            {!isRecording ? (
-              <button
-                type="button"
-                onClick={startRecording}
-                className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500"
-              >
-                <Mic className="mr-1 inline h-4 w-4" /> Start Recording
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={stopRecording}
-                className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500"
-              >
-                <Square className="mr-1 inline h-4 w-4" /> Stop
-              </button>
+            {audioUrl && (
+              <audio src={audioUrl} controls className="mt-2 w-full" />
             )}
-            <button
-              type="button"
-              onClick={useRecording}
-              disabled={!audioBlob || aiLoading}
-              className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-            >
-              {aiLoading ? "Processing..." : "Use Recording to Fill"}
-            </button>
-            <button
-              type="button"
-              onClick={clearRecording}
-              disabled={!audioBlob}
-              className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
-            >
-              Clear
-            </button>
           </div>
-          {audioUrl && (
-            <audio src={audioUrl} controls className="mt-2 w-full" />
-          )}
-        </div>
-      </section>
+        </section>
 
-      {/* Property Details */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Property Details</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Owner Name
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.property_details.owner_name}
-              onChange={(e) =>
-                handleChange("property_details", "owner_name", e.target.value)
-              }
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-gray-700">
-              Address
-            </label>
-            <input
-              required
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.property_details.address}
-              onChange={(e) =>
-                handleChange("property_details", "address", e.target.value)
-              }
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-gray-700">
-              Land Description
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.property_details.land_description}
-              onChange={(e) =>
-                handleChange(
-                  "property_details",
-                  "land_description",
-                  e.target.value
-                )
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Municipality
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.property_details.municipality}
-              onChange={(e) =>
-                handleChange("property_details", "municipality", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Title Number
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.property_details.title_number}
-              onChange={(e) =>
-                handleChange("property_details", "title_number", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Parcel Number
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.property_details.parcel_number}
-              onChange={(e) =>
-                handleChange(
-                  "property_details",
-                  "parcel_number",
-                  e.target.value
-                )
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Land Area (acres)
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.property_details.land_area_acres}
-              onChange={(e) =>
-                handleChange(
-                  "property_details",
-                  "land_area_acres",
-                  e.target.value
-                )
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Source Quarter Section
-            </label>
-            <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              value={details.property_details.source_quarter_section}
-              onChange={(e) =>
-                handleChange(
-                  "property_details",
-                  "source_quarter_section",
-                  e.target.value
-                )
-              }
-            />
-          </div>
+        {/* Property Details */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Property Details</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Owner Name
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.property_details.owner_name}
+                onChange={(e) =>
+                  handleChange("property_details", "owner_name", e.target.value)
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-700">
+                Address
+              </label>
+              <input
+                required
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.property_details.address}
+                onChange={(e) =>
+                  handleChange("property_details", "address", e.target.value)
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-700">
+                Land Description
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.property_details.land_description}
+                onChange={(e) =>
+                  handleChange(
+                    "property_details",
+                    "land_description",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Municipality
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.property_details.municipality}
+                onChange={(e) =>
+                  handleChange("property_details", "municipality", e.target.value)
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Title Number
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.property_details.title_number}
+                onChange={(e) =>
+                  handleChange("property_details", "title_number", e.target.value)
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Parcel Number
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.property_details.parcel_number}
+                onChange={(e) =>
+                  handleChange(
+                    "property_details",
+                    "parcel_number",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Land Area (acres)
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.property_details.land_area_acres}
+                onChange={(e) =>
+                  handleChange(
+                    "property_details",
+                    "land_area_acres",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Source Quarter Section
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.property_details.source_quarter_section}
+                onChange={(e) =>
+                  handleChange(
+                    "property_details",
+                    "source_quarter_section",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+            
         </div>
       </section>
 
@@ -567,7 +562,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
             </label>
             <input
               type="date"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.report_dates.report_date}
               onChange={(e) =>
                 handleChange("report_dates", "report_date", e.target.value)
@@ -580,7 +575,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
             </label>
             <input
               type="date"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.report_dates.effective_date}
               onChange={(e) =>
                 handleChange("report_dates", "effective_date", e.target.value)
@@ -593,7 +588,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
             </label>
             <input
               type="date"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.report_dates.inspection_date}
               onChange={(e) =>
                 handleChange("report_dates", "inspection_date", e.target.value)
@@ -612,7 +607,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               Year Built
             </label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.house_details.year_built}
               onChange={(e) =>
                 handleChange("house_details", "year_built", e.target.value)
@@ -624,7 +619,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               Square Footage
             </label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.house_details.square_footage}
               onChange={(e) =>
                 handleChange("house_details", "square_footage", e.target.value)
@@ -636,7 +631,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               Lot Size (sqft)
             </label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.house_details.lot_size_sqft}
               onChange={(e) =>
                 handleChange("house_details", "lot_size_sqft", e.target.value)
@@ -648,7 +643,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               Rooms
             </label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.house_details.number_of_rooms}
               onChange={(e) =>
                 handleChange("house_details", "number_of_rooms", e.target.value)
@@ -660,7 +655,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               Full Bathrooms
             </label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.house_details.number_of_full_bathrooms}
               onChange={(e) =>
                 handleChange(
@@ -676,7 +671,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               Half Bathrooms
             </label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.house_details.number_of_half_bathrooms}
               onChange={(e) =>
                 handleChange(
@@ -693,7 +688,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
             Known Issues (comma separated)
           </label>
           <input
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
             value={details.house_details.known_issues.join(", ")}
             onChange={(e) => handleKnownIssuesChange(e.target.value)}
           />
@@ -713,14 +708,14 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           onChange={(e) => handleImagesChange(e.target.files)}
           className="sr-only"
         />
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white/50 p-4 text-center">
+        <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
           <Upload className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-2 text-sm text-gray-700">Add images</p>
           <div className="mt-3">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white shadow hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] focus:outline-none"
             >
               <Upload className="h-4 w-4" />
               Select Images
@@ -734,21 +729,24 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           Selected: {images.length} file(s)
         </p>
         {images.length > 0 && (
-          <div className="rounded-md border border-gray-200 p-2">
+          <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {previews.map((src, idx) => (
-                <div key={idx} className="relative group">
+                <div
+                  key={idx}
+                  className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={src}
                     alt={images[idx]?.name || `image-${idx + 1}`}
-                    className="h-24 w-full rounded object-cover"
+                    className="h-28 w-full object-cover"
                   />
                   <button
                     type="button"
                     aria-label="Remove image"
                     onClick={() => removeImage(idx)}
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white shadow"
+                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1.5 text-white shadow-lg hover:bg-black/80 transition"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -762,7 +760,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         <div className="flex items-center gap-2 pt-2">
           <button
             type="button"
-            className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
             onClick={onCancel}
             disabled={submitting}
           >
@@ -770,14 +768,14 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           </button>
           <button
             type="submit"
-            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-blue-500 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50"
             disabled={submitting}
           >
             {submitting ? "Creating..." : "Create Report"}
           </button>
         </div>
         {submitting && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/80 ring-1 ring-black/5 backdrop-blur">
             <Loading message="Creating your report..." height={220} width={220} />
           </div>
         )}

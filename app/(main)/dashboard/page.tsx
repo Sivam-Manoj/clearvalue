@@ -145,55 +145,56 @@ export default function DashboardPage() {
 
       {/* Quick actions */}
       <div className="grid gap-3 sm:grid-cols-3">
+        {/* Real Estate (emerald) */}
         <button
           type="button"
           onClick={() => {
             setDrawerType("real-estate");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-xl border border-rose-100 bg-gradient-to-b from-white to-rose-50/40 px-4 py-3 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+          className="group flex items-center justify-between rounded-xl border border-emerald-100 bg-gradient-to-b from-white to-emerald-50/40 px-4 py-3 text-left shadow-[0_10px_30px_rgba(16,185,129,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(16,185,129,0.18)] active:translate-y-[1px]"
         >
           <div>
             <p className="text-sm font-medium text-gray-900">Real Estate</p>
-            <p className="text-xs text-gray-500">
-              Create a new property record
-            </p>
+            <p className="text-xs text-gray-500">Create a new property record</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-rose-500/10 text-rose-600 transition-colors duration-300 group-hover:bg-rose-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-100 transition-colors duration-300 group-hover:bg-emerald-500/15">
             <Building2 className="h-5 w-5" />
           </div>
         </button>
 
+        {/* Salvage (amber) */}
         <button
           type="button"
           onClick={() => {
             setDrawerType("salvage");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-xl border border-rose-100 bg-gradient-to-b from-white to-rose-50/40 px-4 py-3 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+          className="group flex items-center justify-between rounded-xl border border-amber-100 bg-gradient-to-b from-white to-amber-50/40 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(245,158,11,0.2)] active:translate-y-[1px]"
         >
           <div>
             <p className="text-sm font-medium text-gray-900">Salvage</p>
             <p className="text-xs text-gray-500">Start a new salvage entry</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-rose-500/10 text-rose-600 transition-colors duration-300 group-hover:bg-rose-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-amber-500/10 text-amber-600 ring-1 ring-amber-100 transition-colors duration-300 group-hover:bg-amber-500/15">
             <Car className="h-5 w-5" />
           </div>
         </button>
 
+        {/* Asset (sky) */}
         <button
           type="button"
           onClick={() => {
             setDrawerType("asset");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-xl border border-rose-100 bg-gradient-to-b from-white to-rose-50/40 px-4 py-3 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+          className="group flex items-center justify-between rounded-xl border border-sky-100 bg-gradient-to-b from-white to-sky-50/40 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(14,165,233,0.22)] active:translate-y-[1px]"
         >
           <div>
             <p className="text-sm font-medium text-gray-900">Asset</p>
             <p className="text-xs text-gray-500">Add a general asset</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-rose-500/10 text-rose-600 transition-colors duration-300 group-hover:bg-rose-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-sky-500/10 text-sky-600 ring-1 ring-sky-100 transition-colors duration-300 group-hover:bg-sky-500/15">
             <Package className="h-5 w-5" />
           </div>
         </button>
