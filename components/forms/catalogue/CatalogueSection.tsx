@@ -546,7 +546,7 @@ export default function CatalogueSection({
       {cameraOpen &&
         createPortal(
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto p-4">
-            <div className="relative w-[94%] max-w-sm max-h-[96vh] overflow-y-auto flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
+            <div className="relative w-full sm:w-[92%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl max-h-[96vh] overflow-y-auto flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
               <button
                 type="button"
                 onClick={stopInAppCamera}
@@ -557,13 +557,7 @@ export default function CatalogueSection({
               </button>
 
               <div className="relative overflow-hidden rounded-t-2xl">
-                <div
-                  className={
-                    orientation === "portrait"
-                      ? "relative w-full aspect-[9/16] overflow-hidden"
-                      : "relative w-full aspect-[16/9] overflow-hidden"
-                  }
-                >
+                <div className="relative w-full h-[72vh] sm:h-[78vh] overflow-hidden">
                   <video
                     ref={videoRef}
                     autoPlay
