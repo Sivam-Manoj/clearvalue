@@ -131,8 +131,8 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
       <div className="relative">
-        {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+        {!submitting && error && (
+          <div className="rounded-xl border border-red-200/70 bg-red-50/80 p-3 text-sm text-red-700 shadow ring-1 ring-black/5 backdrop-blur">
             {error}
           </div>
         )}
@@ -145,7 +145,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
             <label className="block text-xs font-medium text-gray-700">Report Date</label>
             <input
               type="date"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.report_date}
               onChange={(e) => handleChange("report_date", e.target.value)}
             />
@@ -154,7 +154,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
             <label className="block text-xs font-medium text-gray-700">Date Received</label>
             <input
               type="date"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.date_received}
               onChange={(e) => handleChange("date_received", e.target.value)}
             />
@@ -163,7 +163,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
             <label className="block text-xs font-medium text-gray-700">Next Report Due</label>
             <input
               type="date"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.next_report_due}
               onChange={(e) => handleChange("next_report_due", e.target.value)}
             />
@@ -173,7 +173,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           <div>
             <label className="block text-xs font-medium text-gray-700">File Number</label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.file_number}
               onChange={(e) => handleChange("file_number", e.target.value)}
             />
@@ -181,7 +181,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           <div>
             <label className="block text-xs font-medium text-gray-700">Claim Number</label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.claim_number}
               onChange={(e) => handleChange("claim_number", e.target.value)}
             />
@@ -189,7 +189,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           <div>
             <label className="block text-xs font-medium text-gray-700">Policy Number</label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.policy_number}
               onChange={(e) => handleChange("policy_number", e.target.value)}
             />
@@ -204,7 +204,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           <div>
             <label className="block text-xs font-medium text-gray-700">Appraiser Name</label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.appraiser_name}
               onChange={(e) => handleChange("appraiser_name", e.target.value)}
             />
@@ -212,7 +212,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           <div>
             <label className="block text-xs font-medium text-gray-700">Appraiser Phone</label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.appraiser_phone}
               onChange={(e) => handleChange("appraiser_phone", e.target.value)}
             />
@@ -221,7 +221,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
             <label className="block text-xs font-medium text-gray-700">Appraiser Email</label>
             <input
               type="email"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.appraiser_email}
               onChange={(e) => handleChange("appraiser_email", e.target.value)}
             />
@@ -231,7 +231,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           <div>
             <label className="block text-xs font-medium text-gray-700">Adjuster Name</label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.adjuster_name}
               onChange={(e) => handleChange("adjuster_name", e.target.value)}
             />
@@ -239,7 +239,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           <div>
             <label className="block text-xs font-medium text-gray-700">Insured Name</label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.insured_name}
               onChange={(e) => handleChange("insured_name", e.target.value)}
             />
@@ -247,7 +247,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           <div>
             <label className="block text-xs font-medium text-gray-700">Company Name</label>
             <input
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.company_name}
               onChange={(e) => handleChange("company_name", e.target.value)}
             />
@@ -256,7 +256,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         <div>
           <label className="block text-xs font-medium text-gray-700">Company Address</label>
           <input
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
             value={details.company_address}
             onChange={(e) => handleChange("company_address", e.target.value)}
           />
@@ -269,7 +269,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         <div>
           <label className="block text-xs font-medium text-gray-700">Appraiser Comments</label>
           <textarea
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
             rows={3}
             value={details.appraiser_comments}
             onChange={(e) => handleChange("appraiser_comments", e.target.value)}
@@ -285,17 +285,20 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           type="file"
           accept="image/*"
           multiple
-          onChange={(e) => handleImagesChange(e.target.files)}
+          onChange={(e) => {
+            handleImagesChange(e.target.files);
+            e.currentTarget.value = "";
+          }}
           className="sr-only"
         />
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white/50 p-4 text-center">
+        <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
           <Upload className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-2 text-sm text-gray-700">Add images</p>
           <div className="mt-3">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white shadow hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] focus:outline-none cursor-pointer"
             >
               <Upload className="h-4 w-4" />
               Select Images
@@ -305,21 +308,24 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         </div>
         <p className="text-xs text-gray-500">Selected: {images.length} file(s)</p>
         {images.length > 0 && (
-          <div className="rounded-md border border-gray-200 p-2">
+          <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {previews.map((src, idx) => (
-                <div key={idx} className="relative group">
+                <div
+                  key={idx}
+                  className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={src}
                     alt={images[idx]?.name || `image-${idx + 1}`}
-                    className="h-24 w-full rounded object-cover"
+                    className="h-28 w-full object-cover"
                   />
                   <button
                     type="button"
                     aria-label="Remove image"
                     onClick={() => removeImage(idx)}
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white shadow"
+                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1.5 text-white shadow-lg hover:bg-black/80 transition cursor-pointer"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -333,7 +339,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         <div className="flex items-center gap-2 pt-2">
           <button
             type="button"
-            className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5 cursor-pointer"
             onClick={onCancel}
             disabled={submitting}
           >
@@ -341,7 +347,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           </button>
           <button
             type="submit"
-            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-blue-500 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50 cursor-pointer"
             disabled={submitting}
           >
             {submitting ? "Creating..." : "Create Report"}

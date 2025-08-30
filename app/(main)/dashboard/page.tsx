@@ -152,13 +152,13 @@ export default function DashboardPage() {
             setDrawerType("real-estate");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-xl border border-emerald-100 bg-gradient-to-b from-white to-emerald-50/40 px-4 py-3 text-left shadow-[0_10px_30px_rgba(16,185,129,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(16,185,129,0.18)] active:translate-y-[1px]"
+          className="group flex items-center justify-between rounded-2xl border border-emerald-200 bg-gradient-to-b from-white/90 to-emerald-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(16,185,129,0.12)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(16,185,129,0.25)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(16,185,129,0.35)] cursor-pointer"
         >
           <div>
             <p className="text-sm font-medium text-gray-900">Real Estate</p>
             <p className="text-xs text-gray-500">Create a new property record</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-100 transition-colors duration-300 group-hover:bg-emerald-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-200 transition-colors duration-300 group-hover:bg-emerald-500/15">
             <Building2 className="h-5 w-5" />
           </div>
         </button>
@@ -170,13 +170,13 @@ export default function DashboardPage() {
             setDrawerType("salvage");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-xl border border-amber-100 bg-gradient-to-b from-white to-amber-50/40 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(245,158,11,0.2)] active:translate-y-[1px]"
+          className="group flex items-center justify-between rounded-2xl border border-amber-200 bg-gradient-to-b from-white/90 to-amber-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(245,158,11,0.4)] cursor-pointer"
         >
           <div>
             <p className="text-sm font-medium text-gray-900">Salvage</p>
             <p className="text-xs text-gray-500">Start a new salvage entry</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-amber-500/10 text-amber-600 ring-1 ring-amber-100 transition-colors duration-300 group-hover:bg-amber-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 ring-1 ring-amber-200 transition-colors duration-300 group-hover:bg-amber-500/15">
             <Car className="h-5 w-5" />
           </div>
         </button>
@@ -188,13 +188,13 @@ export default function DashboardPage() {
             setDrawerType("asset");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-xl border border-sky-100 bg-gradient-to-b from-white to-sky-50/40 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(14,165,233,0.22)] active:translate-y-[1px]"
+          className="group flex items-center justify-between rounded-2xl border border-sky-200 bg-gradient-to-b from-white/90 to-sky-50/60 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(14,165,233,0.3)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(14,165,233,0.4)] cursor-pointer"
         >
           <div>
             <p className="text-sm font-medium text-gray-900">Asset</p>
             <p className="text-xs text-gray-500">Add a general asset</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-sky-500/10 text-sky-600 ring-1 ring-sky-100 transition-colors duration-300 group-hover:bg-sky-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 ring-1 ring-sky-200 transition-colors duration-300 group-hover:bg-sky-500/15">
             <Package className="h-5 w-5" />
           </div>
         </button>
@@ -204,8 +204,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {statsLoading ? (
           <>
-            <div className="min-h-[6rem] h-full w-full animate-pulse rounded-xl border border-rose-100 bg-rose-50" />
-            <div className="min-h-[6rem] h-full w-full animate-pulse rounded-xl border border-rose-100 bg-rose-50" />
+            <div className="min-h-[6rem] h-full w-full animate-pulse rounded-2xl border border-rose-200 bg-rose-50" />
+            <div className="min-h-[6rem] h-full w-full animate-pulse rounded-2xl border border-rose-200 bg-rose-50" />
           </>
         ) : statsError ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 col-span-2">
@@ -213,7 +213,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            <div className="rounded-xl border border-rose-100 bg-white/90 backdrop-blur-sm p-4 min-h-[6rem] h-full shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="rounded-2xl border border-rose-200 bg-white/85 backdrop-blur p-4 min-h-[6rem] h-full shadow ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
                   <p className="text-sm text-gray-500">Total Reports</p>
@@ -221,13 +221,13 @@ export default function DashboardPage() {
                     {stats?.totalReports ?? 0}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-rose-500/10 text-rose-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 ring-1 ring-rose-200">
                   <FileBarChart2 className="h-5 w-5" />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-rose-100 bg-white/90 backdrop-blur-sm p-4 min-h-[6rem] h-full shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="rounded-2xl border border-rose-200 bg-white/85 backdrop-blur p-4 min-h-[6rem] h-full shadow ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
                   <p className="text-sm text-gray-500">Total FMV</p>
@@ -238,7 +238,7 @@ export default function DashboardPage() {
                     }).format(stats?.totalFairMarketValue ?? 0)}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-rose-500/10 text-rose-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 ring-1 ring-rose-200">
                   <DollarSign className="h-5 w-5" />
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-rose-100 bg-white/95 p-4 shadow-sm backdrop-blur-sm">
+      <div className="rounded-2xl border border-rose-200 bg-white/90 p-4 shadow ring-1 ring-black/5 backdrop-blur">
         <h2 className="text-lg font-medium text-gray-900">Recent Reports</h2>
         {recentLoading ? (
           <div className="mt-3 space-y-2">
@@ -264,12 +264,12 @@ export default function DashboardPage() {
             No recent reports. Create one to see it here.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-rose-100">
+          <ul className="mt-3 divide-y divide-rose-200">
             {recent.map((r) => (
               <li key={r._id}>
                 <button
                   onClick={() => router.push("/reports")}
-                  className="group w-full text-left px-2 py-2 rounded-lg flex items-center justify-between transition-all hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-500/20 hover:-translate-y-0.5"
+                  className="group w-full text-left px-3 py-3 rounded-xl flex items-center justify-between transition-all hover:bg-rose-50/70 focus:outline-none focus:ring-2 focus:ring-rose-500/20 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ring-1 ring-transparent hover:ring-rose-200"
                   title="Go to reports"
                 >
                   <div>

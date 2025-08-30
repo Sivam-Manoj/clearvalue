@@ -64,7 +64,7 @@ export default function Navbar() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-rose-100 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
+    <header className="sticky top-0 z-40 w-full border-b border-rose-100 bg-white shadow-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand */}
         <div className="flex items-center gap-3">
@@ -115,7 +115,7 @@ export default function Navbar() {
         {/* Overlay */}
         <div
           className={classNames(
-            "fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity duration-300",
+            "fixed inset-0 z-40 bg-black/50 transition-opacity duration-300",
             open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           )}
           onClick={() => setOpen(false)}
@@ -124,7 +124,7 @@ export default function Navbar() {
         {/* Sidebar */}
         <aside
           className={classNames(
-            "fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] border-r border-rose-100 bg-white/90 backdrop-blur-xl shadow-2xl ring-1 ring-black/5 transition-transform duration-300",
+            "fixed inset-y-0 left-0 z-50 w-72 max-w-[85%] border-r border-rose-100 bg-white text-rose-800 shadow-2xl ring-1 ring-black/5 transition-transform duration-300",
             open ? "translate-x-0" : "-translate-x-full"
           )}
           role="dialog"
