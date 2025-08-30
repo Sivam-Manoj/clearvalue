@@ -327,7 +327,7 @@ export default function CatalogueSection({
   return (
     <div className="space-y-4">
       {/* Summary/header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-rose-100 bg-gradient-to-br from-white to-rose-50/60 p-3 shadow-lg ring-1 ring-black/5">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-rose-200/80 bg-gradient-to-br from-white to-rose-50/60 p-3 shadow-lg ring-1 ring-black/5">
         <div>
           <div className="text-sm font-medium text-gray-900">Lots</div>
           <div className="text-xs text-gray-600">
@@ -341,14 +341,14 @@ export default function CatalogueSection({
               createLot();
               startInAppCamera();
             }}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
           >
             <Plus className="h-4 w-4" /> Lot from camera
           </button>
           <button
             type="button"
             onClick={() => startManualUpload(true)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
           >
             <ImageIcon className="h-4 w-4" /> Upload from device
           </button>
@@ -371,7 +371,7 @@ export default function CatalogueSection({
 
       {/* Active capture panel */}
       {activeIdx >= 0 && (
-        <div className="rounded-2xl border border-rose-100 bg-white/80 p-3 shadow-xl ring-1 ring-black/5 backdrop-blur">
+        <div className="rounded-2xl border border-rose-200/80 bg-white/80 p-3 shadow-xl ring-1 ring-black/5 backdrop-blur">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-sm font-semibold text-gray-900">
               Lot #{activeIdx + 1}
@@ -385,14 +385,14 @@ export default function CatalogueSection({
             <button
               type="button"
               onClick={startInAppCamera}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
               <Camera className="h-4 w-4" /> Open Camera
             </button>
             <button
               type="button"
               onClick={() => startManualUpload(false)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
               <ImageIcon className="h-4 w-4" /> Upload from device
             </button>
@@ -402,7 +402,7 @@ export default function CatalogueSection({
                 advanceAfterUploadRef.current = true;
                 startManualUpload(false);
               }}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
               <ImageIcon className="h-4 w-4" /> Upload & Next
             </button>
@@ -412,21 +412,21 @@ export default function CatalogueSection({
                 createLot();
                 startInAppCamera();
               }}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
               Add Lot from camera
             </button>
             <button
               type="button"
               onClick={() => setActiveIdx(-1)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
               Done
             </button>
           </div>
 
           {activeLot?.files.length ? (
-            <div className="mt-3 rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
+            <div className="mt-3 rounded-2xl border border-gray-300/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {activeLot.files.map((file, i) => {
                   const url = URL.createObjectURL(file);
@@ -447,7 +447,7 @@ export default function CatalogueSection({
                         <button
                           type="button"
                           onClick={() => setCover(activeIdx, i)}
-                          className={`rounded-md px-2 py-1 text-[10px] font-semibold shadow-lg backdrop-blur-sm ${
+                          className={`rounded-md cursor-pointer px-2 py-1 text-[10px] font-semibold shadow-lg backdrop-blur-sm ${
                             isCover
                               ? "bg-rose-600/90 text-white"
                               : "bg-black/50 text-white"
@@ -458,7 +458,7 @@ export default function CatalogueSection({
                         <button
                           type="button"
                           onClick={() => removeImage(activeIdx, i)}
-                          className="rounded-full bg-black/60 p-1.5 text-white shadow-lg hover:bg-black/70 transition"
+                          className="rounded-full cursor-pointer bg-black/60 p-1.5 text-white shadow-lg hover:bg-black/70 transition"
                           aria-label="Remove image"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -477,14 +477,14 @@ export default function CatalogueSection({
                 <button
                   type="button"
                   onClick={startInAppCamera}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                 >
                   <Camera className="h-4 w-4" /> Open Camera
                 </button>
                 <button
                   type="button"
                   onClick={() => startManualUpload(false)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                 >
                   <ImageIcon className="h-4 w-4" /> Upload from device
                 </button>
@@ -505,7 +505,7 @@ export default function CatalogueSection({
 
       {/* Lots summary */}
       {lots.length > 0 && (
-        <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-3 shadow ring-1 ring-black/5 backdrop-blur">
+        <div className="rounded-2xl border border-gray-300/70 bg-white/70 p-3 shadow ring-1 ring-black/5 backdrop-blur">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {lots.map((lot, idx) => {
               const cover = lot.files[lot.coverIndex];
@@ -514,7 +514,7 @@ export default function CatalogueSection({
                 <div
                   key={lot.id}
                   className={`flex items-center gap-3 rounded-xl border p-2 bg-white/80 shadow-sm transition active:translate-y-0.5 ${
-                    idx === activeIdx ? "border-rose-300" : "border-gray-200"
+                    idx === activeIdx ? "border-rose-300" : "border-gray-300"
                   } hover:shadow-md`}
                 >
                   {cover ? (
@@ -542,14 +542,14 @@ export default function CatalogueSection({
                     <button
                       type="button"
                       onClick={() => setActiveIdx(idx)}
-                      className="rounded-lg border border-gray-200 bg-white/80 px-2.5 py-1.5 text-xs text-gray-700 shadow hover:bg-white transition"
+                      className="rounded-lg cursor-pointer border border-gray-300 bg-white/80 px-2.5 py-1.5 text-xs text-gray-700 shadow hover:bg-white transition"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => removeLot(idx)}
-                      className="rounded-lg border border-red-200 bg-white/80 px-2.5 py-1.5 text-xs text-red-600 shadow hover:bg-red-50 transition"
+                      className="rounded-lg cursor-pointer border border-red-300 bg-white/80 px-2.5 py-1.5 text-xs text-red-600 shadow hover:bg-red-50 transition"
                     >
                       Remove
                     </button>
@@ -607,7 +607,7 @@ export default function CatalogueSection({
                         o === "portrait" ? "landscape" : "portrait"
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
                     title="Toggle orientation"
                   >
                     <RotateCw className="h-3.5 w-3.5" />
@@ -640,7 +640,7 @@ export default function CatalogueSection({
                         }
                       } catch {}
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
                     title="Flash"
                   >
                     {flashOn ? (
@@ -665,7 +665,7 @@ export default function CatalogueSection({
                     step={0.1}
                     value={zoom}
                     onChange={(e) => setZoom(parseFloat(e.target.value))}
-                    className="flex-1 min-w-[140px] accent-rose-500"
+                    className="flex-1 min-w-[140px] accent-rose-500 cursor-pointer"
                   />
                   <ZoomIn className="h-4 w-4 text-white/90" />
                   <div className="ml-2 w-10 text-right text-[11px] text-white/90">
@@ -679,28 +679,28 @@ export default function CatalogueSection({
                     type="button"
                     onClick={goPrevLot}
                     disabled={activeIdx <= 0}
-                    className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-4 w-4" /> Prev
                   </button>
                   <button
                     type="button"
                     onClick={captureFromStream}
-                    className="inline-flex items-center gap-3 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-6 py-3 text-base font-semibold text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                    className="inline-flex cursor-pointer items-center gap-3 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-6 py-3 text-base font-semibold text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                   >
                     <Camera className="h-5 w-5" /> Capture
                   </button>
                   <button
                     type="button"
                     onClick={goNextLot}
-                    className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20"
                   >
                     Next <ChevronRight className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
                     onClick={stopInAppCamera}
-                    className="group relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] focus:outline-none"
+                    className="group relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] focus:outline-none cursor-pointer"
                     aria-label="Done"
                     title="Done"
                   >
