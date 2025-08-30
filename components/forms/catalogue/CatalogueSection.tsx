@@ -173,6 +173,7 @@ export default function CatalogueSection({
     try {
       setCameraError(null);
       setCameraOpen(true);
+      setZoom(1);
       if (activeIdx < 0) {
         // ensure there is a lot to receive captures
         createLot();
@@ -568,8 +569,12 @@ export default function CatalogueSection({
                     autoPlay
                     playsInline
                     muted
-                    className="absolute inset-0 h-full w-full object-cover"
-                    style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
+                    className="absolute inset-0 h-full w-full object-contain"
+                    style={
+                      zoom > 1
+                        ? { transform: `scale(${zoom})`, transformOrigin: "center" }
+                        : undefined
+                    }
                   />
                   {/* Simulated flash overlay */}
                   {isSimulatingFlash && (
