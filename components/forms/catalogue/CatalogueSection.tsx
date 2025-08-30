@@ -14,6 +14,8 @@ import {
   Zap,
   ZapOff,
   RotateCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -56,6 +58,7 @@ export default function CatalogueSection({
   );
   const [isTorchSupported, setIsTorchSupported] = useState<boolean>(false);
   const [isSimulatingFlash, setIsSimulatingFlash] = useState<boolean>(false);
+  const [videoAR, setVideoAR] = useState<number | null>(null);
 
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
@@ -76,9 +79,21 @@ export default function CatalogueSection({
       track?.applyConstraints({
         width: { ideal: orientation === "landscape" ? 1920 : 1080 },
         height: { ideal: orientation === "landscape" ? 1080 : 1920 },
-        aspectRatio: { ideal: orientation === "landscape" ? 16 / 9 : 9 / 16 },
       });
+      // Reset hardware lens zoom to 1x if supported so preview is not zoomed-in
+      const caps = (track as any)?.getCapabilities?.() || {};
+      const hasZoom =
+        typeof (caps as any).zoom !== "undefined" ||
+        typeof (caps as any)?.zoom?.min !== "undefined";
+      if (hasZoom) {
+        (track as any)?.applyConstraints?.({ advanced: [{ zoom: 1 }] });
+      }
     } catch {}
+  }, [orientation, cameraOpen]);
+
+  // Reset digital zoom when user toggles orientation
+  useEffect(() => {
+    if (cameraOpen) setZoom(1);
   }, [orientation, cameraOpen]);
 
   const totalImages = useMemo(
@@ -183,7 +198,6 @@ export default function CatalogueSection({
           facingMode: { ideal: "environment" },
           width: { ideal: orientation === "landscape" ? 1920 : 1080 },
           height: { ideal: orientation === "landscape" ? 1080 : 1920 },
-          aspectRatio: { ideal: orientation === "landscape" ? 16 / 9 : 9 / 16 },
         },
         audio: false,
       });
@@ -197,8 +211,17 @@ export default function CatalogueSection({
         const caps = (track as any)?.getCapabilities?.() || {};
         const torchSupported = !!caps.torch;
         setIsTorchSupported(torchSupported);
+        // Ensure lens zoom is 1x if device supports zoom
+        const zoomSupported =
+          typeof (caps as any).zoom !== "undefined" ||
+          typeof (caps as any)?.zoom?.min !== "undefined";
+        if (zoomSupported) {
+          await (track as any)?.applyConstraints?.({ advanced: [{ zoom: 1 }] });
+        }
         if (flashOn && torchSupported) {
-          await (track as any)?.applyConstraints?.({ advanced: [{ torch: true }] });
+          await (track as any)?.applyConstraints?.({
+            advanced: [{ torch: true }],
+          });
         }
       } catch {}
     } catch (err: any) {
@@ -546,9 +569,9 @@ export default function CatalogueSection({
       {cameraOpen &&
         createPortal(
           <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-hidden p-4 pt-6 sm:pt-8">
-            <div className="relative w-full sm:w-[92%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl max-h-[96vh] overflow-y-auto flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
+            <div className="relative w-full sm:w-[92%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-[92dvh] max-h-[92dvh] overflow-y-auto overscroll-contain flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
               {/* Sticky top bar so Close is always accessible */}
-              <div className="sticky top-0 z-20 flex items-center justify-end gap-2 rounded-t-2xl border-b border-white/10 bg-black/40 p-2 backdrop-blur-sm">
+              <div className="sticky top-[env(safe-area-inset-top)] z-20 flex items-center justify-end gap-2 rounded-t-2xl border-b border-white/10 bg-black/40 p-2 backdrop-blur-sm">
                 <button
                   type="button"
                   onClick={stopInAppCamera}
@@ -560,16 +583,35 @@ export default function CatalogueSection({
               </div>
 
               <div className="relative overflow-hidden">
-                <div className="relative w-full h-[72vh] sm:h-[78vh] overflow-hidden">
+                <div
+                  className="relative w-full max-h-[78vh] overflow-hidden"
+                  style={{
+                    aspectRatio: videoAR
+                      ? String(videoAR)
+                      : orientation === "landscape"
+                      ? "16 / 9"
+                      : "9 / 16",
+                  }}
+                >
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
                     muted
-                    className="absolute inset-0 h-full w-full object-contain"
+                    onLoadedMetadata={() => {
+                      const v = videoRef.current;
+                      if (!v) return;
+                      const w = v.videoWidth || 0;
+                      const h = v.videoHeight || 0;
+                      if (w > 0 && h > 0) setVideoAR(w / h);
+                    }}
+                    className="absolute inset-0 h-full w-full object-contain pointer-events-none"
                     style={
                       zoom > 1
-                        ? { transform: `scale(${zoom})`, transformOrigin: "center" }
+                        ? {
+                            transform: `scale(${zoom})`,
+                            transformOrigin: "center",
+                          }
                         : undefined
                     }
                   />
@@ -587,12 +629,16 @@ export default function CatalogueSection({
                 </div>
               )}
 
-              <div className="p-3">
+              <div className="p-3 pb-24">
                 {/* Top control row: orientation, counters, flash */}
                 <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
                   <button
                     type="button"
-                    onClick={() => setOrientation((o) => (o === "portrait" ? "landscape" : "portrait"))}
+                    onClick={() =>
+                      setOrientation((o) =>
+                        o === "portrait" ? "landscape" : "portrait"
+                      )
+                    }
                     className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
                     title="Toggle orientation"
                   >
@@ -604,7 +650,8 @@ export default function CatalogueSection({
                       Total: {totalImages}/{maxTotalImages}
                     </div>
                     <div>
-                      Lot {activeIdx + 1}: {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}
+                      Lot {activeIdx + 1}: {lots[activeIdx]?.files.length ?? 0}/
+                      {maxImagesPerLot}
                     </div>
                   </div>
                   <button
@@ -612,10 +659,13 @@ export default function CatalogueSection({
                     onClick={async () => {
                       setFlashOn((v) => !v);
                       try {
-                        const stream = videoRef.current?.srcObject as MediaStream | null;
+                        const stream = videoRef.current
+                          ?.srcObject as MediaStream | null;
                         const track = stream?.getVideoTracks?.()[0] as any;
                         if (track?.getCapabilities?.()?.torch) {
-                          await track.applyConstraints({ advanced: [{ torch: !flashOn }] });
+                          await track.applyConstraints({
+                            advanced: [{ torch: !flashOn }],
+                          });
                           setIsTorchSupported(true);
                         } else {
                           setIsTorchSupported(false);
@@ -647,38 +697,39 @@ export default function CatalogueSection({
                     className="flex-1 min-w-[140px] accent-rose-500"
                   />
                   <ZoomIn className="h-4 w-4 text-white/90" />
-                  <div className="ml-2 w-10 text-right text-[11px] text-white/90">{zoom.toFixed(1)}x</div>
+                  <div className="ml-2 w-10 text-right text-[11px] text-white/90">
+                    {zoom.toFixed(1)}x
+                  </div>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between">
+                <div
+                  className="flex-1"
+                  onTouchStart={(e) => e.stopPropagation()}
+                ></div>
+
+                <div className="sticky bottom-0 z-20 -mx-3 mt-3 flex items-center justify-between gap-2 border-t border-white/10 bg-black/40 px-3 py-2 backdrop-blur pb-[env(safe-area-inset-bottom)]">
                   <button
                     type="button"
                     onClick={goPrevLot}
                     disabled={activeIdx <= 0}
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20 disabled:opacity-50"
                   >
-                    Prev Lot
+                    <ChevronLeft className="h-4 w-4" /> Prev
                   </button>
-
                   <button
                     type="button"
                     onClick={captureFromStream}
-                    className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-xl active:scale-95"
-                    aria-label="Capture photo"
+                    className="inline-flex items-center gap-3 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-6 py-3 text-base font-semibold text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                   >
-                    <span className="absolute inset-1 rounded-full border-4 border-black/30"></span>
+                    <Camera className="h-5 w-5" /> Capture
                   </button>
-
                   <button
                     type="button"
                     onClick={goNextLot}
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.5)] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)]"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20"
                   >
-                    Next Lot
+                    Next <ChevronRight className="h-4 w-4" />
                   </button>
-                </div>
-
-                <div className="mt-4 flex items-center justify-center">
                   <button
                     type="button"
                     onClick={stopInAppCamera}
