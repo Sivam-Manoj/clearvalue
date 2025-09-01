@@ -36,8 +36,13 @@ export type AuthUser = {
   email: string;
   username?: string;
   companyName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  companyAddress?: string;
   isVerified?: boolean;
   authProvider?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export const AuthService = {

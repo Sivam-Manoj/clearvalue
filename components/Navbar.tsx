@@ -10,7 +10,8 @@ import {
   Menu,
   X,
 } from "lucide-react";
-
+import Image from "next/image";
+import clearvalueLogo from "@/public/clearvalueIcon.png";
 type NavItem = {
   label: string;
   href: string;
@@ -68,9 +69,8 @@ export default function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-rose-600 to-rose-500 text-white font-semibold shadow-sm ring-1 ring-rose-200 transition-transform duration-300 hover:scale-105">
-            CV
-          </div>
+          <Image src={clearvalueLogo} alt="Logo" width={100} height={100} />
+
           <span className="text-lg font-semibold tracking-tight text-rose-700">
             ClearValue
           </span>
@@ -90,7 +90,10 @@ export default function Navbar() {
                   : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
               )}
             >
-              {item.icon({ className: "h-4 w-4 transition-transform duration-200 group-hover:scale-110" })}
+              {item.icon({
+                className:
+                  "h-4 w-4 transition-transform duration-200 group-hover:scale-110",
+              })}
               <span>{item.label}</span>
             </Link>
           ))}
@@ -116,7 +119,9 @@ export default function Navbar() {
         <div
           className={classNames(
             "fixed inset-0 z-40 bg-black/50 transition-opacity duration-300",
-            open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+            open
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none"
           )}
           onClick={() => setOpen(false)}
           aria-hidden="true"
@@ -135,7 +140,9 @@ export default function Navbar() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-600 to-rose-500 text-white font-semibold shadow-sm ring-1 ring-rose-200">
                 CV
               </div>
-              <span className="text-sm font-semibold tracking-tight text-rose-700">ClearValue</span>
+              <span className="text-sm font-semibold tracking-tight text-rose-700">
+                ClearValue
+              </span>
             </div>
             <button
               type="button"
@@ -160,7 +167,10 @@ export default function Navbar() {
                     : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
                 )}
               >
-                {item.icon({ className: "h-5 w-5 transition-transform duration-200 group-hover:scale-110" })}
+                {item.icon({
+                  className:
+                    "h-5 w-5 transition-transform duration-200 group-hover:scale-110",
+                })}
                 <span>{item.label}</span>
               </Link>
             ))}

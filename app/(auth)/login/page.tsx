@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import LoginForm from "@/components/auth/LoginForm";
+import Image from "next/image";
+import clearvalueLogo from "@/public/clearvalueIcon.png";
 
 export default function Page() {
   return (
@@ -47,7 +49,12 @@ export default function Page() {
               {/* Illustration block */}
               <div className="relative">
                 <div className="mx-auto flex h-40 w-full items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-100 via-rose-50 to-white ring-1 ring-rose-100 shadow-inner sm:h-48">
-                  <div className="h-12 w-12 rounded-2xl bg-rose-500 shadow-lg shadow-rose-500/30" />
+                  <Image
+                    src={clearvalueLogo}
+                    alt="Logo"
+                    width={400}
+                    height={400}
+                  />
                 </div>
                 <ul className="mt-6 space-y-3 text-sm text-rose-900/90">
                   <li className="flex items-center gap-2">

@@ -2,12 +2,14 @@
 
 import { useAuthContext } from "@/context/AuthContext";
 import API from "@/lib/api";
+import { UserService } from "@/services/user";
+import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { Trash2, User, Loader2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function SettingsPage() {
-  const { user, logout } = useAuthContext();
+  const { user, logout, refresh } = useAuthContext();
   const router = useRouter();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
@@ -15,6 +17,27 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletePassword, setDeletePassword] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    username: (user as any)?.username || "",
+    companyName: (user as any)?.companyName || "",
+    companyAddress: (user as any)?.companyAddress || "",
+    contactEmail: (user as any)?.contactEmail || "",
+    contactPhone: (user as any)?.contactPhone || "",
+  });
+
+  useEffect(() => {
+    if (!isEditing) {
+      setForm({
+        username: (user as any)?.username || "",
+        companyName: (user as any)?.companyName || "",
+        companyAddress: (user as any)?.companyAddress || "",
+        contactEmail: (user as any)?.contactEmail || "",
+        contactPhone: (user as any)?.contactPhone || "",
+      });
+    }
+  }, [user, isEditing]);
 
   const initial = useMemo(() => {
     const source =
@@ -75,6 +98,31 @@ export default function SettingsPage() {
     }
   };
 
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await UserService.update({
+        username: form.username || undefined,
+        companyName: form.companyName || undefined,
+        companyAddress: form.companyAddress || undefined,
+        contactEmail: form.contactEmail || undefined,
+        contactPhone: form.contactPhone || undefined,
+      });
+      toast.success("Profile updated");
+      setIsEditing(false);
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="relative isolate">
       <div
@@ -93,81 +141,161 @@ export default function SettingsPage() {
 
         {/* Profile */}
         <section className="rounded-2xl bg-white ring-1 ring-rose-100 p-5 shadow-[0_10px_30px_rgba(244,63,94,0.08)]">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-lg font-semibold text-rose-700 ring-1 ring-rose-200 shadow-inner">
-              {initial}
-            </div>
-            <div>
-              <div className="flex items-center gap-2 text-rose-900">
-                <User className="h-4 w-4 text-rose-500" />
-                <span className="text-sm font-medium">Profile</span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-lg font-semibold text-rose-700 ring-1 ring-rose-200 shadow-inner">
+                {initial}
               </div>
-              <p className="text-sm text-rose-700/70">
-                Your account information
-              </p>
+              <div>
+                <div className="flex items-center gap-2 text-rose-900">
+                  <User className="h-4 w-4 text-rose-500" />
+                  <span className="text-sm font-medium">Profile</span>
+                </div>
+                <p className="text-sm text-rose-700/70">Your account information</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px]"
+                >
+                  Cancel
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px]"
+                >
+                  Edit Profile
+                </button>
+              )}
             </div>
           </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-              <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                Username
-              </p>
-              <p className="mt-1 text-sm text-rose-900">
-                {(user as any)?.username ?? "-"}
-              </p>
-            </div>
-            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-              <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                Email
-              </p>
-              <p className="mt-1 text-sm text-rose-900">{user?.email ?? "-"}</p>
-            </div>
-            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-              <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                Company Name
-              </p>
-              <p className="mt-1 text-sm text-rose-900">
-                {(user as any)?.companyName ?? "-"}
-              </p>
-            </div>
-            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-              <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                Company Address
-              </p>
-              <p className="mt-1 text-sm text-rose-900">
-                {(user as any)?.companyAddress ?? "-"}
-              </p>
-            </div>
-            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-              <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                Contact Email
-              </p>
-              <p className="mt-1 text-sm text-rose-900">
-                {(user as any)?.contactEmail ?? "-"}
-              </p>
-            </div>
-            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-              <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                Contact Phone
-              </p>
-              <p className="mt-1 text-sm text-rose-900">
-                {(user as any)?.contactPhone ?? "-"}
-              </p>
-            </div>
 
-            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-              <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                Member Since
-              </p>
-              <p className="mt-1 text-sm text-rose-900">{memberSince}</p>
+          {!isEditing ? (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">Full Name</p>
+                <p className="mt-1 text-sm text-rose-900">{(user as any)?.username ?? "-"}</p>
+              </div>
+              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">Email</p>
+                <p className="mt-1 text-sm text-rose-900">{user?.email ?? "-"}</p>
+              </div>
+              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">Company Name</p>
+                <p className="mt-1 text-sm text-rose-900">{(user as any)?.companyName ?? "-"}</p>
+              </div>
+              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">Company Address</p>
+                <p className="mt-1 text-sm text-rose-900">{(user as any)?.companyAddress ?? "-"}</p>
+              </div>
+              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">Contact Email</p>
+                <p className="mt-1 text-sm text-rose-900">{(user as any)?.contactEmail ?? "-"}</p>
+              </div>
+              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">Contact Phone</p>
+                <p className="mt-1 text-sm text-rose-900">{(user as any)?.contactPhone ?? "-"}</p>
+              </div>
+              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">Member Since</p>
+                <p className="mt-1 text-sm text-rose-900">{memberSince}</p>
+              </div>
+              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">Last Updated</p>
+                <p className="mt-1 text-sm text-rose-900">{lastUpdated}</p>
+              </div>
             </div>
-            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-              <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                Last Updated
-              </p>
-              <p className="mt-1 text-sm text-rose-900">{lastUpdated}</p>
+          ) : (
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium text-rose-700">Username</label>
+                <input
+                  name="username"
+                  value={form.username}
+                  onChange={onChange}
+                  placeholder="Your username"
+                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-rose-700">Email</label>
+                <input
+                  value={user?.email || ''}
+                  readOnly
+                  className="mt-1 w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-rose-700">Company Name</label>
+                <input
+                  name="companyName"
+                  value={form.companyName}
+                  onChange={onChange}
+                  placeholder="Company name"
+                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-rose-700">Company Address</label>
+                <input
+                  name="companyAddress"
+                  value={form.companyAddress}
+                  onChange={onChange}
+                  placeholder="Company address"
+                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-rose-700">Contact Email</label>
+                <input
+                  name="contactEmail"
+                  value={form.contactEmail}
+                  onChange={onChange}
+                  placeholder="Contact email"
+                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-rose-700">Contact Phone</label>
+                <input
+                  name="contactPhone"
+                  value={form.contactPhone}
+                  onChange={onChange}
+                  placeholder="Contact phone"
+                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+              <div className="sm:col-span-2 mt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-50"
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow-md hover:bg-rose-500 active:translate-y-[1px] disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    <>Save Changes</>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* Session */}

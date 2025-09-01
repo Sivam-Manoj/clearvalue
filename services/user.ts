@@ -1,9 +1,22 @@
 import API from '@/lib/api';
 import type { AuthUser } from './auth';
 
+export type UpdateUserPayload = {
+  username?: string;
+  companyName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  companyAddress?: string;
+};
+
 export const UserService = {
   async getMe(): Promise<AuthUser> {
     const { data } = await API.get<AuthUser>('/user/me');
+    return data;
+  },
+
+  async update(payload: UpdateUserPayload): Promise<AuthUser> {
+    const { data } = await API.patch<AuthUser>('/user', payload);
     return data;
   },
 
