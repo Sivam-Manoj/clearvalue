@@ -11,7 +11,6 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import clearvalueLogo from "@/public/clearvalueIcon.png";
 type NavItem = {
   label: string;
   href: string;
@@ -69,7 +68,7 @@ export default function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <Image src={clearvalueLogo} alt="Logo" width={100} height={100} />
+          <Image src="/clearvalueIcon.png" alt="Logo" width={100} height={100} />
 
           <span className="text-lg font-semibold tracking-tight text-rose-700">
             ClearValue

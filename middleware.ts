@@ -17,6 +17,11 @@ export function middleware(request: NextRequest) {
   const { nextUrl, cookies } = request;
   const pathname = nextUrl.pathname;
 
+  // Allow PNG assets (e.g., from public/) to pass through
+  if (pathname.endsWith(".png")) {
+    return NextResponse.next();
+  }
+
   const hasSession = Boolean(cookies.get(AUTH_COOKIE)?.value);
 
   // Protect all non-auth pages (including "/")
