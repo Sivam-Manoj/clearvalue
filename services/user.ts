@@ -1,5 +1,5 @@
-import API from '@/lib/api';
-import type { AuthUser } from './auth';
+import API from "@/lib/api";
+import type { AuthUser } from "./auth";
 
 export type UpdateUserPayload = {
   username?: string;
@@ -11,22 +11,24 @@ export type UpdateUserPayload = {
 
 export const UserService = {
   async getMe(): Promise<AuthUser> {
-    const { data } = await API.get<AuthUser>('/user/me');
+    const { data } = await API.get<AuthUser>("/user/me");
     return data;
   },
 
   async update(payload: UpdateUserPayload): Promise<AuthUser> {
-    const { data } = await API.patch<AuthUser>('/user', payload);
+    const { data } = await API.put<AuthUser>("/user", payload);
     return data;
   },
 
   async deleteAccount(password?: string): Promise<{ message: string }> {
     const body = password ? { password } : undefined;
     if (body) {
-      const { data } = await API.delete<{ message: string }>('/user', { data: body });
+      const { data } = await API.delete<{ message: string }>("/user", {
+        data: body,
+      });
       return data;
     }
-    const { data } = await API.delete<{ message: string }>('/user');
+    const { data } = await API.delete<{ message: string }>("/user");
     return data;
   },
 };
