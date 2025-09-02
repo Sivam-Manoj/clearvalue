@@ -198,7 +198,7 @@ export default function ReportsPage() {
       setDownloadingId(id);
       const { blob, filename } = await ReportsService.downloadReport(id);
       const r = reports.find((x) => x._id === id);
-      const fileName = filename || r?.filename || `report-${id}.pdf`;
+      const fileName = filename || r?.filename || `report-${id}.docx`;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

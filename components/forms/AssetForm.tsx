@@ -84,14 +84,14 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     client_upload: 0.25,
     r2_upload: 0.15,
     ai_analysis: 0.35,
-    generate_pdf: 0.2,
+    generate_docx: 0.2,
     finalize: 0.05,
   } as const;
   const STEPS = [
     { key: "client_upload", label: "Uploading images" },
     { key: "r2_upload", label: "Storing images" },
     { key: "ai_analysis", label: "Analyzing with AI" },
-    { key: "generate_pdf", label: "Generating PDF" },
+    { key: "generate_docx", label: "Generating DOCX" },
     { key: "finalize", label: "Finalizing" },
   ] as const;
   const [progressPercent, setProgressPercent] = useState(0);
@@ -126,12 +126,12 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         next.client_upload = "done";
         next.r2_upload = "done";
         next.ai_analysis = "done";
-        next.generate_pdf = "active";
+        next.generate_docx = "active";
       } else if (p < 100) {
         next.client_upload = "done";
         next.r2_upload = "done";
         next.ai_analysis = "done";
-        next.generate_pdf = "done";
+        next.generate_docx = "done";
         next.finalize = "active";
       } else {
         for (const s of STEPS) next[s.key] = "done";
@@ -362,7 +362,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         client_upload: "active",
         r2_upload: "pending",
         ai_analysis: "pending",
-        generate_pdf: "pending",
+        generate_docx: "pending",
         finalize: "pending",
       }));
       pollStartedRef.current = false;
@@ -530,7 +530,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   {progressPhase === "upload"
                     ? "Uploading images..."
                     : progressPhase === "processing"
-                    ? "Analyzing images and generating PDF..."
+                    ? "Analyzing images and generating DOCX..."
                     : progressPhase === "done"
                     ? "Finalizing..."
                     : "Starting..."}

@@ -117,7 +117,9 @@ export default function SettingsPage() {
       setIsEditing(false);
       await refresh();
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Failed to update profile");
+      toast.error(
+        e?.response?.data?.message || e?.message || "Failed to update profile"
+      );
     } finally {
       setSaving(false);
     }
@@ -151,7 +153,9 @@ export default function SettingsPage() {
                   <User className="h-4 w-4 text-rose-500" />
                   <span className="text-sm font-medium">Profile</span>
                 </div>
-                <p className="text-sm text-rose-700/70">Your account information</p>
+                <p className="text-sm text-rose-700/70">
+                  Your account information
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -159,7 +163,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px]"
+                  className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white ring-1 ring-red-800 shadow-sm transition-all hover:bg-red-500 hover:shadow-md active:translate-y-[1px]"
                 >
                   Cancel
                 </button>
@@ -167,7 +171,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px]"
+                  className="rounded-xl bg-green-600 px-3 py-2 text-sm font-medium text-white ring-1 ring-green-800 shadow-sm transition-all hover:bg-green-500 hover:shadow-md active:translate-y-[1px]"
                 >
                   Edit Profile
                 </button>
@@ -178,42 +182,72 @@ export default function SettingsPage() {
           {!isEditing ? (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">Full Name</p>
-                <p className="mt-1 text-sm text-rose-900">{(user as any)?.username ?? "-"}</p>
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                  Full Name
+                </p>
+                <p className="mt-1 text-sm text-rose-900">
+                  {(user as any)?.username ?? "-"}
+                </p>
               </div>
               <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">Email</p>
-                <p className="mt-1 text-sm text-rose-900">{user?.email ?? "-"}</p>
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                  Email
+                </p>
+                <p className="mt-1 text-sm text-rose-900">
+                  {user?.email ?? "-"}
+                </p>
               </div>
               <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">Company Name</p>
-                <p className="mt-1 text-sm text-rose-900">{(user as any)?.companyName ?? "-"}</p>
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                  Company Name
+                </p>
+                <p className="mt-1 text-sm text-rose-900">
+                  {(user as any)?.companyName ?? "-"}
+                </p>
               </div>
               <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">Company Address</p>
-                <p className="mt-1 text-sm text-rose-900">{(user as any)?.companyAddress ?? "-"}</p>
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                  Company Address
+                </p>
+                <p className="mt-1 text-sm text-rose-900">
+                  {(user as any)?.companyAddress ?? "-"}
+                </p>
               </div>
               <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">Contact Email</p>
-                <p className="mt-1 text-sm text-rose-900">{(user as any)?.contactEmail ?? "-"}</p>
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                  Contact Email
+                </p>
+                <p className="mt-1 text-sm text-rose-900">
+                  {(user as any)?.contactEmail ?? "-"}
+                </p>
               </div>
               <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">Contact Phone</p>
-                <p className="mt-1 text-sm text-rose-900">{(user as any)?.contactPhone ?? "-"}</p>
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                  Contact Phone
+                </p>
+                <p className="mt-1 text-sm text-rose-900">
+                  {(user as any)?.contactPhone ?? "-"}
+                </p>
               </div>
               <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">Member Since</p>
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                  Member Since
+                </p>
                 <p className="mt-1 text-sm text-rose-900">{memberSince}</p>
               </div>
               <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">Last Updated</p>
+                <p className="text-[10px] uppercase tracking-wide text-rose-600">
+                  Last Updated
+                </p>
                 <p className="mt-1 text-sm text-rose-900">{lastUpdated}</p>
               </div>
             </div>
           ) : (
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-medium text-rose-700">Username</label>
+                <label className="block text-xs font-medium text-rose-700">
+                  Username
+                </label>
                 <input
                   name="username"
                   value={form.username}
@@ -223,15 +257,19 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-rose-700">Email</label>
+                <label className="block text-xs font-medium text-rose-700">
+                  Email
+                </label>
                 <input
-                  value={user?.email || ''}
+                  value={user?.email || ""}
                   readOnly
                   className="mt-1 w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-rose-700">Company Name</label>
+                <label className="block text-xs font-medium text-rose-700">
+                  Company Name
+                </label>
                 <input
                   name="companyName"
                   value={form.companyName}
@@ -241,7 +279,9 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-rose-700">Company Address</label>
+                <label className="block text-xs font-medium text-rose-700">
+                  Company Address
+                </label>
                 <input
                   name="companyAddress"
                   value={form.companyAddress}
@@ -251,7 +291,9 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-rose-700">Contact Email</label>
+                <label className="block text-xs font-medium text-rose-700">
+                  Contact Email
+                </label>
                 <input
                   name="contactEmail"
                   value={form.contactEmail}
@@ -261,7 +303,9 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-rose-700">Contact Phone</label>
+                <label className="block text-xs font-medium text-rose-700">
+                  Contact Phone
+                </label>
                 <input
                   name="contactPhone"
                   value={form.contactPhone}
@@ -274,7 +318,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-50"
+                  className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white ring-1 ring-red-800 shadow-sm transition-all hover:bg-red-500 hover:shadow-md active:translate-y-[1px] disabled:opacity-50"
                   disabled={saving}
                 >
                   Cancel
@@ -283,7 +327,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow-md hover:bg-rose-500 active:translate-y-[1px] disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-3 py-2 text-sm font-medium text-white shadow-md hover:bg-green-500 active:translate-y-[1px] disabled:opacity-50"
                 >
                   {saving ? (
                     <>

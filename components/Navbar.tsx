@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+
 type NavItem = {
   label: string;
   href: string;
@@ -68,7 +69,12 @@ export default function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <Image src="/clearvalueIcon.png" alt="Logo" width={100} height={100} />
+          <Image
+            src="/clearvalueIcon.png"
+            alt="Logo"
+            width={100}
+            height={100}
+          />
 
           <span className="text-lg font-semibold tracking-tight text-rose-700">
             ClearValue
@@ -136,9 +142,12 @@ export default function Navbar() {
         >
           <div className="px-4 py-3 flex items-center justify-between border-b border-rose-100">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-600 to-rose-500 text-white font-semibold shadow-sm ring-1 ring-rose-200">
-                CV
-              </div>
+              <Image
+                src="/clearvalueIcon.png"
+                alt="Logo"
+                width={100}
+                height={100}
+              />
               <span className="text-sm font-semibold tracking-tight text-rose-700">
                 ClearValue
               </span>
