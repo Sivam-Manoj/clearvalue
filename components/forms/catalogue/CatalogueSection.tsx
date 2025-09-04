@@ -690,10 +690,10 @@ export default function CatalogueSection({
                     type="button"
                     onClick={goPrevLot}
                     disabled={activeIdx <= 0}
-                    className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                     aria-label="Previous lot"
                   >
-                    <ChevronLeft className="h-4 w-4 text-blue-500" />{" "}
+                    <ChevronLeft className="h-4 w-4 text-white" />{" "}
                     <span className="hidden sm:inline">Prev</span>
                   </button>
                   <button
@@ -701,16 +701,17 @@ export default function CatalogueSection({
                     onClick={captureFromStream}
                     className="inline-flex cursor-pointer items-center gap-3 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-6 py-3 text-base font-semibold text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                   >
-                    <Camera className="h-5 w-5 text-red-500" /> Capture
+                    <Camera className="h-5 w-5 text-white" />{" "}
+                    Capture
                   </button>
                   <button
                     type="button"
                     onClick={goNextLot}
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-green-500 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20"
                     aria-label="Next lot"
                   >
                     <span className="hidden sm:inline">Next</span>{" "}
-                    <ChevronRight className="h-4 w-4 text-green-500" />
+                    <ChevronRight className="h-4 w-4 text-white" />
                   </button>
                   <button
                     type="button"

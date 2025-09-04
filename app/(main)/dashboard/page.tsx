@@ -14,6 +14,9 @@ import {
   Car,
   Package,
   DollarSign,
+  Calendar,
+  Clock,
+  ChevronRight,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -75,6 +78,10 @@ export default function DashboardPage() {
   const [recentLoading, setRecentLoading] = useState(true);
   const [recentError, setRecentError] = useState<string | null>(null);
 
+  // Live date/time for header card
+  const [now, setNow] = useState<Date>(new Date());
+  const [mounted, setMounted] = useState(false);
+
   const fetchRecent = useCallback(async () => {
     setRecentLoading(true);
     setRecentError(null);
@@ -129,22 +136,112 @@ export default function DashboardPage() {
     };
   }, [fetchRecent]);
 
+  // Tick the clock every second
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Formatted date/time strings
+  const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(
+    now
+  );
+  const dateFull = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(now);
+  const timeStr = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  }).format(now);
+  const tzShort =
+    new Intl.DateTimeFormat("en-US", { timeZoneName: "short" })
+      .formatToParts(now)
+      .find((p) => p.type === "timeZoneName")?.value || "";
+
+  // Helper: relative time like "3h ago"
+  const timeAgo = (input: Date) => {
+    const divisors: [Intl.RelativeTimeFormatUnit, number][] = [
+      ["year", 1000 * 60 * 60 * 24 * 365],
+      ["month", 1000 * 60 * 60 * 24 * 30],
+      ["week", 1000 * 60 * 60 * 24 * 7],
+      ["day", 1000 * 60 * 60 * 24],
+      ["hour", 1000 * 60 * 60],
+      ["minute", 1000 * 60],
+      ["second", 1000],
+    ];
+    const diff = input.getTime() - Date.now();
+    const rtf = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
+    for (const [unit, ms] of divisors) {
+      if (Math.abs(diff) >= ms || unit === "second") {
+        return rtf.format(Math.round(diff / ms), unit);
+      }
+    }
+    return "just now";
+  };
+
+  // Dynamic greeting based on current hour
+  const hour = now.getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const greetingText = mounted ? greeting : "Welcome";
+
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm text-gray-600">
-          Hello {user?.username || user?.email || "there"}
-        </p>
-        <h1 className="mt-1 text-3xl font-extrabold tracking-tight bg-gradient-to-r from-rose-600 to-red-500 bg-clip-text text-transparent drop-shadow-sm">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Overview of your ClearValue activity and insights.
-        </p>
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-gray-600">
+            {greetingText},{" "}
+            <span className="font-medium">
+              {user?.username || user?.email || "there"}
+            </span>
+          </p>
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight bg-gradient-to-r from-rose-600 to-red-500 bg-clip-text text-transparent drop-shadow-sm">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Overview of your ClearValue activity and insights.
+          </p>
+        </div>
+
+        {/* Date/Time card */}
+        <div suppressHydrationWarning className="group relative overflow-hidden rounded-2xl border border-rose-200 bg-white/70 px-4 py-3 shadow ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(244,63,94,0.18)]">
+          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-gradient-to-br from-rose-500/20 to-red-500/20 blur-2xl" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 ring-1 ring-rose-200">
+                <Calendar className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-gray-500">{mounted ? dayName : "—"}</p>
+                <p className="text-sm font-medium text-gray-900 leading-tight">
+                  {mounted ? dateFull : "—"}
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-flex items-center rounded-full bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 text-[10px] font-semibold">
+              Local Time
+            </span>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 ring-1 ring-rose-200">
+              <Clock className="h-4 w-4" />
+            </div>
+            <p className="text-base font-semibold text-gray-900">{mounted ? timeStr : "—"}</p>
+            <span className="text-xs text-gray-500">{mounted ? tzShort : ""}</span>
+          </div>
+        </div>
       </div>
 
       {/* Quick actions */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {/* Real Estate (emerald) */}
         <button
           type="button"
@@ -152,13 +249,14 @@ export default function DashboardPage() {
             setDrawerType("real-estate");
             setDrawerOpen(true);
           }}
+          aria-label="Create Real Estate report"
           className="group flex items-center justify-between rounded-2xl border border-emerald-800 bg-emerald-600 px-4 py-3 text-left shadow-[0_10px_30px_rgba(16,185,129,0.12)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(16,185,129,0.25)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(16,185,129,0.35)] cursor-pointer"
         >
           <div>
             <p className="text-xl font-bold text-white">Real Estate</p>
             <p className="text-xs text-white">Create a new property record</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 ring-1 ring-emerald-800 transition-colors duration-300 group-hover:bg-emerald-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 ring-1 ring-emerald-800 transition duration-300 group-hover:bg-emerald-500/15 group-hover:scale-110">
             <Building2 className="h-5 w-5" />
           </div>
         </button>
@@ -170,13 +268,14 @@ export default function DashboardPage() {
             setDrawerType("salvage");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-2xl border border-red-800 bg-red-600 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(245,158,11,0.4)] cursor-pointer"
+          aria-label="Create Salvage report"
+          className="group flex items-center justify-between rounded-2xl border border-amber-800 bg-amber-600 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(245,158,11,0.4)] cursor-pointer"
         >
           <div>
             <p className="text-xl font-bold text-white">Salvage</p>
             <p className="text-xs text-white">Start a new salvage entry</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600 ring-1 ring-red-800 transition-colors duration-300 group-hover:bg-red-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-600 ring-1 ring-amber-800 transition duration-300 group-hover:bg-amber-500/15 group-hover:scale-110">
             <Car className="h-5 w-5" />
           </div>
         </button>
@@ -188,13 +287,14 @@ export default function DashboardPage() {
             setDrawerType("asset");
             setDrawerOpen(true);
           }}
-          className="group flex items-center justify-between rounded-2xl border border-sky-600 bg-sky-600 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(14,165,233,0.3)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(14,165,233,0.4)] cursor-pointer"
+          aria-label="Create Asset report"
+          className="group flex items-center justify-between rounded-2xl border border-sky-800 bg-sky-600 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(14,165,233,0.3)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(14,165,233,0.4)] cursor-pointer"
         >
           <div>
             <p className="text-xl font-bold text-white">Asset</p>
             <p className="text-xs text-white">Add a general asset</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-600 ring-1 ring-sky-800 transition-colors duration-300 group-hover:bg-sky-500/15">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-600 ring-1 ring-sky-800 transition duration-300 group-hover:bg-sky-500/15 group-hover:scale-110">
             <Package className="h-5 w-5" />
           </div>
         </button>
@@ -238,7 +338,7 @@ export default function DashboardPage() {
                     }).format(stats?.totalFairMarketValue ?? 0)}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 ring-1 ring-rose-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 ring-1 ring-rose-800">
                   <DollarSign className="h-5 w-5" />
                 </div>
               </div>
@@ -248,7 +348,18 @@ export default function DashboardPage() {
       </div>
 
       <div className="rounded-2xl border border-rose-200 bg-white/90 p-4 shadow ring-1 ring-black/5 backdrop-blur">
-        <h2 className="text-lg font-medium text-gray-900">Recent Reports</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium text-gray-900">Recent Reports</h2>
+          <button
+            type="button"
+            onClick={() => router.push("/reports")}
+            className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-all hover:bg-blue-100 hover:shadow-sm"
+            title="View all reports"
+          >
+            View all
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
         {recentLoading ? (
           <div className="mt-3 space-y-2">
             <div className="h-10 w-full animate-pulse rounded bg-rose-50" />
@@ -260,9 +371,20 @@ export default function DashboardPage() {
             {recentError}
           </div>
         ) : recent.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-600">
-            No recent reports. Create one to see it here.
-          </p>
+          <div className="mt-2 text-sm text-gray-600">
+            <p>No recent reports. Create one to see it here.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setDrawerType("real-estate");
+                setDrawerOpen(true);
+              }}
+              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800 hover:underline"
+            >
+              Create your first report
+              <ChevronRight className="h-3 w-3" />
+            </button>
+          </div>
         ) : (
           <ul className="mt-3 divide-y divide-rose-200">
             {recent.map((r) => (
@@ -276,12 +398,25 @@ export default function DashboardPage() {
                     <p className="text-sm font-medium text-gray-900 line-clamp-1">
                       {r.address}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(r.createdAt).toLocaleDateString()}
+                    <p
+                      suppressHydrationWarning
+                      className="text-xs text-gray-500"
+                      title={mounted ? new Date(r.createdAt).toLocaleString() : ""}
+                    >
+                      {mounted ? new Date(r.createdAt).toLocaleDateString("en-US") : "—"}
+                      {mounted && (
+                        <>
+                          {" · "}
+                          {timeAgo(new Date(r.createdAt))}
+                        </>
+                      )}
                     </p>
                   </div>
-                  <div className="text-sm text-rose-700">
-                    {r.fairMarketValue}
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 text-xs font-semibold">
+                      {r.fairMarketValue ?? 0}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-rose-400 transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </button>
               </li>
