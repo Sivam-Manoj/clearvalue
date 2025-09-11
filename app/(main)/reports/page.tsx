@@ -410,16 +410,45 @@ export default function ReportsPage() {
                               <div className="text-[11px] text-slate-900">
                                 {new Date(r.createdAt).toLocaleDateString()}
                               </div>
-                              <span className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm bg-emerald-50 text-emerald-700 ring-emerald-200">
-                                {String(r.fairMarketValue ?? "")}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm bg-emerald-50 text-emerald-700 ring-emerald-200">
+                                  {String(r.fairMarketValue ?? "")}
+                                </span>
+                                {(() => {
+                                  const st = (r as any).approvalStatus as 'pending' | 'approved' | 'rejected' | undefined;
+                                  const label = st === 'approved' ? 'Approved' : st === 'rejected' ? 'Rejected' : 'Waiting approval';
+                                  const cls = st === 'approved'
+                                    ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                                    : st === 'rejected'
+                                    ? 'bg-rose-50 text-rose-700 ring-rose-200'
+                                    : 'bg-amber-50 text-amber-700 ring-amber-200';
+                                  return (
+                                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm ${cls}`}>
+                                      {label}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                             </div>
+                            {((r as any).approvalStatus === 'rejected' && (r as any).approvalNote) ? (
+                              <div className="mt-2 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2">
+                                Reason: {(r as any).approvalNote}
+                              </div>
+                            ) : null}
                             <div className="mt-3 flex gap-2">
                               <button
                                 onClick={() => handleDownload(r._id)}
-                                disabled={downloadingId === r._id}
+                                disabled={
+                                  downloadingId === r._id ||
+                                  (!!(r as any).approvalStatus && (r as any).approvalStatus !== 'approved')
+                                }
                                 className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
-                                title="Download"
+                                title={(() => {
+                                  const st = (r as any).approvalStatus as string | undefined;
+                                  if (st === 'pending') return 'Waiting for approval';
+                                  if (st === 'rejected') return 'Rejected';
+                                  return 'Download';
+                                })()}
                               >
                                 <Download className="h-3.5 w-3.5" />
                                 {downloadingId === r._id ? "Downloading..." : "Download"}
@@ -470,6 +499,12 @@ export default function ReportsPage() {
                             </th>
                             <th
                               scope="col"
+                              className="px-3 py-2 text-left text-[11px] font-semibold text-slate-700 uppercase tracking-wide"
+                            >
+                              Status
+                            </th>
+                            <th
+                              scope="col"
                               className="px-3 py-2 text-right text-[11px] font-semibold text-slate-700 uppercase tracking-wide"
                             >
                               Actions
@@ -515,12 +550,36 @@ export default function ReportsPage() {
                                   </span>
                                 </td>
                                 <td className="px-3 py-2">
+                                  {(() => {
+                                    const st = (r as any).approvalStatus as 'pending' | 'approved' | 'rejected' | undefined;
+                                    const label = st === 'approved' ? 'Approved' : st === 'rejected' ? 'Rejected' : 'Waiting approval';
+                                    const cls = st === 'approved'
+                                      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                                      : st === 'rejected'
+                                      ? 'bg-rose-50 text-rose-700 ring-rose-200'
+                                      : 'bg-amber-50 text-amber-700 ring-amber-200';
+                                    return (
+                                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm ${cls}`}>
+                                        {label}
+                                      </span>
+                                    );
+                                  })()}
+                                </td>
+                                <td className="px-3 py-2">
                                   <div className="flex justify-end gap-2">
                                     <button
                                       onClick={() => handleDownload(r._id)}
-                                      disabled={downloadingId === r._id}
+                                      disabled={
+                                        downloadingId === r._id ||
+                                        (!!(r as any).approvalStatus && (r as any).approvalStatus !== 'approved')
+                                      }
                                       className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
-                                      title="Download"
+                                      title={(() => {
+                                        const st = (r as any).approvalStatus as string | undefined;
+                                        if (st === 'pending') return 'Waiting for approval';
+                                        if (st === 'rejected') return 'Rejected';
+                                        return 'Download';
+                                      })()}
                                     >
                                       <Download className="h-3.5 w-3.5" />
                                       {downloadingId === r._id

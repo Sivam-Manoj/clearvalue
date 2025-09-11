@@ -12,6 +12,10 @@ export type PdfReport = {
   fairMarketValue: string;
   createdAt: string; // ISO string
   type?: string;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  approvalNote?: string;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
 };
 
 export const ReportsService = {

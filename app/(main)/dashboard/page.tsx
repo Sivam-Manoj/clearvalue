@@ -229,7 +229,9 @@ export default function DashboardPage() {
                 <Calendar className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex flex-col justify-center">
-                <p className="text-xs text-gray-500">{mounted ? dayName : "—"}</p>
+                <p className="text-xs text-gray-500">
+                  {mounted ? dayName : "—"}
+                </p>
                 <p className="text-sm font-medium text-gray-900 leading-tight">
                   {mounted ? dateFull : "—"}
                 </p>
@@ -238,8 +240,12 @@ export default function DashboardPage() {
                 <Clock className="h-5 w-5" />
               </div>
               <div className="flex flex-col justify-center min-w-0">
-                <p className="text-base font-semibold text-gray-900 tabular-nums leading-none">{mounted ? timeStr : "—"}</p>
-                <span className="mt-0.5 text-xs text-gray-500">{mounted ? tzShort : ""}</span>
+                <p className="text-base font-semibold text-gray-900 tabular-nums leading-none">
+                  {mounted ? timeStr : "—"}
+                </p>
+                <span className="mt-0.5 text-xs text-gray-500">
+                  {mounted ? tzShort : ""}
+                </span>
               </div>
             </div>
           </div>
@@ -407,9 +413,13 @@ export default function DashboardPage() {
                     <p
                       suppressHydrationWarning
                       className="text-xs text-gray-500"
-                      title={mounted ? new Date(r.createdAt).toLocaleString() : ""}
+                      title={
+                        mounted ? new Date(r.createdAt).toLocaleString() : ""
+                      }
                     >
-                      {mounted ? new Date(r.createdAt).toLocaleDateString("en-US") : "—"}
+                      {mounted
+                        ? new Date(r.createdAt).toLocaleDateString("en-US")
+                        : "—"}
                       {mounted && (
                         <>
                           {" · "}

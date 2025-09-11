@@ -14,6 +14,7 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@clearvalue.com";
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +31,8 @@ export default function LoginForm() {
     }
   };
 
+  const isBlocked = (error || "").toLowerCase().includes("blocked");
+
   return (
     <form
       onSubmit={onSubmit}
@@ -40,9 +43,27 @@ export default function LoginForm() {
         <p className="text-sm text-gray-600">Sign in to continue</p>
       </div>
       {error && (
-        <div className="rounded-md border border-red-300 bg-red-50 p-2 text-sm text-red-700">
-          {error}
-        </div>
+        isBlocked ? (
+          <div className="rounded-xl border border-red-300 bg-red-50/90 p-3 text-sm text-red-800 shadow-sm">
+            <div className="font-medium">Your account is blocked.</div>
+            <div className="mt-1 text-[13px] text-red-900/80">
+              Please contact our support team at
+              {" "}
+              <a
+                className="font-medium text-red-700 underline underline-offset-2 hover:text-red-800 cursor-pointer"
+                href={`mailto:${supportEmail}`}
+              >
+                {supportEmail}
+              </a>
+              {" "}
+              for assistance.
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-md border border-red-300 bg-red-50 p-2 text-sm text-red-700">
+            {error}
+          </div>
+        )
       )}
       <div className="space-y-1">
         <label className="block text-sm font-medium text-gray-700">Email</label>

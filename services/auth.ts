@@ -52,14 +52,19 @@ export const AuthService = {
   },
 
   async login(payload: LoginPayload): Promise<{ accessToken: string; refreshToken: string; user: AuthUser }> {
-    const { data } = await API.post<{ accessToken: string; refreshToken: string; user: AuthUser }>(
-      '/auth/login',
-      payload,
-    );
-    setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-    // mark session for middleware
-    setCookie('cv_auth', '1', 7);
-    return data;
+    try {
+      const { data } = await API.post<{ accessToken: string; refreshToken: string; user: AuthUser }>(
+        '/auth/login',
+        payload,
+      );
+      setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+      // mark session for middleware
+      setCookie('cv_auth', '1', 7);
+      return data;
+    } catch (err: any) {
+      const serverMsg = err?.response?.data?.message || err?.message || 'Failed to login';
+      throw new Error(serverMsg);
+    }
   },
 
   async verifyEmail(payload: VerifyEmailPayload): Promise<{ message: string }> {
