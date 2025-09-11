@@ -14,8 +14,6 @@ import {
   Car,
   Package,
   DollarSign,
-  Calendar,
-  Clock,
   ChevronRight,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -199,55 +197,42 @@ export default function DashboardPage() {
         <div className="pointer-events-none absolute -top-24 -left-16 h-48 w-48 rounded-full bg-gradient-to-br from-rose-500/10 to-red-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -right-16 h-56 w-56 rounded-full bg-gradient-to-tl from-rose-500/10 to-red-500/10 blur-3xl" />
 
-        <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-6">
+        <div className="relative">
           <div className="max-w-2xl">
-            <p className="text-sm text-gray-700">
-              {greetingText},{" "}
-              <span className="font-medium">
-                {user?.username || user?.email || "there"}
-              </span>
-            </p>
-            <h1 className="mt-1 text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-rose-600 to-red-500 bg-clip-text text-transparent drop-shadow-sm">
+            <h1
+              className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-rose-600 to-red-500 bg-clip-text text-transparent drop-shadow-sm"
+              suppressHydrationWarning
+            >
               Dashboard
             </h1>
+            <div className="mt-1 flex items-center justify-between">
+              <p
+                className="text-base md:text-lg text-gray-900 font-semibold"
+                suppressHydrationWarning
+              >
+                {greetingText},{" "}
+                <span className="font-medium">
+                  {user?.username || user?.email || "there"}
+                </span>
+              </p>
+              <span
+                className="text-xs md:text-sm text-gray-700 tabular-nums whitespace-nowrap"
+                suppressHydrationWarning
+              >
+                {mounted
+                  ? now.toLocaleDateString(undefined, {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "—"}
+                {" · "}
+                {mounted ? timeStr : ""}
+              </span>
+            </div>
             <p className="mt-1 text-sm md:text-base text-gray-600">
               Overview of your ClearValue activity and insights.
             </p>
-          </div>
-
-          {/* Nested Date/Time card */}
-          <div
-            suppressHydrationWarning
-            className="relative w-full md:w-[340px] overflow-hidden rounded-2xl border border-rose-200 bg-white/70 px-4 py-3 shadow-sm ring-1 ring-black/5 backdrop-blur"
-          >
-            <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-gradient-to-br from-rose-500/20 to-red-500/20 blur-2xl" />
-            <span className="hidden md:inline-flex items-center rounded-full bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 text-[10px] font-semibold absolute right-3 top-3">
-              Local Time
-            </span>
-            <div className="grid grid-cols-[40px_1fr] gap-x-3 gap-y-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 ring-1 ring-rose-200">
-                <Calendar className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex flex-col justify-center">
-                <p className="text-xs text-gray-500">
-                  {mounted ? dayName : "—"}
-                </p>
-                <p className="text-sm font-medium text-gray-900 leading-tight">
-                  {mounted ? dateFull : "—"}
-                </p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 ring-1 ring-rose-200">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div className="flex flex-col justify-center min-w-0">
-                <p className="text-base font-semibold text-gray-900 tabular-nums leading-none">
-                  {mounted ? timeStr : "—"}
-                </p>
-                <span className="mt-0.5 text-xs text-gray-500">
-                  {mounted ? tzShort : ""}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
