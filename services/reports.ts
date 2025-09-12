@@ -12,6 +12,7 @@ export type PdfReport = {
   fairMarketValue: string;
   createdAt: string; // ISO string
   type?: string;
+  fileType?: 'pdf' | 'docx' | 'xlsx' | 'images';
   approvalStatus?: 'pending' | 'approved' | 'rejected';
   approvalNote?: string;
   reviewedBy?: string | null;

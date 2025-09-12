@@ -447,11 +447,17 @@ export default function ReportsPage() {
                                   const st = (r as any).approvalStatus as string | undefined;
                                   if (st === 'pending') return 'Waiting for approval';
                                   if (st === 'rejected') return 'Rejected';
-                                  return 'Download';
+                                  const ft = ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase();
+                                  return ft === 'images' || ft === 'zip' ? 'Download Images' : 'Download';
                                 })()}
                               >
                                 <Download className="h-3.5 w-3.5" />
-                                {downloadingId === r._id ? "Downloading..." : "Download"}
+                                {downloadingId === r._id
+                                  ? "Downloading..."
+                                  : ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase() === 'images' ||
+                                    ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase() === 'zip'
+                                  ? "Download Images"
+                                  : "Download"}
                               </button>
                               <button
                                 onClick={() => handleDelete(r._id)}
@@ -578,12 +584,16 @@ export default function ReportsPage() {
                                         const st = (r as any).approvalStatus as string | undefined;
                                         if (st === 'pending') return 'Waiting for approval';
                                         if (st === 'rejected') return 'Rejected';
-                                        return 'Download';
+                                        const ft = ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase();
+                                        return ft === 'images' || ft === 'zip' ? 'Download Images' : 'Download';
                                       })()}
                                     >
                                       <Download className="h-3.5 w-3.5" />
                                       {downloadingId === r._id
                                         ? "Downloading..."
+                                        : ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase() === 'images' ||
+                                          ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase() === 'zip'
+                                        ? "Download Images"
                                         : "Download"}
                                     </button>
                                     <button
