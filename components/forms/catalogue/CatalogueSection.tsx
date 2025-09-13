@@ -6,8 +6,6 @@ import {
   Camera,
   Image as ImageIcon,
   Trash2,
-  Plus,
-  X,
   Check,
   ZoomIn,
   ZoomOut,
@@ -46,6 +44,7 @@ export default function CatalogueSection({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   // When true, after a manual device upload we should move to the next lot automatically
@@ -243,6 +242,53 @@ export default function CatalogueSection({
     }
   }
 
+  // Audio helpers for shutter click
+  function ensureAudioContext(): AudioContext | null {
+    try {
+      if (!audioCtxRef.current) {
+        const Ctx: any =
+          (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (!Ctx) return null;
+        audioCtxRef.current = new Ctx();
+      }
+      // resume on user gesture contexts (mobile)
+      audioCtxRef.current?.resume?.();
+      return audioCtxRef.current;
+    } catch {
+      return null;
+    }
+  }
+
+  function playShutterClick() {
+    const ctx = ensureAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    // Pulse 1
+    const osc1 = ctx.createOscillator();
+    const g1 = ctx.createGain();
+    osc1.type = "square";
+    osc1.frequency.setValueAtTime(900, now);
+    g1.gain.setValueAtTime(0, now);
+    g1.gain.linearRampToValueAtTime(0.28, now + 0.01);
+    g1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc1.connect(g1);
+    g1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.08);
+    // Pulse 2 (slightly lower freq, quick after)
+    const osc2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    osc2.type = "triangle";
+    osc2.frequency.setValueAtTime(600, now + 0.06);
+    g2.gain.setValueAtTime(0, now + 0.06);
+    g2.gain.linearRampToValueAtTime(0.22, now + 0.08);
+    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    osc2.connect(g2);
+    g2.connect(ctx.destination);
+    osc2.start(now + 0.06);
+    osc2.stop(now + 0.16);
+  }
+
   async function captureFromStream() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -285,6 +331,13 @@ export default function CatalogueSection({
     canvas.height = outH;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    // Haptics + shutter click
+    try {
+      navigator.vibrate?.(30);
+    } catch {}
+    try {
+      playShutterClick();
+    } catch {}
     if (flashOn && !isTorchSupported) {
       setIsSimulatingFlash(true);
       setTimeout(() => setIsSimulatingFlash(false), 120);
@@ -337,13 +390,10 @@ export default function CatalogueSection({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              createLot();
-              startInAppCamera();
-            }}
+            onClick={startInAppCamera}
             className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
           >
-            <Plus className="h-4 w-4" /> Lot from camera
+            <Camera className="h-4 w-4" /> Open Camera
           </button>
           <button
             type="button"
@@ -384,37 +434,10 @@ export default function CatalogueSection({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={startInAppCamera}
-              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
-            >
-              <Camera className="h-4 w-4" /> Open Camera
-            </button>
-            <button
-              type="button"
               onClick={() => startManualUpload(false)}
               className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
             >
-              <ImageIcon className="h-4 w-4" /> Upload from device
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                advanceAfterUploadRef.current = true;
-                startManualUpload(false);
-              }}
-              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
-            >
-              <ImageIcon className="h-4 w-4" /> Upload & Next
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                createLot();
-                startInAppCamera();
-              }}
-              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
-            >
-              Add Lot from camera
+              <ImageIcon className="h-4 w-4" /> Upload images
             </button>
             <button
               type="button"
@@ -476,17 +499,10 @@ export default function CatalogueSection({
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
-                  onClick={startInAppCamera}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
-                >
-                  <Camera className="h-4 w-4" /> Open Camera
-                </button>
-                <button
-                  type="button"
                   onClick={() => startManualUpload(false)}
                   className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                 >
-                  <ImageIcon className="h-4 w-4" /> Upload from device
+                  <ImageIcon className="h-4 w-4" /> Upload images
                 </button>
               </div>
               <p className="mt-1 text-xs text-gray-500">
@@ -496,9 +512,9 @@ export default function CatalogueSection({
           )}
 
           <div className="mt-2 text-[11px] text-gray-500">
-            Tip: Use "Open Camera" or "Upload from device" to add images. Use
-            "Add Lot" to start a new lot. Use "Done" to finish catalogue
-            capture.
+            Tip: Use "Open Camera" above to create a new lot if needed and
+            capture, or "Upload images" to add photos to this lot. Use "Done"
+            to finish catalogue capture.
           </div>
         </div>
       )}
@@ -568,8 +584,16 @@ export default function CatalogueSection({
       {/* In-app camera overlay */}
       {cameraOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-hidden p-2 pt-4 sm:p-4 sm:pt-6">
-            <div className="relative w-full sm:w-[98%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-[100svh] sm:h-[96dvh] max-h-[100svh] sm:max-h-[96dvh] overflow-hidden flex flex-col rounded-2xl border border-rose-200/30 bg-black/30 ring-1 ring-black/50 shadow-2xl">
+          <div
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden"
+            style={{
+              paddingTop: "max(env(safe-area-inset-top), 8px)",
+              paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+              paddingLeft: "max(env(safe-area-inset-left), 8px)",
+              paddingRight: "max(env(safe-area-inset-right), 8px)",
+            }}
+          >
+            <div className="relative w-full sm:w-[98%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-[100dvh] sm:h-[96dvh] max-h-[100dvh] sm:max-h-[96dvh] overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-rose-200/30 bg-black/30 ring-0 sm:ring-1 ring-black/50 shadow-2xl">
               <div className="relative flex-1 min-h-0 bg-black">
                 <video
                   ref={videoRef}
@@ -701,8 +725,7 @@ export default function CatalogueSection({
                     onClick={captureFromStream}
                     className="inline-flex cursor-pointer items-center gap-3 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-6 py-3 text-base font-semibold text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                   >
-                    <Camera className="h-5 w-5 text-white" />{" "}
-                    Capture
+                    <Camera className="h-5 w-5 text-white" /> Capture
                   </button>
                   <button
                     type="button"
