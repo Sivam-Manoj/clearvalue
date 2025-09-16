@@ -15,6 +15,7 @@ import { useAuthContext } from "@/context/AuthContext";
 const CatalogueSection = dynamic(() => import("./catalogue/CatalogueSection"), {
   ssr: false,
 });
+const CombinedCamera = dynamic(() => import("./capture/CombinedCamera"), { ssr: false });
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -50,6 +51,11 @@ const GROUPING_OPTIONS: {
     value: "catalogue",
     label: "Catalogue Listing",
     desc: "Capture images per lot (max 20 per lot).",
+  },
+  {
+    value: "combined",
+    label: "Combined",
+    desc: "Capture with in-app camera, then generate Single Lot + Per Item + Per Photo DOCX in one report.",
   },
 ];
 
@@ -338,6 +344,21 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
           ),
         })),
       } as Partial<AssetCreateDetails>;
+    } else if (grouping === "combined") {
+      // Combined: flat images only, max 20
+      if (images.length === 0) {
+        const msg = "Please add at least one image (Combined).";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      if (images.length > 20) {
+        const msg = "Maximum 20 images allowed in Combined mode.";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      filesToSend = images;
     } else {
       if (images.length === 0) {
         const msg = "Please add at least one image.";
@@ -672,7 +693,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
             </section>
 
             {/* Images / Catalogue */}
-            {grouping !== "catalogue" ? (
+            {grouping !== "catalogue" && grouping !== "combined" ? (
               <section className="space-y-3">
                 <h3 className="text-sm font-medium text-gray-900">
                   Images (max 10)
@@ -736,7 +757,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   </div>
                 )}
               </section>
-            ) : (
+            ) : grouping === "catalogue" ? (
               <section className="space-y-3">
                 <h3 className="text-sm font-medium text-gray-900">
                   Catalogue Listing
@@ -747,6 +768,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   maxImagesPerLot={20}
                   maxTotalImages={500}
                 />
+              </section>
+            ) : (
+              <section className="space-y-3">
+                <h3 className="text-sm font-medium text-gray-900">Combined Capture</h3>
+                <CombinedCamera value={images} onChange={setImages} maxImages={20} />
               </section>
             )}
 

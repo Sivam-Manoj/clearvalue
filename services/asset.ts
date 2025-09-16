@@ -1,7 +1,12 @@
 import API from "@/lib/api";
 import type { AxiosProgressEvent } from "axios";
 
-export type AssetGroupingMode = "single_lot" | "per_item" | "per_photo" | "catalogue";
+export type AssetGroupingMode =
+  | "single_lot"
+  | "per_item"
+  | "per_photo"
+  | "catalogue"
+  | "combined";
 
 export type AssetCreateDetails = {
   grouping_mode: AssetGroupingMode;
@@ -60,14 +65,22 @@ export const AssetService = {
     const fd = new FormData();
     fd.append("details", JSON.stringify(details));
     const filesToSend =
-      details.grouping_mode === "catalogue" ? images : images.slice(0, 10);
+      details.grouping_mode === "catalogue" ||
+      details.grouping_mode === "combined"
+        ? images
+        : images.slice(0, 10);
     filesToSend.forEach((file) => fd.append("images", file));
 
     const { data } = await API.post<AssetCreateResponse>("/asset", fd, {
       onUploadProgress: (e: AxiosProgressEvent) => {
         if (!options?.onUploadProgress) return;
         let fraction = typeof e.progress === "number" ? e.progress : 0;
-        if (!fraction && typeof e.loaded === "number" && typeof e.total === "number" && e.total > 0) {
+        if (
+          !fraction &&
+          typeof e.loaded === "number" &&
+          typeof e.total === "number" &&
+          e.total > 0
+        ) {
           fraction = e.loaded / e.total;
         }
         options.onUploadProgress(Math.max(0, Math.min(1, fraction)));
