@@ -15,13 +15,16 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 
+type CombinedMode = "single_lot" | "per_item" | "per_photo";
 type Props = {
   value: File[];
   onChange: (files: File[]) => void;
   maxImages?: number; // default 20
+  modes: CombinedMode[];
+  onModesChange: (modes: CombinedMode[]) => void;
 };
 
-export default function CombinedCamera({ value, onChange, maxImages = 20 }: Props) {
+export default function CombinedCamera({ value, onChange, maxImages = 20, modes, onModesChange }: Props) {
   const [files, setFiles] = useState<File[]>(value || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -297,7 +300,7 @@ export default function CombinedCamera({ value, onChange, maxImages = 20 }: Prop
               <div className="relative flex-1 min-h-0 bg-black">
                 <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 h-full w-full object-contain pointer-events-none" style={zoom > 1 ? { transform: `scale(${zoom})`, transformOrigin: "center" } : undefined} />
 
-                {/* Top overlay */}
+                {/* Top overlay (orientation + counts + flash) */}
                 <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
                   <button type="button" onClick={() => setOrientation((o) => (o === "portrait" ? "landscape" : "portrait"))} className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15" title="Toggle orientation">
                     <RotateCw className="h-3.5 w-3.5" />
@@ -321,6 +324,43 @@ export default function CombinedCamera({ value, onChange, maxImages = 20 }: Prop
                   }} className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15" title="Flash">
                     {flashOn ? <Zap className="h-3.5 w-3.5 text-yellow-300" /> : <ZapOff className="h-3.5 w-3.5" />}
                     <span>{flashOn ? "On" : "Off"}</span>
+                  </button>
+                </div>
+
+                {/* Mode selector overlay */}
+                <div className="pointer-events-auto absolute left-2 right-2 z-20 flex flex-wrap items-center gap-2 rounded-xl bg-white/10 px-2 py-2 ring-1 ring-white/20 backdrop-blur" style={{ top: 48 }}>
+                  {([
+                    { key: "single_lot", label: "Single Lot" },
+                    { key: "per_item", label: "Per Item" },
+                    { key: "per_photo", label: "Per Lot" },
+                  ] as { key: CombinedMode; label: string }[]).map((m) => {
+                    const active = modes.includes(m.key);
+                    return (
+                      <button
+                        key={m.key}
+                        type="button"
+                        onClick={() => {
+                          const next = active
+                            ? modes.filter((x) => x !== m.key)
+                            : [...modes, m.key];
+                          onModesChange(next.length ? next : [m.key]);
+                        }}
+                        className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] shadow ${
+                          active ? "bg-rose-500 text-white" : "bg-white/10 text-white/90"
+                        }`}
+                        title={m.label}
+                      >
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => onModesChange(["single_lot", "per_item", "per_photo"])}
+                    className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] shadow bg-white/10 text-white/90 hover:bg-white/15"
+                    title="Select all"
+                  >
+                    All
                   </button>
                 </div>
 

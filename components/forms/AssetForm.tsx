@@ -64,6 +64,12 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   const [grouping, setGrouping] = useState<AssetGroupingMode>("single_lot");
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  // Combined mode selected sections
+  const [combinedModes, setCombinedModes] = useState<Array<"single_lot" | "per_item" | "per_photo">>([
+    "single_lot",
+    "per_item",
+    "per_photo",
+  ]);
   // Catalogue mode state
   const [catalogueLots, setCatalogueLots] = useState<
     { id: string; files: File[]; coverIndex: number }[]
@@ -346,6 +352,12 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       } as Partial<AssetCreateDetails>;
     } else if (grouping === "combined") {
       // Combined: flat images only, max 20
+      if (!combinedModes || combinedModes.length === 0) {
+        const msg = "Please select at least one section (Single Lot, Per Item, Per Lot).";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
       if (images.length === 0) {
         const msg = "Please add at least one image (Combined).";
         setError(msg);
@@ -359,6 +371,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         return;
       }
       filesToSend = images;
+      extraDetails = { combined_modes: combinedModes };
     } else {
       if (images.length === 0) {
         const msg = "Please add at least one image.";
@@ -772,7 +785,13 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
             ) : (
               <section className="space-y-3">
                 <h3 className="text-sm font-medium text-gray-900">Combined Capture</h3>
-                <CombinedCamera value={images} onChange={setImages} maxImages={20} />
+                <CombinedCamera
+                  value={images}
+                  onChange={setImages}
+                  maxImages={20}
+                  modes={combinedModes}
+                  onModesChange={setCombinedModes}
+                />
               </section>
             )}
 

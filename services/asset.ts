@@ -26,6 +26,8 @@ export type AssetCreateDetails = {
     count: number; // number of images in this lot (max 20)
     cover_index?: number; // 0-based index within this lot to use as cover (defaults to 0)
   }>;
+  // Combined mode: which sections to include in the single DOCX report
+  combined_modes?: Array<"single_lot" | "per_item" | "per_photo">;
 };
 
 export type AssetCreateResponse = {
