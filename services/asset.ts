@@ -6,7 +6,8 @@ export type AssetGroupingMode =
   | "per_item"
   | "per_photo"
   | "catalogue"
-  | "combined";
+  | "combined"
+  | "mixed";
 
 export type AssetCreateDetails = {
   grouping_mode: AssetGroupingMode;
@@ -28,6 +29,12 @@ export type AssetCreateDetails = {
   }>;
   // Combined mode: which sections to include in the single DOCX report
   combined_modes?: Array<"single_lot" | "per_item" | "per_photo">;
+  // Mixed mode: describe each lot's mode and image counts (flattened in order)
+  mixed_lots?: Array<{
+    count: number; // number of images in this lot (max 20)
+    cover_index?: number; // 0-based within the lot
+    mode: "single_lot" | "per_item" | "per_photo";
+  }>;
 };
 
 export type AssetCreateResponse = {
@@ -68,7 +75,8 @@ export const AssetService = {
     fd.append("details", JSON.stringify(details));
     const filesToSend =
       details.grouping_mode === "catalogue" ||
-      details.grouping_mode === "combined"
+      details.grouping_mode === "combined" ||
+      details.grouping_mode === "mixed"
         ? images
         : images.slice(0, 10);
     filesToSend.forEach((file) => fd.append("images", file));

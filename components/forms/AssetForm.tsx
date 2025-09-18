@@ -15,7 +15,12 @@ import { useAuthContext } from "@/context/AuthContext";
 const CatalogueSection = dynamic(() => import("./catalogue/CatalogueSection"), {
   ssr: false,
 });
-const CombinedCamera = dynamic(() => import("./capture/CombinedCamera"), { ssr: false });
+const CombinedCamera = dynamic(() => import("./capture/CombinedCamera"), {
+  ssr: false,
+});
+const MixedSection = dynamic(() => import("./mixed/MixedSection"), {
+  ssr: false,
+});
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -57,6 +62,11 @@ const GROUPING_OPTIONS: {
     label: "Combined",
     desc: "Capture with in-app camera, then generate Single Lot + Per Item + Per Photo DOCX in one report.",
   },
+  {
+    value: "mixed" as any,
+    label: "Mixed Mode",
+    desc: "Create multiple lots; pick mode per lot (Single Lot, Per Item, Per Photo). 20 images max per lot.",
+  },
 ];
 
 export default function AssetForm({ onSuccess, onCancel }: Props) {
@@ -65,14 +75,21 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   // Combined mode selected sections
-  const [combinedModes, setCombinedModes] = useState<Array<"single_lot" | "per_item" | "per_photo">>([
-    "single_lot",
-    "per_item",
-    "per_photo",
-  ]);
+  const [combinedModes, setCombinedModes] = useState<
+    Array<"single_lot" | "per_item" | "per_photo">
+  >(["single_lot", "per_item", "per_photo"]);
   // Catalogue mode state
   const [catalogueLots, setCatalogueLots] = useState<
     { id: string; files: File[]; coverIndex: number }[]
+  >([]);
+  // Mixed mode state
+  const [mixedLots, setMixedLots] = useState<
+    {
+      id: string;
+      files: File[];
+      coverIndex: number;
+      mode?: "single_lot" | "per_item" | "per_photo";
+    }[]
   >([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -353,7 +370,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     } else if (grouping === "combined") {
       // Combined: flat images only, max 20
       if (!combinedModes || combinedModes.length === 0) {
-        const msg = "Please select at least one section (Single Lot, Per Item, Per Lot).";
+        const msg =
+          "Please select at least one section (Single Lot, Per Item, Per Lot).";
         setError(msg);
         toast.error(msg);
         return;
@@ -372,6 +390,35 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       }
       filesToSend = images;
       extraDetails = { combined_modes: combinedModes };
+    } else if (grouping === "mixed") {
+      // Mixed: multiple lots with per-lot mode, each lot 1-20 images, cannot be empty
+      const total = mixedLots.reduce((s, l) => s + l.files.length, 0);
+      if (total === 0) {
+        const msg = "Please add at least one image (Mixed).";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      const perLotOk = mixedLots.every(
+        (l) => l.files.length > 0 && l.files.length <= 20 && !!l.mode
+      );
+      if (!perLotOk) {
+        const msg = "Each lot must have 1-20 images and a selected mode.";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      filesToSend = mixedLots.flatMap((l) => l.files);
+      extraDetails = {
+        mixed_lots: mixedLots.map((l) => ({
+          count: l.files.length,
+          cover_index: Math.max(
+            0,
+            Math.min(l.files.length - 1, l.coverIndex || 0)
+          ),
+          mode: l.mode!,
+        })),
+      } as Partial<AssetCreateDetails>;
     } else {
       if (images.length === 0) {
         const msg = "Please add at least one image.";
@@ -424,7 +471,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         ...(industry.trim() && { industry: industry.trim() }),
         ...(inspectionDate && { inspection_date: inspectionDate }),
         progress_id: jobId,
-        ...(grouping === "catalogue" ? extraDetails : {}),
+        ...(grouping === "catalogue" ||
+        grouping === "combined" ||
+        grouping === "mixed"
+          ? extraDetails
+          : {}),
       };
 
       // Helper to start polling server progress after upload completes
@@ -706,7 +757,9 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
             </section>
 
             {/* Images / Catalogue */}
-            {grouping !== "catalogue" && grouping !== "combined" ? (
+            {grouping !== "catalogue" &&
+            grouping !== "combined" &&
+            grouping !== "mixed" ? (
               <section className="space-y-3">
                 <h3 className="text-sm font-medium text-gray-900">
                   Images (max 10)
@@ -782,15 +835,29 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   maxTotalImages={500}
                 />
               </section>
-            ) : (
+            ) : grouping === "combined" ? (
               <section className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-900">Combined Capture</h3>
+                <h3 className="text-sm font-medium text-gray-900">
+                  Combined Capture
+                </h3>
                 <CombinedCamera
                   value={images}
                   onChange={setImages}
                   maxImages={20}
                   modes={combinedModes}
                   onModesChange={setCombinedModes}
+                />
+              </section>
+            ) : (
+              <section className="space-y-3">
+                <h3 className="text-sm font-medium text-gray-900">
+                  Mixed Lots
+                </h3>
+                <MixedSection
+                  value={mixedLots}
+                  onChange={setMixedLots}
+                  maxImagesPerLot={20}
+                  maxTotalImages={500}
                 />
               </section>
             )}
