@@ -218,6 +218,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setImages([]);
       setPreviews([]);
       setCatalogueLots([]);
+      setMixedLots([]);
+      setCombinedModes(["single_lot", "per_item", "per_photo"]);
       setError(null);
       setClientName("");
       setEffectiveDate(isoDate(new Date()));
@@ -230,6 +232,40 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       onCancel?.();
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.info("Form cleared.");
+    } catch {}
+  }
+
+  // Reset all fields after successful submission (keeps form open)
+  function clearFieldsAfterSubmit() {
+    try {
+      setGrouping("single_lot");
+      setImages([]);
+      setPreviews([]);
+      setCatalogueLots([]);
+      setMixedLots([]);
+      setCombinedModes(["single_lot", "per_item", "per_photo"]);
+      setError(null);
+      setClientName("");
+      setEffectiveDate(isoDate(new Date()));
+      setAppraisalPurpose("");
+      setOwnerName("");
+      setAppraiser("");
+      setAppraisalCompany("");
+      setIndustry("");
+      setInspectionDate(isoDate(new Date()));
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      // Reset progress UI state
+      setProgressPhase("idle");
+      setProgressPercent(0);
+      setStepStates(() =>
+        Object.fromEntries(STEPS.map((s) => [s.key, "pending"])) as any
+      );
+      jobIdRef.current = null;
+      pollStartedRef.current = false;
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
     } catch {}
   }
 
@@ -530,6 +566,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       }
       onSuccess?.(msg);
       setSubmitting(false);
+      // Clear all fields after submit
+      clearFieldsAfterSubmit();
     } catch (err: any) {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       setProgressPhase("error");
