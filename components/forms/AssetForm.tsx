@@ -58,11 +58,6 @@ const GROUPING_OPTIONS: {
     desc: "Capture images per lot (max 20 per lot).",
   },
   {
-    value: "combined",
-    label: "Combined",
-    desc: "Capture with in-app camera, then generate Single Lot + Per Item + Per Photo DOCX in one report.",
-  },
-  {
     value: "mixed" as any,
     label: "Mixed Mode",
     desc: "Create multiple lots; pick mode per lot (Single Lot, Per Item, Per Photo). 20 images max per lot.",

@@ -58,7 +58,7 @@ export default function MixedSection({
   const [isTorchSupported, setIsTorchSupported] = useState<boolean>(false);
   const [isSimulatingFlash, setIsSimulatingFlash] = useState<boolean>(false);
   const [videoAR, setVideoAR] = useState<number | null>(null);
-  const [modePickerOpen, setModePickerOpen] = useState<boolean>(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setLots(value || []), [value]);
@@ -158,6 +158,48 @@ export default function MixedSection({
     });
   }
 
+  // Add files and set mode in one atomic update when capturing via camera
+  function addFilesToLotWithMode(
+    idx: number,
+    incoming: File[],
+    selectedMode?: MixedMode
+  ) {
+    setLots((prev) => {
+      const out = [...prev];
+      const lot = out[idx];
+      if (!lot) return prev;
+      // If no mode set yet and a desiredMode was provided, set it now
+      let mode = lot.mode;
+      if (!mode && selectedMode) {
+        mode = selectedMode;
+        out[idx] = { ...lot, mode: selectedMode };
+      }
+      if (!mode) {
+        toast.warn("Select a mode for this lot first.");
+        return prev;
+      }
+      const totalSoFar = prev.reduce((s, l) => s + l.files.length, 0);
+      const remainingTotal = Math.max(0, maxTotalImages - totalSoFar);
+      if (remainingTotal <= 0) {
+        toast.error("Reached maximum total images limit.");
+        return prev;
+      }
+      const current = out[idx];
+      const roomInLot = Math.max(0, maxImagesPerLot - current.files.length);
+      if (roomInLot <= 0) {
+        toast.error(`This lot already has ${maxImagesPerLot} images.`);
+        return prev;
+      }
+      const allowedCount = Math.min(remainingTotal, roomInLot, incoming.length);
+      const accepted = incoming.slice(0, allowedCount);
+      if (accepted.length < incoming.length) {
+        toast.warn("Some images were not added due to limits.");
+      }
+      out[idx] = { ...current, files: [...current.files, ...accepted] };
+      return out;
+    });
+  }
+
   function removeImage(idx: number, imgIdx: number) {
     setLots((prev) => {
       const out = [...prev];
@@ -195,16 +237,12 @@ export default function MixedSection({
   // Camera overlay logic
   async function openCamera() {
     try {
+      setCameraError(null);
       setZoom(1);
-      // Ensure destination lot: if none, create; if exists, advance to next
-      if (activeIdx < 0) {
-        createLot();
-        // Prompt to pick mode for the very first lot
-        setModePickerOpen(true);
-      } else {
-        // Move to next lot and prompt mode selection
-        goNextLot(true);
-      }
+      // Open overlay first so the <video> element mounts
+      setCameraOpen(true);
+      // Wait a tick to ensure portal mounts and ref is available
+      await new Promise((r) => setTimeout(r, 0));
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
@@ -235,9 +273,18 @@ export default function MixedSection({
           await track?.applyConstraints?.({ advanced: [{ torch: true }] });
         }
       } catch {}
-      setCameraOpen(true);
-    } catch (e) {
-      toast.error("Unable to access camera.");
+
+      // After camera is running, ensure destination lot: if none, create; if exists, advance to next
+      if (activeIdx < 0) {
+        createLot();
+      } else {
+        goNextLot();
+      }
+    } catch (e: any) {
+      setCameraError(e?.message || "Unable to access camera.");
+      toast.error(e?.message || "Unable to access camera.");
+      // Ensure overlay is closed and stream cleared on failure
+      closeCamera();
     }
   }
 
@@ -294,14 +341,10 @@ export default function MixedSection({
     osc2.stop(now + 0.16);
   }
 
-  async function captureFromStream() {
+  async function captureFromStream(selectedMode?: MixedMode) {
     const idx = activeIdx < 0 ? 0 : activeIdx;
     const lot = lots[idx];
     if (!lot) return;
-    if (!lot.mode) {
-      setModePickerOpen(true);
-      return;
-    }
     const totalSoFar = lots.reduce((s, l) => s + l.files.length, 0);
     if (lot.files.length >= maxImagesPerLot || totalSoFar >= maxTotalImages) {
       toast.warn(
@@ -351,36 +394,38 @@ export default function MixedSection({
     const file = new File([blob], `lot-${idx + 1}-${Date.now()}.jpg`, {
       type: "image/jpeg",
     });
-    addFilesToLot(idx, [file]);
+    addFilesToLotWithMode(idx, [file], selectedMode);
   }
 
   function goPrevLot() {
-    const newIdx = Math.max(0, activeIdx - 1);
-    setActiveIdx(newIdx);
-    const prevLot = lots[newIdx];
-    if (!prevLot?.mode) setModePickerOpen(true);
-    else setModePickerOpen(false);
+    setActiveIdx((i) => Math.max(0, i - 1));
   }
-  function goNextLot(forcePick: boolean = false) {
+  function goNextLot() {
     setLots((prev) => {
-      // Create new lot if at end
       if (activeIdx >= prev.length - 1) {
-        const id = `lot-${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 7)}`;
+        const id = `lot-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
         const next = [...prev, { id, files: [], coverIndex: 0 } as MixedLot];
         setActiveIdx(next.length - 1);
-        setModePickerOpen(true);
         return next;
       } else {
         const nextIdx = Math.min(activeIdx + 1, prev.length - 1);
         setActiveIdx(nextIdx);
-        const nextLot = prev[nextIdx];
-        if (forcePick || !nextLot?.mode) setModePickerOpen(true);
-        else setModePickerOpen(false);
         return prev;
       }
     });
+  }
+
+  function handleCapture(mode: MixedMode) {
+    const idx = activeIdx < 0 ? 0 : activeIdx;
+    const lot = lots[idx];
+    if (!lot) return;
+    if (lot.mode && lot.mode !== mode) {
+      toast.warn(
+        `This lot is already set to ${lot.mode.replace("_", " ")}. Go to next lot to capture a different mode.`
+      );
+      return;
+    }
+    captureFromStream(mode);
   }
 
   const totalImages = lots.reduce((s, l) => s + l.files.length, 0);
@@ -702,16 +747,35 @@ export default function MixedSection({
                     <ChevronLeft className="h-4 w-4 text-white" />
                     <span className="hidden sm:inline">Prev</span>
                   </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCapture("single_lot")}
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                      title="Capture - Single Lot"
+                    >
+                      <Camera className="h-5 w-5 text-white" /> Single Lot
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCapture("per_item")}
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                      title="Capture - Per Item"
+                    >
+                      <Camera className="h-5 w-5 text-white" /> Per Item
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCapture("per_photo")}
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                      title="Capture - Per Photo"
+                    >
+                      <Camera className="h-5 w-5 text-white" /> Per Photo
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    onClick={captureFromStream}
-                    className="inline-flex cursor-pointer items-center gap-3 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-6 py-3 text-base font-semibold text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
-                  >
-                    <Camera className="h-5 w-5 text-white" /> Capture
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => goNextLot(true)}
+                    onClick={goNextLot}
                     className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-green-500 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20"
                     aria-label="Next lot"
                   >
@@ -730,33 +794,10 @@ export default function MixedSection({
                   </button>
                 </div>
 
-                {/* Mode picker mini-modal */}
-                {modePickerOpen && (
-                  <div className="pointer-events-auto absolute inset-x-4 top-1/2 -translate-y-1/2 z-30 rounded-xl border border-rose-200/50 bg-white/95 p-3 shadow-xl">
-                    <div className="mb-2 text-sm font-semibold text-gray-900">
-                      Select mode for Lot {activeIdx + 1}
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      {(
-                        ["single_lot", "per_item", "per_photo"] as MixedMode[]
-                      ).map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => {
-                            setLotMode(activeIdx, m);
-                            setModePickerOpen(false);
-                          }}
-                          className="rounded-lg border border-gray-200 bg-white px-3 py-2 font-medium text-gray-700 shadow hover:bg-gray-50"
-                        >
-                          {m === "single_lot"
-                            ? "Single Lot"
-                            : m === "per_item"
-                            ? "Per Item"
-                            : "Per Photo"}
-                        </button>
-                      ))}
-                    </div>
+                {/* Error overlay */}
+                {cameraError && (
+                  <div className="pointer-events-auto absolute left-2 right-2 top-14 z-30 rounded-lg border border-red-200 bg-red-50/95 p-2 text-xs text-red-700">
+                    {cameraError}
                   </div>
                 )}
 
