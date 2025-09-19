@@ -403,7 +403,9 @@ export default function MixedSection({
   function goNextLot() {
     setLots((prev) => {
       if (activeIdx >= prev.length - 1) {
-        const id = `lot-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const id = `lot-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 7)}`;
         const next = [...prev, { id, files: [], coverIndex: 0 } as MixedLot];
         setActiveIdx(next.length - 1);
         return next;
@@ -421,7 +423,10 @@ export default function MixedSection({
     if (!lot) return;
     if (lot.mode && lot.mode !== mode) {
       toast.warn(
-        `This lot is already set to ${lot.mode.replace("_", " ")}. Go to next lot to capture a different mode.`
+        `This lot is already set to ${lot.mode.replace(
+          "_",
+          " "
+        )}. Go to next lot to capture a different mode.`
       );
       return;
     }
@@ -532,7 +537,7 @@ export default function MixedSection({
                         } ${disabled ? "opacity-60" : ""}`}
                       >
                         {m === "single_lot"
-                          ? "Single Lot"
+                          ? "Bundle"
                           : m === "per_item"
                           ? "Per Item"
                           : "Per Photo"}
@@ -673,8 +678,12 @@ export default function MixedSection({
                     </div>
                     <div>
                       Mode:{" "}
-                      {lots[activeIdx]?.mode
-                        ? lots[activeIdx]?.mode?.replace("_", " ")
+                      {lots[activeIdx]?.mode === "single_lot"
+                        ? "Bundle"
+                        : lots[activeIdx]?.mode === "per_item"
+                        ? "Per Item"
+                        : lots[activeIdx]?.mode === "per_photo"
+                        ? "Per Photo"
                         : "—"}
                     </div>
                   </div>
@@ -754,7 +763,7 @@ export default function MixedSection({
                       className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                       title="Capture - Single Lot"
                     >
-                      <Camera className="h-5 w-5 text-white" /> Single Lot
+                      <Camera className="h-5 w-5 text-white" /> Bundle
                     </button>
                     <button
                       type="button"
