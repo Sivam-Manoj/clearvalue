@@ -771,7 +771,7 @@ export default function MixedSection({
                       className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                       title="Capture - Per Item"
                     >
-                      <Camera className="h-5 w-5 text-white" /> Per Item
+                      <Camera className="h-5 w-5 text-white" /> Item
                     </button>
                     <button
                       type="button"
@@ -779,7 +779,7 @@ export default function MixedSection({
                       className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
                       title="Capture - Per Photo"
                     >
-                      <Camera className="h-5 w-5 text-white" /> Per Photo
+                      <Camera className="h-5 w-5 text-white" /> Photo
                     </button>
                   </div>
                   <button
