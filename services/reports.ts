@@ -17,6 +17,7 @@ export type PdfReport = {
   approvalNote?: string;
   reviewedBy?: string | null;
   reviewedAt?: string | null;
+  contract_no?: string;
 };
 
 export const ReportsService = {

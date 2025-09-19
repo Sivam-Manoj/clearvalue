@@ -53,10 +53,9 @@ export default function ReportsPage() {
         const filename = String((r as any).filename ?? "").toLowerCase();
         const id = String(r._id ?? "").toLowerCase();
         const fmv = String(r.fairMarketValue ?? "").toLowerCase();
-        const dateStr = new Date(r.createdAt)
-          .toLocaleDateString()
-          .toLowerCase();
-        return [address, filename, id, fmv, dateStr].some((s) => s.includes(q));
+        const dateStr = new Date(r.createdAt).toLocaleDateString().toLowerCase();
+        const contractNo = String((r as any).contract_no ?? "").toLowerCase();
+        return [address, filename, id, fmv, dateStr, contractNo].some((s) => s.includes(q));
       });
     }
 
@@ -414,6 +413,11 @@ export default function ReportsPage() {
                                 <span className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm bg-emerald-50 text-emerald-700 ring-emerald-200">
                                   {String(r.fairMarketValue ?? "")}
                                 </span>
+                                {(r as any).contract_no ? (
+                                  <span className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm bg-slate-50 text-slate-700 ring-slate-200">
+                                    CN: {(r as any).contract_no}
+                                  </span>
+                                ) : null}
                                 {(() => {
                                   const st = (r as any).approvalStatus as 'pending' | 'approved' | 'rejected' | undefined;
                                   const label = st === 'approved' ? 'Approved' : st === 'rejected' ? 'Rejected' : 'Waiting approval';
@@ -495,6 +499,12 @@ export default function ReportsPage() {
                               scope="col"
                               className="px-3 py-2 text-left text-[11px] font-semibold text-slate-700 uppercase tracking-wide"
                             >
+                              Contract No
+                            </th>
+                            <th
+                              scope="col"
+                              className="px-3 py-2 text-left text-[11px] font-semibold text-slate-700 uppercase tracking-wide"
+                            >
                               Date
                             </th>
                             <th
@@ -521,7 +531,7 @@ export default function ReportsPage() {
                         {filteredReports.length === 0 && reports.length > 0 ? (
                           <tr>
                             <td
-                              colSpan={4}
+                              colSpan={6}
                               className="px-3 py-5 text-center text-sm text-slate-700/80"
                             >
                               No matches for "{query}".
@@ -546,6 +556,9 @@ export default function ReportsPage() {
                                       </div>
                                     </div>
                                   </div>
+                                </td>
+                                <td className="px-3 py-2 text-xs text-slate-900 truncate max-w-[14rem]">
+                                  {(r as any).contract_no || "—"}
                                 </td>
                                 <td className="px-3 py-2 text-xs text-slate-900">
                                   {new Date(r.createdAt).toLocaleDateString()}

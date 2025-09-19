@@ -37,26 +37,26 @@ const GROUPING_OPTIONS: {
   label: string;
   desc: string;
 }[] = [
-  {
-    value: "single_lot",
-    label: "Single Lot",
-    desc: "All images are treated as one lot.",
-  },
-  {
-    value: "per_item",
-    label: "Per Item",
-    desc: "Each item as a distinct lot.",
-  },
-  {
-    value: "per_photo",
-    label: "Per Photo",
-    desc: "Each image as a distinct lot.",
-  },
-  {
-    value: "catalogue",
-    label: "Catalogue Listing",
-    desc: "Capture images per lot (max 20 per lot).",
-  },
+  // {
+  //   value: "single_lot",
+  //   label: "Single Lot",
+  //   desc: "All images are treated as one lot.",
+  // },
+  // {
+  //   value: "per_item",
+  //   label: "Per Item",
+  //   desc: "Each item as a distinct lot.",
+  // },
+  // {
+  //   value: "per_photo",
+  //   label: "Per Photo",
+  //   desc: "Each image as a distinct lot.",
+  // },
+  // {
+  //   value: "catalogue",
+  //   label: "Catalogue Listing",
+  //   desc: "Capture images per lot (max 20 per lot).",
+  // },
   {
     value: "mixed" as any,
     label: "Mixed Mode",
@@ -66,7 +66,7 @@ const GROUPING_OPTIONS: {
 
 export default function AssetForm({ onSuccess, onCancel }: Props) {
   const { user } = useAuthContext();
-  const [grouping, setGrouping] = useState<AssetGroupingMode>("single_lot");
+  const [grouping, setGrouping] = useState<AssetGroupingMode>("mixed" as any);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   // Combined mode selected sections
@@ -102,6 +102,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   );
   const [industry, setIndustry] = useState("");
   const [inspectionDate, setInspectionDate] = useState(isoDate(new Date())); // YYYY-MM-DD
+  const [contractNo, setContractNo] = useState("");
+  const [language, setLanguage] = useState<"en" | "fr" | "es">("en");
 
   // Progress UI state
   const PROG_WEIGHTS = {
@@ -229,6 +231,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setAppraisalCompany("");
       setIndustry("");
       setInspectionDate(isoDate(new Date()));
+      setContractNo("");
+      setLanguage("en");
       onCancel?.();
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.info("Form cleared.");
@@ -253,12 +257,14 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setAppraisalCompany("");
       setIndustry("");
       setInspectionDate(isoDate(new Date()));
+      setContractNo("");
+      setLanguage("en");
       if (fileInputRef.current) fileInputRef.current.value = "";
       // Reset progress UI state
       setProgressPhase("idle");
       setProgressPercent(0);
-      setStepStates(() =>
-        Object.fromEntries(STEPS.map((s) => [s.key, "pending"])) as any
+      setStepStates(
+        () => Object.fromEntries(STEPS.map((s) => [s.key, "pending"])) as any
       );
       jobIdRef.current = null;
       pollStartedRef.current = false;
@@ -281,6 +287,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         appraisalCompany,
         industry,
         inspectionDate,
+        contractNo,
+        language,
         // Store catalogue meta (counts and covers) but not binary images
         catalogueLots: catalogueLots.map((l) => ({
           coverIndex: l.coverIndex,
@@ -315,6 +323,13 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       if (typeof draft.industry === "string") setIndustry(draft.industry);
       if (typeof draft.inspectionDate === "string")
         setInspectionDate(draft.inspectionDate);
+      if (typeof draft.contractNo === "string") setContractNo(draft.contractNo);
+      if (
+        draft.language === "en" ||
+        draft.language === "fr" ||
+        draft.language === "es"
+      )
+        setLanguage(draft.language);
       toast.success("Draft restored.");
     } catch {}
   }
@@ -501,6 +516,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         }),
         ...(industry.trim() && { industry: industry.trim() }),
         ...(inspectionDate && { inspection_date: inspectionDate }),
+        ...(contractNo.trim() && { contract_no: contractNo.trim() }),
+        language,
         progress_id: jobId,
         ...(grouping === "catalogue" ||
         grouping === "combined" ||
@@ -761,7 +778,6 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     type="text"
                     value={appraisalCompany}
                     onChange={(e) => setAppraisalCompany(e.target.value)}
-                    placeholder="e.g., ClearValue Appraisals"
                     className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
@@ -786,13 +802,33 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">Contract No</label>
+                  <input
+                    type="text"
+                    value={contractNo}
+                    onChange={(e) => setContractNo(e.target.value)}
+                    placeholder="e.g., CN-2025-001"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">Language</label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as any)}
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  >
+                    <option value="en">English (default)</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                  </select>
+                </div>
               </div>
             </section>
-
-            {/* Images / Catalogue */}
-            {grouping !== "catalogue" &&
-            grouping !== "combined" &&
-            grouping !== "mixed" ? (
+            {grouping === "single_lot" ||
+            grouping === "per_item" ||
+            grouping === "per_photo" ? (
               <section className="space-y-3">
                 <h3 className="text-sm font-medium text-gray-900">
                   Images (max 10)

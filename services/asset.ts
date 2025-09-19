@@ -20,6 +20,9 @@ export type AssetCreateDetails = {
   appraisal_company?: string;
   industry?: string;
   inspection_date?: string; // ISO date string (YYYY-MM-DD)
+  // New optional fields
+  contract_no?: string; // user-provided contract number
+  language?: 'en' | 'fr' | 'es'; // report output language for DOCX (default 'en')
   // Real-time progress
   progress_id?: string;
   // Catalogue mode: describe how files map to lots (flattened in order)
