@@ -7,17 +7,17 @@ import {
   type AssetCreateDetails,
   type AssetGroupingMode,
 } from "@/services/asset";
-import { X, Upload, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuthContext } from "@/context/AuthContext";
 
-// Code-split the CatalogueSection for camera-based lot capture
-const CatalogueSection = dynamic(() => import("./catalogue/CatalogueSection"), {
-  ssr: false,
-});
-const CombinedCamera = dynamic(() => import("./capture/CombinedCamera"), {
-  ssr: false,
-});
+// // Code-split the CatalogueSection for camera-based lot capture (disabled for Mixed-only)
+// const CatalogueSection = dynamic(() => import("./catalogue/CatalogueSection"), {
+//   ssr: false,
+// });
+// const CombinedCamera = dynamic(() => import("./capture/CombinedCamera"), {
+//   ssr: false,
+// });
 const MixedSection = dynamic(() => import("./mixed/MixedSection"), {
   ssr: false,
 });
@@ -32,43 +32,22 @@ const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 const DRAFT_KEY = "cv_asset_draft";
 const MAX_NON_CAT_IMAGES = 10;
 
-const GROUPING_OPTIONS: {
-  value: AssetGroupingMode;
-  label: string;
-  desc: string;
-}[] = [
-  // {
-  //   value: "single_lot",
-  //   label: "Single Lot",
-  //   desc: "All images are treated as one lot.",
-  // },
-  // {
-  //   value: "per_item",
-  //   label: "Per Item",
-  //   desc: "Each item as a distinct lot.",
-  // },
-  // {
-  //   value: "per_photo",
-  //   label: "Per Photo",
-  //   desc: "Each image as a distinct lot.",
-  // },
-  // {
-  //   value: "catalogue",
-  //   label: "Catalogue Listing",
-  //   desc: "Capture images per lot (max 20 per lot).",
-  // },
-  {
-    value: "mixed" as any,
-    label: "Mixed Mode",
-    desc: "Create multiple lots; pick mode per lot (Single Lot, Per Item, Per Photo). 20 images max per lot.",
-  },
-];
+// const GROUPING_OPTIONS: {
+//   value: AssetGroupingMode;
+//   label: string;
+//   desc: string;
+// }[] = [
+//   {
+//     value: "mixed" as any,
+//     label: "Mixed Mode",
+//     desc: "Create multiple lots; pick mode per lot (Bundle, Per Item, Per Photo). 20 images max per lot.",
+//   },
+// ];
 
 export default function AssetForm({ onSuccess, onCancel }: Props) {
   const { user } = useAuthContext();
   const [grouping, setGrouping] = useState<AssetGroupingMode>("mixed" as any);
   const [images, setImages] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
   // Combined mode selected sections
   const [combinedModes, setCombinedModes] = useState<
     Array<"single_lot" | "per_item" | "per_photo">
@@ -104,6 +83,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   const [inspectionDate, setInspectionDate] = useState(isoDate(new Date())); // YYYY-MM-DD
   const [contractNo, setContractNo] = useState("");
   const [language, setLanguage] = useState<"en" | "fr" | "es">("en");
+  const [currency, setCurrency] = useState<string>("");
+  const [currencyTouched, setCurrencyTouched] = useState<boolean>(false);
+  const [currencyLoading, setCurrencyLoading] = useState<boolean>(false);
+  const currencyPromptedRef = useRef(false);
 
   // Progress UI state
   const PROG_WEIGHTS = {
@@ -172,33 +155,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     };
   }, []);
 
-  function handleImagesChange(files: FileList | null) {
-    if (!files) return;
-    const incoming = Array.from(files);
-    setImages((prev) => {
-      const combined = [...prev, ...incoming];
-      const trimmed = combined.slice(0, MAX_NON_CAT_IMAGES);
-      if (combined.length > MAX_NON_CAT_IMAGES) {
-        setError(
-          `You can upload up to ${MAX_NON_CAT_IMAGES} images. Extra files were ignored.`
-        );
-        toast.warn(
-          `You can upload up to ${MAX_NON_CAT_IMAGES} images. Extra files were ignored.`
-        );
-      } else {
-        setError(null);
-      }
-      return trimmed;
-    });
-  }
-
-  useEffect(() => {
-    const urls = images.map((file) => URL.createObjectURL(file));
-    setPreviews(urls);
-    return () => {
-      urls.forEach((u) => URL.revokeObjectURL(u));
-    };
-  }, [images]);
+  // Mixed-only: no direct single-bucket images picker/preview
 
   // Backfill fields once user loads, without overwriting user edits
   useEffect(() => {
@@ -216,9 +173,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
 
   function clearForm() {
     try {
-      setGrouping("single_lot");
+      setGrouping("mixed" as any);
       setImages([]);
-      setPreviews([]);
       setCatalogueLots([]);
       setMixedLots([]);
       setCombinedModes(["single_lot", "per_item", "per_photo"]);
@@ -233,6 +189,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setInspectionDate(isoDate(new Date()));
       setContractNo("");
       setLanguage("en");
+      setCurrency("");
+      setCurrencyTouched(false);
+      setCurrencyLoading(false);
+      currencyPromptedRef.current = false;
       onCancel?.();
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.info("Form cleared.");
@@ -242,9 +202,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   // Reset all fields after successful submission (keeps form open)
   function clearFieldsAfterSubmit() {
     try {
-      setGrouping("single_lot");
+      setGrouping("mixed" as any);
       setImages([]);
-      setPreviews([]);
       setCatalogueLots([]);
       setMixedLots([]);
       setCombinedModes(["single_lot", "per_item", "per_photo"]);
@@ -259,6 +218,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setInspectionDate(isoDate(new Date()));
       setContractNo("");
       setLanguage("en");
+      setCurrency("");
+      setCurrencyTouched(false);
+      setCurrencyLoading(false);
+      currencyPromptedRef.current = false;
       if (fileInputRef.current) fileInputRef.current.value = "";
       // Reset progress UI state
       setProgressPhase("idle");
@@ -289,6 +252,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         inspectionDate,
         contractNo,
         language,
+        currency,
         // Store catalogue meta (counts and covers) but not binary images
         catalogueLots: catalogueLots.map((l) => ({
           coverIndex: l.coverIndex,
@@ -310,7 +274,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   function restoreDraft(draft: any) {
     try {
       if (!draft) return;
-      if (draft.grouping) setGrouping(draft.grouping);
+      // For Mixed-only mode, ignore any saved grouping and force 'mixed'
+      setGrouping("mixed" as any);
       if (typeof draft.clientName === "string") setClientName(draft.clientName);
       if (typeof draft.effectiveDate === "string")
         setEffectiveDate(draft.effectiveDate);
@@ -330,6 +295,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         draft.language === "es"
       )
         setLanguage(draft.language);
+      if (typeof draft.currency === "string" && draft.currency.trim()) setCurrency(draft.currency.trim());
       toast.success("Draft restored.");
     } catch {}
   }
@@ -376,6 +342,72 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       ) as any;
     } catch {}
   }, []);
+  // Fallback helper: detect currency from browser locale
+  const applyLocaleFallbackCurrency = () => {
+    try {
+      const lang = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-CA';
+      const region = (lang.split('-')[1] || '').toUpperCase();
+      const byRegion: Record<string, string> = {
+        US: 'USD', CA: 'CAD', GB: 'GBP', AU: 'AUD', NZ: 'NZD', IN: 'INR', LK: 'LKR',
+        JP: 'JPY', CN: 'CNY', SG: 'SGD', AE: 'AED', SA: 'SAR', PK: 'PKR', BD: 'BDT',
+        ZA: 'ZAR', NG: 'NGN', PH: 'PHP', MY: 'MYR', TH: 'THB', ID: 'IDR', KR: 'KRW', HK: 'HKD', TW: 'TWD',
+        AR: 'ARS', CL: 'CLP', CO: 'COP', PE: 'PEN', VE: 'VES', TR: 'TRY', EG: 'EGP', KE: 'KES', GH: 'GHS', VN: 'VND',
+        FR: 'EUR', DE: 'EUR', ES: 'EUR', IT: 'EUR', NL: 'EUR', IE: 'EUR', PT: 'EUR', BE: 'EUR'
+      };
+      const detected = byRegion[region] || 'CAD';
+      console.log('[CurrencyDetect] Locale fallback', { acceptLanguage: lang, region, detected });
+      if (!currencyTouched) setCurrency((prev) => prev || detected);
+    } catch {}
+  };
+
+  // On first open, use browser geolocation to call AI currency route
+  useEffect(() => {
+    if (currencyPromptedRef.current) return;
+    currencyPromptedRef.current = true;
+    if (currencyTouched) return;
+    setCurrencyLoading(true);
+    try {
+      console.log('[CurrencyDetect] Starting geolocation-based detection');
+      if (typeof navigator === 'undefined' || !navigator.geolocation) { console.warn('[CurrencyDetect] Geolocation API not available'); applyLocaleFallbackCurrency(); setCurrencyLoading(false); return; }
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const { latitude, longitude } = pos.coords || {} as any;
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) { console.warn('[CurrencyDetect] Invalid coordinates from geolocation', pos.coords); setCurrencyLoading(false); return; }
+            console.log('[CurrencyDetect] Geolocation success', { latitude, longitude });
+            const res = await fetch('/api/ai/currency', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lat: latitude, lng: longitude }),
+            });
+            console.log('[CurrencyDetect] Currency API status', res.status);
+            if (!res.ok) { console.warn('[CurrencyDetect] Currency API returned non-OK'); applyLocaleFallbackCurrency(); return; }
+            const data = await res.json();
+            console.log('[CurrencyDetect] Currency API response', data);
+            const cc = String(data?.currency || '').toUpperCase();
+            if (!currencyTouched && /^[A-Z]{3}$/.test(cc)) {
+              setCurrency(cc);
+              console.log('[CurrencyDetect] Currency chosen', cc);
+              toast.success(`Currency detected: ${cc}`);
+            } else {
+              console.warn('[CurrencyDetect] Invalid or missing currency from API, applying locale fallback');
+              applyLocaleFallbackCurrency();
+            }
+          } catch {}
+          finally {
+            setCurrencyLoading(false);
+          }
+        },
+        (error) => {
+          // User denied or error; rely on locale fallback above
+          setCurrencyLoading(false);
+          console.warn('[CurrencyDetect] Geolocation error', error);
+          applyLocaleFallbackCurrency();
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+      );
+    } catch {}
+  }, [currencyTouched]);
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -503,7 +535,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       jobIdRef.current = jobId;
 
       const payload: AssetCreateDetails = {
-        grouping_mode: grouping,
+        grouping_mode: "mixed" as any,
         ...(clientName.trim() && { client_name: clientName.trim() }),
         ...(effectiveDate && { effective_date: effectiveDate }),
         ...(appraisalPurpose.trim() && {
@@ -518,6 +550,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         ...(inspectionDate && { inspection_date: inspectionDate }),
         ...(contractNo.trim() && { contract_no: contractNo.trim() }),
         language,
+        ...(currency && { currency }),
         progress_id: jobId,
         ...(grouping === "catalogue" ||
         grouping === "combined" ||
@@ -677,39 +710,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
 
         {!submitting && (
           <>
-            {/* Grouping */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-medium text-gray-900">
-                Grouping Mode
-              </h3>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {GROUPING_OPTIONS.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className={`relative flex cursor-pointer items-start gap-3 rounded-2xl border p-3 shadow-sm transition hover:shadow-md ring-1 ring-black/5 backdrop-blur ${
-                      grouping === opt.value
-                        ? "border-rose-300 ring-rose-200 bg-gradient-to-br from-white to-rose-50"
-                        : "border-gray-200 bg-white/80"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="grouping"
-                      value={opt.value}
-                      checked={grouping === opt.value}
-                      onChange={() => setGrouping(opt.value)}
-                      className="mt-1 h-4 w-4 text-rose-600 focus:ring-rose-500"
-                    />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {opt.label}
-                      </div>
-                      <div className="text-xs text-gray-600">{opt.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </section>
+            {/* Grouping selector removed: Mixed mode only */}
 
             {/* Report Details */}
             <section className="space-y-3">
@@ -824,112 +825,34 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     <option value="es">Español</option>
                   </select>
                 </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">Currency (ISO code){" "}{currencyLoading && (
+                    <span className="ml-1 text-[11px] text-gray-500">Detecting…</span>
+                  )}</label>
+                  <input
+                    type="text"
+                    value={currency}
+                    onChange={(e) => {
+                      setCurrencyTouched(true);
+                      setCurrency(e.target.value.toUpperCase().slice(0, 3));
+                    }}
+                    disabled={currencyLoading && !currencyTouched}
+                    placeholder={currencyLoading ? 'Detecting…' : 'e.g., CAD, USD, EUR'}
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  />
+                </div>
               </div>
             </section>
-            {grouping === "single_lot" ||
-            grouping === "per_item" ||
-            grouping === "per_photo" ? (
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-900">
-                  Images (max 10)
-                </h3>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => {
-                    handleImagesChange(e.target.files);
-                    e.currentTarget.value = "";
-                  }}
-                  className="sr-only"
-                />
-                <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
-                  <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-700">Add images</p>
-                  <div className="mt-3">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] focus:outline-none"
-                    >
-                      <Upload className="h-4 w-4" />
-                      Select Images
-                    </button>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    PNG, JPG. Up to 10 images.
-                  </p>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Selected: {images.length} file(s)
-                </p>
-                {images.length > 0 && (
-                  <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                      {previews.map((src, idx) => (
-                        <div
-                          key={idx}
-                          className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={src}
-                            alt={images[idx]?.name || `image-${idx + 1}`}
-                            className="h-28 w-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            aria-label="Remove image"
-                            onClick={() => removeImage(idx)}
-                            className="absolute right-1 top-1 rounded-full bg-black/70 p-1.5 text-white shadow-lg hover:bg-black/80 transition"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </section>
-            ) : grouping === "catalogue" ? (
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-900">
-                  Catalogue Listing
-                </h3>
-                <CatalogueSection
-                  value={catalogueLots}
-                  onChange={setCatalogueLots}
-                  maxImagesPerLot={20}
-                  maxTotalImages={500}
-                />
-              </section>
-            ) : grouping === "combined" ? (
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-900">
-                  Combined Capture
-                </h3>
-                <CombinedCamera
-                  value={images}
-                  onChange={setImages}
-                  maxImages={20}
-                  modes={combinedModes}
-                  onModesChange={setCombinedModes}
-                />
-              </section>
-            ) : (
-              <section className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-900">
-                  Mixed Lots
-                </h3>
-                <MixedSection
-                  value={mixedLots}
-                  onChange={setMixedLots}
-                  maxImagesPerLot={20}
-                  maxTotalImages={500}
-                />
-              </section>
-            )}
+            {/* Mixed mode only */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-medium text-gray-900">Mixed Lots</h3>
+              <MixedSection
+                value={mixedLots}
+                onChange={setMixedLots}
+                maxImagesPerLot={20}
+                maxTotalImages={500}
+              />
+            </section>
 
             <div className="flex items-center gap-2 pt-2">
               <button
