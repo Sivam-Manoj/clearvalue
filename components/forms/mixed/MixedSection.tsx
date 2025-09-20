@@ -720,7 +720,7 @@ export default function MixedSection({
                 {/* Zoom overlay */}
                 <div
                   className="pointer-events-auto absolute left-2 right-2 z-20 rounded-xl bg-white/10 p-2 ring-1 ring-white/20 backdrop-blur flex flex-wrap items-center gap-2"
-                  style={{ bottom: `calc(96px + env(safe-area-inset-bottom))` }}
+                  style={{ bottom: `calc(120px + env(safe-area-inset-bottom))` }}
                 >
                   <ZoomOut className="h-4 w-4 text-white/90" />
                   <input
@@ -740,67 +740,71 @@ export default function MixedSection({
 
                 {/* Bottom controls */}
                 <div
-                  className="pointer-events-auto absolute inset-x-0 z-20 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur"
+                  className="pointer-events-auto absolute inset-x-0 z-20 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur"
                   style={{
                     bottom: "env(safe-area-inset-bottom)",
-                    paddingBottom: "max(env(safe-area-inset-bottom), 12px)",
+                    paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
                   }}
                 >
-                  <button
-                    type="button"
-                    onClick={goPrevLot}
-                    disabled={activeIdx <= 0}
-                    className="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                    aria-label="Previous lot"
-                  >
-                    <ChevronLeft className="h-4 w-4 text-white" />
-                    <span className="hidden sm:inline">Prev</span>
-                  </button>
-                  <div className="flex items-center gap-2">
+                  {/* Row 1: Prev (wide) | Done (square) | Next (wide) */}
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 w-full">
+                    <button
+                      type="button"
+                      onClick={goPrevLot}
+                      disabled={activeIdx <= 0}
+                      className="h-12 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 text-sm font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                      aria-label="Previous lot"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                      <span className="text-xs">Previous</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeCamera}
+                      className="h-12 w-12 inline-flex items-center justify-center rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_6px_0_0_rgba(190,18,60,0.45)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_3px_0_0_rgba(190,18,60,0.45)] focus:outline-none cursor-pointer"
+                      aria-label="Done"
+                      title="Done"
+                    >
+                      <Check className="h-6 w-6" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={goNextLot}
+                      className="h-12 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-3 text-sm font-semibold text-white ring-1 ring-white/10 hover:bg-green-500 cursor-pointer"
+                      aria-label="Next lot"
+                    >
+                      <span className="text-xs">Next</span>
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  {/* Row 2: Capture buttons spanning full width */}
+                  <div className="mt-2 grid grid-cols-3 gap-2 w-full">
                     <button
                       type="button"
                       onClick={() => handleCapture("single_lot")}
-                      className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                       title="Capture - Single Lot"
                     >
-                      <Camera className="h-5 w-5 text-white" /> Bundle
+                      <Camera className="h-5 w-5" /> Bundle
                     </button>
                     <button
                       type="button"
                       onClick={() => handleCapture("per_item")}
-                      className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                       title="Capture - Per Item"
                     >
-                      <Camera className="h-5 w-5 text-white" /> Item
+                      <Camera className="h-5 w-5" /> Item
                     </button>
                     <button
                       type="button"
                       onClick={() => handleCapture("per_photo")}
-                      className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600"
+                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                       title="Capture - Per Photo"
                     >
-                      <Camera className="h-5 w-5 text-white" /> Photo
+                      <Camera className="h-5 w-5" /> Photo
                     </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={goNextLot}
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-green-500 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 hover:bg-white/20"
-                    aria-label="Next lot"
-                  >
-                    <span className="hidden sm:inline">Next</span>
-                    <ChevronRight className="h-4 w-4 text-white" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={closeCamera}
-                    className="group relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_8px_0_0_rgba(190,18,60,0.5)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.5)] focus:outline-none cursor-pointer"
-                    aria-label="Done"
-                    title="Done"
-                  >
-                    <Check className="h-7 w-7 sm:h-8 sm:w-8" />
-                    <span className="sr-only">Done</span>
-                  </button>
                 </div>
 
                 {/* Error overlay */}
