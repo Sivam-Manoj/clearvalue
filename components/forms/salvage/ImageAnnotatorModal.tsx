@@ -42,7 +42,7 @@ export default function ImageAnnotatorModal({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [mode, setMode] = useState<AnnotatorMode>("draw");
   const [color, setColor] = useState<string>("#ef4444"); // rose-500
-  const [size, setSize] = useState<number>(4);
+  const [size, setSize] = useState<number>(12);
   const [actions, setActions] = useState<Action[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentStroke, setCurrentStroke] = useState<StrokePoint[]>([]);
