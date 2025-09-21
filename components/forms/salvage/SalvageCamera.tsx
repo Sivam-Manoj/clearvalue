@@ -11,12 +11,14 @@ type Props = {
   maxCount?: number; // default 10
 };
 
+type OrientationMode = "auto" | "portrait" | "landscape";
+
 export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [orientation, setOrientation] = useState<"portrait" | "landscape">("landscape");
+  const [orientation, setOrientation] = useState<OrientationMode>("auto");
   const [zoom, setZoom] = useState<number>(1);
   const [flashOn, setFlashOn] = useState<boolean>(false);
   const [isTorchSupported, setIsTorchSupported] = useState<boolean>(false);
@@ -34,15 +36,20 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: orientation === "landscape" ? 1920 : 1080 },
-            height: { ideal: orientation === "landscape" ? 1080 : 1920 },
+            width: { ideal: 1920 },
+            height: { ideal: 1920 },
           },
           audio: false,
         });
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream as any;
-          await videoRef.current.play().catch(() => {});
+          const v = videoRef.current;
+          const onMeta = async () => {
+            try { await v.play(); } catch {}
+          };
+          v.onloadedmetadata = onMeta;
+          await v.play().catch(() => {});
         }
         // Capabilities
         try {
@@ -76,10 +83,7 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
     try {
       const stream = videoRef.current?.srcObject as MediaStream | null;
       const track = stream?.getVideoTracks?.()[0] as any;
-      track?.applyConstraints?.({
-        width: { ideal: orientation === "landscape" ? 1920 : 1080 },
-        height: { ideal: orientation === "landscape" ? 1080 : 1920 },
-      });
+      // Reset zoom on mode change
       const caps = track?.getCapabilities?.() || {};
       const zoomSupported = typeof (caps as any).zoom !== "undefined" || typeof (caps as any)?.zoom?.min !== "undefined";
       if (zoomSupported) track?.applyConstraints?.({ advanced: [{ zoom: 1 }] });
@@ -112,7 +116,7 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
     if (!video || !canvas) return;
     const vw = video.videoWidth || 1280;
     const vh = video.videoHeight || 720;
-    const targetAR = orientation === "portrait" ? 9 / 16 : 16 / 9;
+    const targetAR: number = orientation === "portrait" ? 9 / 16 : orientation === "landscape" ? 16 / 9 : vw / vh;
     const videoARNow = vw / vh;
     let cropW: number;
     let cropH: number;
@@ -125,8 +129,16 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
     }
     const sx = Math.max(0, (vw - cropW) / 2);
     const sy = Math.max(0, (vh - cropH) / 2);
-    const outW = orientation === "landscape" ? 1920 : 1080;
-    const outH = orientation === "landscape" ? 1080 : 1920;
+    const ar = cropW / cropH;
+    let outW: number;
+    let outH: number;
+    if (ar >= 1) {
+      outW = 1920;
+      outH = Math.round(1920 / ar);
+    } else {
+      outH = 1920;
+      outW = Math.round(1920 * ar);
+    }
     canvas.width = outW;
     canvas.height = outH;
     const ctx = canvas.getContext("2d");
@@ -173,12 +185,12 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
           <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
             <button
               type="button"
-              onClick={() => setOrientation((o) => (o === "portrait" ? "landscape" : "portrait"))}
+              onClick={() => setOrientation((o) => (o === "auto" ? "portrait" : o === "portrait" ? "landscape" : "auto"))}
               className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
-              title="Toggle orientation"
+              title="Toggle aspect"
             >
               <RotateCw className="h-3.5 w-3.5" />
-              <span className="capitalize">Change to {orientation == "portrait" ? "Full Screen" : "Half Screen"}</span>
+              <span>Aspect: {orientation === "auto" ? "Auto" : orientation === "portrait" ? "Portrait" : "Landscape"}</span>
             </button>
             <button
               type="button"
