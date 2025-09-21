@@ -36,8 +36,9 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1920 },
+            // Match MixedSection behavior: request dimensions based on orientation
+            width: { ideal: orientation === "landscape" ? 1920 : 1080 },
+            height: { ideal: orientation === "landscape" ? 1080 : 1920 },
           },
           audio: false,
         });
@@ -83,12 +84,18 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
     try {
       const stream = videoRef.current?.srcObject as MediaStream | null;
       const track = stream?.getVideoTracks?.()[0] as any;
-      // Reset zoom on mode change
+      // Apply width/height constraints to match orientation (like MixedSection)
+      track?.applyConstraints({
+        width: { ideal: orientation === "landscape" ? 1920 : 1080 },
+        height: { ideal: orientation === "landscape" ? 1080 : 1920 },
+      });
+      // Reset hardware zoom if supported
       const caps = track?.getCapabilities?.() || {};
       const zoomSupported = typeof (caps as any).zoom !== "undefined" || typeof (caps as any)?.zoom?.min !== "undefined";
       if (zoomSupported) track?.applyConstraints?.({ advanced: [{ zoom: 1 }] });
-      setZoom(1);
     } catch {}
+    // Reset digital zoom in UI as well
+    setZoom(1);
   }, [orientation, open]);
 
   function closeCamera() {
@@ -188,10 +195,10 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
               type="button"
               onClick={() => setOrientation((o) => (o === "portrait" ? "landscape" : "portrait"))}
               className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
-              title="Toggle aspect"
+              title="Toggle orientation"
             >
               <RotateCw className="h-3.5 w-3.5" />
-              <span>Aspect: {orientation === "portrait" ? "Portrait" : "Landscape"}</span>
+              <span className="capitalize">Change to {orientation === "portrait" ? "Full Screen" : "Half Screen"}</span>
             </button>
             <button
               type="button"
