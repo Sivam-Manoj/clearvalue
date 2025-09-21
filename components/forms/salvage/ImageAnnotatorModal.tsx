@@ -37,7 +37,7 @@ export default function ImageAnnotatorModal({
   onClose,
   onSave,
 }: Props) {
-  const TEXT_ADD_DEFAULT_SIZE = 12;
+  const TEXT_ADD_DEFAULT_SIZE = 16;
   const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [mode, setMode] = useState<AnnotatorMode>("draw");
@@ -50,6 +50,7 @@ export default function ImageAnnotatorModal({
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastTapRef = useRef<{ t: number; x: number; y: number } | null>(null);
   // Track both canvas coords (for drawing) and CSS coords (for placing the input card)
   const [pendingTextCanvasPos, setPendingTextCanvasPos] = useState<{
     x: number;
@@ -412,22 +413,29 @@ export default function ImageAnnotatorModal({
       setCurrentStroke([ptCanvas]);
       return;
     }
-    // In text mode, open input card to add new text at tap location
+    // In text mode, require a double-tap to open input for adding new text
     if (mode === "text") {
-      // Clamp input card within container
-      const contRect = containerRef.current?.getBoundingClientRect();
-      let cssX = ptCss.x + 8;
-      let cssY = ptCss.y + 8;
-      const approxW = 280;
-      const approxH = 80;
-      if (contRect) {
-        cssX = Math.max(8, Math.min(cssX, contRect.width - approxW - 8));
-        cssY = Math.max(8, Math.min(cssY, contRect.height - approxH - 8));
+      const now = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+      const last = lastTapRef.current;
+      const dpx = last ? Math.hypot(e.clientX - last.x, e.clientY - last.y) : Infinity;
+      if (last && now - last.t < 350 && dpx < 24) {
+        // Double tap detected: open input near tap, clamped within stage box
+        let cssX = ptCss.x + 8;
+        let cssY = ptCss.y + 8;
+        const approxW = 280;
+        const approxH = 90;
+        if (stageBox.width > 0 && stageBox.height > 0) {
+          cssX = Math.max(8, Math.min(cssX, stageBox.width - approxW - 8));
+          cssY = Math.max(8, Math.min(cssY, stageBox.height - approxH - 8));
+        }
+        setPendingTextCanvasPos(ptCanvas);
+        setPendingTextCssPos({ x: cssX, y: cssY });
+        setPendingText("");
+        lastTapRef.current = null;
+        setTimeout(() => inputRef.current?.focus(), 0);
+      } else {
+        lastTapRef.current = { t: now, x: e.clientX, y: e.clientY };
       }
-      setPendingTextCanvasPos(ptCanvas);
-      setPendingTextCssPos({ x: cssX, y: cssY });
-      setPendingText("");
-      setTimeout(() => inputRef.current?.focus(), 0);
     }
   }
 
@@ -534,15 +542,11 @@ export default function ImageAnnotatorModal({
         const scaleY = cRect.height / canvas.height;
         let cssLeft = a.x * scaleX;
         let cssTop = Math.max(0, (a.y - 32) * scaleY);
-        const contRect = containerRef.current?.getBoundingClientRect();
         const approxW = 280;
         const approxH = 90;
-        if (contRect) {
-          cssLeft = Math.max(
-            8,
-            Math.min(cssLeft, contRect.width - approxW - 8)
-          );
-          cssTop = Math.max(8, Math.min(cssTop, contRect.height - approxH - 8));
+        if (stageBox.width > 0 && stageBox.height > 0) {
+          cssLeft = Math.max(8, Math.min(cssLeft, stageBox.width - approxW - 8));
+          cssTop = Math.max(8, Math.min(cssTop, stageBox.height - approxH - 8));
         }
         setEditTextIndex(i);
         setEditTextColor(a.color);
@@ -552,12 +556,23 @@ export default function ImageAnnotatorModal({
     }
 
     if (mode === "draw" && isDrawing && currentStroke.length > 0) {
-      setActions((prev) => [
-        ...prev,
-        { type: "stroke", color, size, points: currentStroke },
-      ]);
+      // Compute total path length to ignore micro-strokes / accidental taps
+      let pathLen = 0;
+      for (let i = 1; i < currentStroke.length; i++) {
+        const a = currentStroke[i - 1];
+        const b = currentStroke[i];
+        pathLen += Math.hypot(b.x - a.x, b.y - a.y);
+      }
+      if (pathLen >= 12) {
+        setActions((prev) => [
+          ...prev,
+          { type: "stroke", color, size, points: currentStroke },
+        ]);
+      }
       setIsDrawing(false);
       setCurrentStroke([]);
+      // Auto-exit draw mode, user can tap Draw again to continue drawing
+      setMode("text");
     }
   }
 
