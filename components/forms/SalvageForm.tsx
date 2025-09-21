@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import { SalvageService, type SalvageDetails } from "@/services/salvage";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Camera } from "lucide-react";
 import { toast } from "react-toastify";
 import Loading from "@/components/common/Loading";
+import SalvageCamera from "./salvage/SalvageCamera";
+import ImageAnnotatorModal from "./salvage/ImageAnnotatorModal";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -40,6 +42,10 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [annotOpen, setAnnotOpen] = useState(false);
+  const [annotIndex, setAnnotIndex] = useState<number | null>(null);
+  const [annotFile, setAnnotFile] = useState<File | null>(null);
 
   function handleChange<K extends keyof SalvageDetails>(key: K, value: string) {
     setDetails((prev) => ({ ...prev, [key]: value }));
@@ -59,6 +65,17 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
     });
   }
 
+  function addCapturedImages(files: File[]) {
+    if (!files || files.length === 0) return;
+    setImages((prev) => {
+      const combined = [...prev, ...files];
+      if (combined.length > 10) {
+        toast.warn("Reached maximum of 10 images. Some captures were not added.");
+      }
+      return combined.slice(0, 10);
+    });
+  }
+
   useEffect(() => {
     const urls = images.map((file) => URL.createObjectURL(file));
     setPreviews(urls);
@@ -69,6 +86,14 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
 
   function removeImage(index: number) {
     setImages((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function openAnnotator(index: number) {
+    const f = images[index];
+    if (!f) return;
+    setAnnotIndex(index);
+    setAnnotFile(f);
+    setAnnotOpen(true);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -303,6 +328,14 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
               <Upload className="h-4 w-4" />
               Select Images
             </button>
+            <button
+              type="button"
+              onClick={() => setCameraOpen(true)}
+              className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] focus:outline-none cursor-pointer"
+            >
+              <Camera className="h-4 w-4" />
+              Open Camera
+            </button>
           </div>
           <p className="mt-1 text-xs text-gray-500">PNG, JPG. Up to 10 images.</p>
         </div>
@@ -319,12 +352,13 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
                   <img
                     src={src}
                     alt={images[idx]?.name || `image-${idx + 1}`}
-                    className="h-28 w-full object-cover"
+                    className="h-28 w-full object-cover cursor-crosshair"
+                    onClick={() => openAnnotator(idx)}
                   />
                   <button
                     type="button"
                     aria-label="Remove image"
-                    onClick={() => removeImage(idx)}
+                    onClick={(e) => { e.stopPropagation(); removeImage(idx); }}
                     className="absolute right-1 top-1 rounded-full bg-black/70 p-1.5 text-white shadow-lg hover:bg-black/80 transition cursor-pointer"
                   >
                     <X className="h-4 w-4" />
@@ -359,6 +393,24 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           </div>
         )}
       </div>
+      {/* Camera overlay for capture */}
+      <SalvageCamera
+        open={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onAdd={(files) => addCapturedImages(files)}
+        maxCount={10}
+      />
+      {/* Annotator modal for drawing/text */}
+      <ImageAnnotatorModal
+        open={annotOpen}
+        file={annotFile}
+        onClose={() => setAnnotOpen(false)}
+        onSave={(annotated) => {
+          if (annotIndex == null) return;
+          setImages((prev) => prev.map((f, i) => (i === annotIndex ? annotated : f)));
+          setAnnotOpen(false);
+        }}
+      />
     </form>
   );
 }

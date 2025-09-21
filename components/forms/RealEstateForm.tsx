@@ -6,10 +6,11 @@ import {
   RealEstateService,
   type RealEstateDetails,
 } from "@/services/realEstate";
-import { X, Upload, Mic, Square } from "lucide-react";
+import { X, Upload, Mic, Square, Camera } from "lucide-react";
 import { AIService, type RealEstateDetailsPatch } from "@/services/ai";
 import { toast } from "react-toastify";
 import Loading from "@/components/common/Loading";
+import RealEstateCamera from "./real-estate/RealEstateCamera";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -21,6 +22,7 @@ const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   const { user } = useAuthContext();
   const [details, setDetails] = useState<RealEstateDetails>({
+    language: "en",
     property_details: {
       owner_name: "",
       address: "",
@@ -68,6 +70,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   function handleChange<
     K1 extends keyof RealEstateDetails,
@@ -105,6 +108,17 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         setError("You can upload up to 10 images. Extra files were ignored.");
       } else {
         setError(null);
+      }
+      return combined.slice(0, 10);
+    });
+  }
+
+  function addCapturedImages(files: File[]) {
+    if (!files || files.length === 0) return;
+    setImages((prev) => {
+      const combined = [...prev, ...files];
+      if (combined.length > 10) {
+        toast.warn("Reached maximum of 10 images. Some captures were not added.");
       }
       return combined.slice(0, 10);
     });
@@ -325,6 +339,20 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
             {error}
           </div>
         )}
+
+        {/* Language Selection */}
+        <section className="space-y-2">
+          <label className="block text-xs font-medium text-gray-700">Language</label>
+          <select
+            className="mt-1 w-full max-w-xs rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+            value={details.language || "en"}
+            onChange={(e) => setDetails((prev) => ({ ...prev, language: e.target.value as any }))}
+          >
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+          </select>
+        </section>
 
         {/* Smart Fill (AI) */}
         <section className="space-y-3">
@@ -720,6 +748,14 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               <Upload className="h-4 w-4" />
               Select Images
             </button>
+            <button
+              type="button"
+              onClick={() => setCameraOpen(true)}
+              className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] focus:outline-none"
+            >
+              <Camera className="h-4 w-4" />
+              Open Camera
+            </button>
           </div>
           <p className="mt-1 text-xs text-gray-500">
             PNG, JPG. Up to 10 images.
@@ -780,6 +816,13 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           </div>
         )}
       </div>
+      {/* Camera Overlay */}
+      <RealEstateCamera
+        open={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onAdd={(files) => addCapturedImages(files)}
+        maxCount={10}
+      />
     </form>
   );
 }
