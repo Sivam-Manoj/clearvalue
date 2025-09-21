@@ -11,14 +11,14 @@ type Props = {
   maxCount?: number; // default 10
 };
 
-type OrientationMode = "auto" | "portrait" | "landscape";
+type OrientationMode = "portrait" | "landscape";
 
 export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [orientation, setOrientation] = useState<OrientationMode>("auto");
+  const [orientation, setOrientation] = useState<OrientationMode>("portrait");
   const [zoom, setZoom] = useState<number>(1);
   const [flashOn, setFlashOn] = useState<boolean>(false);
   const [isTorchSupported, setIsTorchSupported] = useState<boolean>(false);
@@ -116,7 +116,8 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
     if (!video || !canvas) return;
     const vw = video.videoWidth || 1280;
     const vh = video.videoHeight || 720;
-    const targetAR: number = orientation === "portrait" ? 9 / 16 : orientation === "landscape" ? 16 / 9 : vw / vh;
+    // Fixed target aspect per mode: portrait (9:16), landscape (16:9)
+    const targetAR: number = orientation === "portrait" ? 9 / 16 : 16 / 9;
     const videoARNow = vw / vh;
     let cropW: number;
     let cropH: number;
@@ -185,12 +186,12 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
           <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
             <button
               type="button"
-              onClick={() => setOrientation((o) => (o === "auto" ? "portrait" : o === "portrait" ? "landscape" : "auto"))}
+              onClick={() => setOrientation((o) => (o === "portrait" ? "landscape" : "portrait"))}
               className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
               title="Toggle aspect"
             >
               <RotateCw className="h-3.5 w-3.5" />
-              <span>Aspect: {orientation === "auto" ? "Auto" : orientation === "portrait" ? "Portrait" : "Landscape"}</span>
+              <span>Aspect: {orientation === "portrait" ? "Portrait" : "Landscape"}</span>
             </button>
             <button
               type="button"

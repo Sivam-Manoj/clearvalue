@@ -355,6 +355,16 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
                     className="h-28 w-full object-cover cursor-crosshair"
                     onClick={() => openAnnotator(idx)}
                   />
+                  {/* Edit overlay button */}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); openAnnotator(idx); }}
+                    className="absolute left-1 bottom-1 rounded-full bg-black/70 px-2 py-1 text-[11px] text-white shadow-lg hover:bg-black/80 transition cursor-pointer"
+                    aria-label="Edit image"
+                    title="Edit"
+                  >
+                    Edit
+                  </button>
                   <button
                     type="button"
                     aria-label="Remove image"
