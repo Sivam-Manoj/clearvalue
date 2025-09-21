@@ -137,16 +137,8 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
     }
     const sx = Math.max(0, (vw - cropW) / 2);
     const sy = Math.max(0, (vh - cropH) / 2);
-    const ar = cropW / cropH;
-    let outW: number;
-    let outH: number;
-    if (ar >= 1) {
-      outW = 1920;
-      outH = Math.round(1920 / ar);
-    } else {
-      outH = 1920;
-      outW = Math.round(1920 * ar);
-    }
+    const outW: number = orientation === "landscape" ? 1920 : 1080;
+    const outH: number = orientation === "landscape" ? 1080 : 1920;
     canvas.width = outW;
     canvas.height = outH;
     const ctx = canvas.getContext("2d");
