@@ -1,6 +1,10 @@
 import API from "@/lib/api";
+import type { AxiosProgressEvent } from "axios";
 
 export type RealEstateDetails = {
+  progress_id?: string;
+  progressId?: string;
+  job_id?: string;
   language?: "en" | "fr" | "es";
   property_details: {
     owner_name: string;
@@ -60,17 +64,36 @@ export type RealEstateProgress = {
   message?: string;
 };
 
+export type RealEstateCreateOptions = {
+  onUploadProgress?: (fraction: number) => void;
+};
+
 export const RealEstateService = {
   async create(
     details: RealEstateDetails,
-    images: File[]
+    images: File[],
+    options?: RealEstateCreateOptions
   ): Promise<RealEstateCreateResponse> {
     const fd = new FormData();
     fd.append("details", JSON.stringify(details));
     // Limit max images to 10 as per backend middleware
     images.slice(0, 10).forEach((file) => fd.append("images", file));
 
-    const { data } = await API.post<RealEstateCreateResponse>("/real-estate", fd);
+    const { data } = await API.post<RealEstateCreateResponse>("/real-estate", fd, {
+      onUploadProgress: (event: AxiosProgressEvent) => {
+        if (!options?.onUploadProgress) return;
+        let fraction = typeof event.progress === "number" ? event.progress : 0;
+        if (
+          !fraction &&
+          typeof event.loaded === "number" &&
+          typeof event.total === "number" &&
+          event.total > 0
+        ) {
+          fraction = event.loaded / event.total;
+        }
+        options.onUploadProgress(Math.max(0, Math.min(1, fraction)));
+      },
+    });
     return data;
   },
   async progress(id: string): Promise<RealEstateProgress> {

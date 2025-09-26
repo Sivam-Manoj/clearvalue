@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import {
   RealEstateService,
   type RealEstateDetails,
 } from "@/services/realEstate";
-import { X, Upload, Mic, Square, Camera } from "lucide-react";
+import { X, Upload, Mic, Square, Camera, Check } from "lucide-react";
 import { AIService, type RealEstateDetailsPatch } from "@/services/ai";
 import { toast } from "react-toastify";
-import Loading from "@/components/common/Loading";
 import RealEstateCamera from "./real-estate/RealEstateCamera";
 
 type Props = {
@@ -18,6 +17,55 @@ type Props = {
 };
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+
+const PROG_WEIGHTS = {
+  client_upload: 0.25,
+  r2_upload: 0.18,
+  ai_analysis: 0.2,
+  find_comparables: 0.12,
+  valuation: 0.08,
+  market_trend: 0.05,
+  generate_outputs: 0.07,
+  finalize: 0.05,
+} as const;
+
+const STEPS = [
+  { key: "client_upload", label: "Uploading images" },
+  { key: "r2_upload", label: "Storing images" },
+  { key: "ai_analysis", label: "Analyzing with AI" },
+  { key: "find_comparables", label: "Finding comparables" },
+  { key: "valuation", label: "Calculating valuation" },
+  { key: "market_trend", label: "Fetching market trends" },
+  { key: "generate_outputs", label: "Generating files" },
+  { key: "finalize", label: "Finalizing" },
+] as const;
+
+type StepKey = (typeof STEPS)[number]["key"];
+
+const makeInitialStepStates = (): Record<StepKey, "pending" | "active" | "done"> => {
+  return STEPS.reduce((acc, step) => {
+    acc[step.key] = "pending";
+    return acc;
+  }, {} as Record<StepKey, "pending" | "active" | "done">);
+};
+
+const deriveStepStates = (
+  percent: number
+): Record<StepKey, "pending" | "active" | "done"> => {
+  const states = makeInitialStepStates();
+  let previousBoundary = 0;
+  STEPS.forEach((step) => {
+    const weight = PROG_WEIGHTS[step.key];
+    const boundary = previousBoundary + weight * 100;
+    if (percent >= boundary - 0.1) {
+      states[step.key] = "done";
+    } else if (percent >= previousBoundary) {
+      states[step.key] = "active";
+    }
+    previousBoundary = boundary;
+  });
+  return states;
+};
 
 export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   const { user } = useAuthContext();
@@ -71,6 +119,23 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [progressPhase, setProgressPhase] = useState<"idle" | "upload" | "processing" | "done" | "error">("idle");
+  const [stepStates, setStepStates] = useState<Record<StepKey, "pending" | "active" | "done">>(makeInitialStepStates);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const jobIdRef = useRef<string | null>(null);
+  const pollStartedRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (progressPhase === "idle") return;
+    setStepStates(deriveStepStates(progressPercent));
+  }, [progressPercent, progressPhase]);
 
   function handleChange<
     K1 extends keyof RealEstateDetails,
@@ -295,8 +360,31 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       return;
     }
     try {
+      if (images.length === 0) {
+        const msg = "Please add at least one image.";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+
       setSubmitting(true);
       setError(null);
+      setProgressPhase("upload");
+      setProgressPercent(0);
+      setStepStates(() => {
+        const initial = makeInitialStepStates();
+        initial.client_upload = "active";
+        return initial;
+      });
+      pollStartedRef.current = false;
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+
+      const jobId =
+        typeof crypto !== "undefined" && (crypto as any)?.randomUUID
+          ? (crypto as any).randomUUID()
+          : `cv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      jobIdRef.current = jobId;
+
       const inspector = {
         inspector_name: (user as any)?.username || (user as any)?.name || "",
         company_name: (user as any)?.companyName || "",
@@ -313,15 +401,74 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         },
         inspector_info: inspector,
       };
-      const res = await RealEstateService.create(payload, images);
-      const successMsg = res?.message || "Report created successfully";
-      toast.success(successMsg);
-      // Notify other parts of the app (e.g., Dashboard) to refetch recents
+      payload.progress_id = jobId;
+
+      const startPolling = () => {
+        if (!jobIdRef.current || pollStartedRef.current) return;
+        pollStartedRef.current = true;
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = setInterval(async () => {
+          try {
+            const rec = await RealEstateService.progress(jobIdRef.current!);
+            const clientWeight = PROG_WEIGHTS.client_upload;
+            const server01 = Math.max(0, Math.min(1, rec?.serverProgress01 ?? 0));
+            const overall = (clientWeight + server01 * (1 - clientWeight)) * 100;
+            setProgressPhase(
+              rec.phase === "error"
+                ? "error"
+                : rec.phase === "done"
+                ? "done"
+                : "processing"
+            );
+            setProgressPercent((prev) => (overall > prev ? overall : prev));
+            if (rec.message) setError(rec.message);
+            if (rec.phase === "done" || rec.phase === "error") {
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+            }
+          } catch (err) {
+            // Ignore early 404/network hiccups
+          }
+        }, 800);
+      };
+
+      const res = await RealEstateService.create(payload, images, {
+        onUploadProgress: (fraction: number) => {
+          const pct = Math.max(0, Math.min(1, fraction));
+          const weighted = pct * PROG_WEIGHTS.client_upload * 100;
+          setProgressPhase("upload");
+          setProgressPercent((prev) => (weighted > prev ? weighted : prev));
+          if (weighted >= PROG_WEIGHTS.client_upload * 100 - 0.5) {
+            setStepStates((prev) => ({
+              ...prev,
+              client_upload: "done",
+              r2_upload: prev.r2_upload === "pending" ? "active" : prev.r2_upload,
+            }));
+            startPolling();
+          }
+        },
+      });
+
+      startPolling();
+
+      const successMsg =
+        res?.message ||
+        "Your report is being processed. You will receive an email when it's ready.";
+      toast.info(successMsg);
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("cv:report-created"));
       }
       onSuccess?.(res?.message);
+      setProgressPhase("done");
+      setProgressPercent((prev) => (prev < 100 ? 100 : prev));
     } catch (err: any) {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      setProgressPhase("error");
       const msg =
         err?.response?.data?.message || err?.message || "Failed to create report";
       setError(msg);
@@ -811,8 +958,69 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           </button>
         </div>
         {submitting && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/80 ring-1 ring-black/5 backdrop-blur">
-            <Loading message="Creating your report..." height={220} width={220} />
+          <div className="mb-3">
+            <div className="w-full max-w-xl mx-auto rounded-2xl border border-rose-100/70 bg-white/80 p-4 shadow-2xl ring-1 ring-black/5 backdrop-blur">
+              <div className="mb-3 text-sm font-semibold text-gray-900">
+                Creating report...
+              </div>
+              <div className="mb-4 flex items-center justify-between">
+                {STEPS.map((s, idx) => {
+                  const state = stepStates[s.key];
+                  const isDone = state === "done";
+                  const isActive = state === "active";
+                  return (
+                    <div key={s.key} className="flex flex-1 items-center">
+                      <div
+                        className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold shadow ${
+                          isDone
+                            ? "border-rose-600 bg-rose-600 text-white shadow-[0_3px_0_0_rgba(190,18,60,0.5)]"
+                            : isActive
+                            ? "border-rose-600 text-rose-600 ring-2 ring-rose-300 animate-pulse"
+                            : "border-gray-300 text-gray-400"
+                        }`}
+                        title={s.label}
+                      >
+                        {isDone ? <Check className="h-4 w-4" /> : idx + 1}
+                      </div>
+                      {idx < STEPS.length - 1 && (
+                        <div className="mx-2 h-0.5 flex-1 rounded bg-gradient-to-r from-gray-200 to-gray-100">
+                          <div
+                            className={`h-0.5 rounded ${
+                              isDone
+                                ? "bg-gradient-to-r from-rose-500 to-rose-600"
+                                : isActive
+                                ? "bg-gradient-to-r from-rose-300 to-rose-400"
+                                : "bg-transparent"
+                            }`}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div>
+                <div className="h-2 w-full overflow-hidden rounded bg-gray-200">
+                  <div
+                    className="h-2 rounded bg-gradient-to-r from-rose-500 to-rose-600 transition-all duration-300 shadow-inner"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, progressPercent)).toFixed(0)}%`,
+                    }}
+                  ></div>
+                </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  {progressPhase === "upload"
+                    ? "Uploading images..."
+                    : progressPhase === "processing"
+                    ? "Analyzing images and generating outputs..."
+                    : progressPhase === "done"
+                    ? "Finalizing..."
+                    : progressPhase === "error"
+                    ? "Encountered an error."
+                    : "Starting..."}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
