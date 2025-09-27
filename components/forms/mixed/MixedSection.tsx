@@ -720,7 +720,9 @@ export default function MixedSection({
                 {/* Zoom overlay */}
                 <div
                   className="pointer-events-auto absolute left-2 right-2 z-20 rounded-xl bg-white/10 p-2 ring-1 ring-white/20 backdrop-blur flex flex-wrap items-center gap-2"
-                  style={{ bottom: `calc(120px + env(safe-area-inset-bottom))` }}
+                  style={{
+                    bottom: `calc(120px + env(safe-area-inset-bottom))`,
+                  }}
                 >
                   <ZoomOut className="h-4 w-4 text-white/90" />
                   <input
@@ -737,36 +739,6 @@ export default function MixedSection({
                     {zoom.toFixed(1)}x
                   </div>
                 </div>
-
-                {/* Landscape capture overlay (right side) */}
-                {orientation === "landscape" && (
-                  <div className="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleCapture("single_lot")}
-                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                      title="Capture - Single Lot"
-                    >
-                      <Camera className="h-5 w-5" /> Bundle
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCapture("per_item")}
-                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                      title="Capture - Per Item"
-                    >
-                      <Camera className="h-5 w-5" /> Item
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCapture("per_photo")}
-                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                      title="Capture - Per Photo"
-                    >
-                      <Camera className="h-5 w-5" /> Photo
-                    </button>
-                  </div>
-                )}
 
                 {/* Bottom controls */}
                 <div
@@ -807,8 +779,35 @@ export default function MixedSection({
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
-                  {/* Row 2: Capture buttons at bottom for portrait */}
-                  {orientation !== "landscape" && (
+                  {/* Row 2: Capture buttons - right side for landscape, bottom for portrait */}
+                  {orientation === "landscape" ? (
+                    <div className="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCapture("single_lot")}
+                        className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        title="Capture - Single Lot"
+                      >
+                        <Camera className="h-5 w-5" /> Bundle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCapture("per_item")}
+                        className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        title="Capture - Per Item"
+                      >
+                        <Camera className="h-5 w-5" /> Item
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCapture("per_photo")}
+                        className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        title="Capture - Per Photo"
+                      >
+                        <Camera className="h-5 w-5" /> Photo
+                      </button>
+                    </div>
+                  ) : (
                     <div className="mt-2 grid grid-cols-3 gap-2 w-full">
                       <button
                         type="button"
