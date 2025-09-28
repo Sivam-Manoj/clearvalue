@@ -90,6 +90,42 @@ export default function MixedSection({
     if (cameraOpen) setZoom(1);
   }, [orientation, cameraOpen]);
 
+  // Auto-detect device/viewport orientation while camera is open
+  useEffect(() => {
+    if (!cameraOpen) return;
+    if (typeof window === "undefined") return;
+    // Prefer Media Query orientation
+    const mql = window.matchMedia("(orientation: landscape)");
+    const apply = () => setOrientation(mql.matches ? "landscape" : "portrait");
+    apply();
+    const handler = (e: MediaQueryListEvent | MediaQueryList) =>
+      setOrientation((e as MediaQueryList).matches ? "landscape" : "portrait");
+    try {
+      mql.addEventListener("change", handler as any);
+    } catch {
+      // Safari
+      // @ts-ignore
+      mql.addListener(handler as any);
+    }
+    // Fallback to window resize heuristic
+    const onResize = () => {
+      try {
+        const isLandscape = window.innerWidth >= window.innerHeight;
+        setOrientation(isLandscape ? "landscape" : "portrait");
+      } catch {}
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      try {
+        mql.removeEventListener("change", handler as any);
+      } catch {
+        // @ts-ignore
+        mql.removeListener(handler as any);
+      }
+      window.removeEventListener("resize", onResize);
+    };
+  }, [cameraOpen]);
+
   // Cleanup camera on unmount
   useEffect(() => {
     return () => {
@@ -717,28 +753,35 @@ export default function MixedSection({
                   </button>
                 </div>
 
-                {/* Zoom overlay */}
-                <div
-                  className="pointer-events-auto absolute left-2 right-2 z-20 rounded-xl bg-white/10 p-2 ring-1 ring-white/20 backdrop-blur flex flex-wrap items-center gap-2"
-                  style={{
-                    bottom: `calc(120px + env(safe-area-inset-bottom))`,
-                  }}
-                >
-                  <ZoomOut className="h-4 w-4 text-white/90" />
-                  <input
-                    type="range"
-                    min={1}
-                    max={5}
-                    step={0.1}
-                    value={zoom}
-                    onChange={(e) => setZoom(parseFloat(e.target.value))}
-                    className="flex-1 min-w-[140px] accent-rose-500 cursor-pointer"
-                  />
-                  <ZoomIn className="h-4 w-4 text-white/90" />
-                  <div className="ml-2 w-10 text-right text-[11px] text-white/90">
-                    {zoom.toFixed(1)}x
+                {/* Landscape capture overlay (right side) */}
+                {orientation === "landscape" && (
+                  <div className="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCapture("single_lot")}
+                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                      title="Capture - Single Lot"
+                    >
+                      <Camera className="h-5 w-5" /> Bundle
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCapture("per_item")}
+                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                      title="Capture - Per Item"
+                    >
+                      <Camera className="h-5 w-5" /> Item
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCapture("per_photo")}
+                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                      title="Capture - Per Photo"
+                    >
+                      <Camera className="h-5 w-5" /> Photo
+                    </button>
                   </div>
-                </div>
+                )}
 
                 {/* Bottom controls */}
                 <div
@@ -754,60 +797,50 @@ export default function MixedSection({
                       type="button"
                       onClick={goPrevLot}
                       disabled={activeIdx <= 0}
-                      className="h-10 w-24 sm:w-28 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-2 text-xs font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                      className="h-9 w-20 sm:w-24 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-2 text-[11px] font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                       aria-label="Previous lot"
                     >
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="text-[11px]">Previous</span>
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                      <span className="text-[10px]">Previous</span>
                     </button>
                     <button
                       type="button"
                       onClick={closeCamera}
-                      className="h-14 w-14 sm:h-16 sm:w-16 inline-flex items-center justify-center rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_8px_0_0_rgba(190,18,60,0.45)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.45)] focus:outline-none cursor-pointer"
+                      className="h-16 w-16 sm:h-20 sm:w-20 inline-flex items-center justify-center rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_8px_0_0_rgba(190,18,60,0.45)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_4px_0_0_rgba(190,18,60,0.45)] focus:outline-none cursor-pointer"
                       aria-label="Done"
                       title="Done"
                     >
-                      <Check className="h-7 w-7" />
+                      <Check className="h-9 w-9" />
                     </button>
                     <button
                       type="button"
                       onClick={goNextLot}
-                      className="h-10 w-24 sm:w-28 inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-2 text-xs font-semibold text-white ring-1 ring-white/10 hover:bg-green-500 cursor-pointer"
+                      className="h-9 w-20 sm:w-24 inline-flex items-center justify-center gap-1.5 rounded-xl bg-green-600 px-2 text-[11px] font-semibold text-white ring-1 ring-white/10 hover:bg-green-500 cursor-pointer"
                       aria-label="Next lot"
                     >
-                      <span className="text-[11px]">Next</span>
-                      <ChevronRight className="h-4 w-4" />
+                      <span className="text-[10px]">Next</span>
+                      <ChevronRight className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  {/* Row 2: Capture buttons - right side for landscape, bottom for portrait */}
-                  {orientation === "landscape" ? (
-                    <div className="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleCapture("single_lot")}
-                        className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                        title="Capture - Single Lot"
-                      >
-                        <Camera className="h-5 w-5" /> Bundle
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCapture("per_item")}
-                        className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                        title="Capture - Per Item"
-                      >
-                        <Camera className="h-5 w-5" /> Item
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCapture("per_photo")}
-                        className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                        title="Capture - Per Photo"
-                      >
-                        <Camera className="h-5 w-5" /> Photo
-                      </button>
+                  {/* Row 1.5: Zoom slider inside bottom controls */}
+                  <div className="mt-2 flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 ring-1 ring-white/20 backdrop-blur">
+                    <ZoomOut className="h-4 w-4 text-white/90" />
+                    <input
+                      type="range"
+                      min={1}
+                      max={5}
+                      step={0.1}
+                      value={zoom}
+                      onChange={(e) => setZoom(parseFloat(e.target.value))}
+                      className="flex-1 min-w-[140px] accent-rose-500 cursor-pointer"
+                    />
+                    <ZoomIn className="h-4 w-4 text-white/90" />
+                    <div className="ml-2 w-10 text-right text-[11px] text-white/90">
+                      {zoom.toFixed(1)}x
                     </div>
-                  ) : (
+                  </div>
+                  {/* Row 2: Capture buttons - right side for landscape, bottom for portrait */}
+                  {orientation !== "landscape" && (
                     <div className="mt-2 grid grid-cols-3 gap-2 w-full">
                       <button
                         type="button"
