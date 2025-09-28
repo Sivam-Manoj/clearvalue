@@ -788,6 +788,7 @@ export default function MixedSection({
                   className="pointer-events-auto absolute inset-x-0 z-20 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur"
                   style={{
                     bottom: 0,
+                    paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)",
                   }}
                 >
                   {/* Zoom: above controls for clarity (compact) */}
