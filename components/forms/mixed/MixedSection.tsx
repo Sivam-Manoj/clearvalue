@@ -647,7 +647,7 @@ export default function MixedSection({
       {cameraOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden"
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden touch-none overscroll-contain select-none"
             style={{
               paddingTop: "max(env(safe-area-inset-top), 8px)",
               paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
@@ -655,7 +655,7 @@ export default function MixedSection({
               paddingRight: "max(env(safe-area-inset-right), 8px)",
             }}
           >
-            <div className="relative w-full sm:w-[98%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-[100dvh] sm:h-[96dvh] max-h-[100dvh] sm:max-h-[96dvh] overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-rose-200/30 bg-black/30 ring-0 sm:ring-1 ring-black/50 shadow-2xl">
+            <div className="relative w-full sm:w-[98%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-full max-h-full overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-rose-200/30 bg-black/30 ring-0 sm:ring-1 ring-black/50 shadow-2xl">
               <div className="relative flex-1 min-h-0 bg-black">
                 <video
                   ref={videoRef}
@@ -787,8 +787,7 @@ export default function MixedSection({
                 <div
                   className="pointer-events-auto absolute inset-x-0 z-20 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur"
                   style={{
-                    bottom: "env(safe-area-inset-bottom)",
-                    paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+                    bottom: 0,
                   }}
                 >
                   {/* Zoom: above controls for clarity (compact) */}
@@ -801,7 +800,7 @@ export default function MixedSection({
                       step={0.1}
                       value={zoom}
                       onChange={(e) => setZoom(parseFloat(e.target.value))}
-                      className="flex-1 min-w-[100px] accent-rose-500 cursor-pointer"
+                      className="flex-1 min-w-[100px] accent-rose-500 cursor-pointer text-[16px]"
                     />
                     <ZoomIn className="h-3.5 w-3.5 text-white/90" />
                     <div className="ml-2 w-8 text-right text-[10px] text-white/90">
