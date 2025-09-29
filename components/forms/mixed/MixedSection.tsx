@@ -14,7 +14,6 @@ import {
   ZoomOut,
   Zap,
   ZapOff,
-  RotateCw,
   Check,
 } from "lucide-react";
 
@@ -64,31 +63,7 @@ export default function MixedSection({
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
 
-  // Re-apply constraints when orientation changes while camera is open
-  useEffect(() => {
-    if (!cameraOpen) return;
-    const stream = videoRef.current?.srcObject as MediaStream | null;
-    const track = stream?.getVideoTracks?.()[0] as any;
-    try {
-      track?.applyConstraints({
-        width: { ideal: orientation === "landscape" ? 1920 : 1080 },
-        height: { ideal: orientation === "landscape" ? 1080 : 1920 },
-      });
-      // Reset hardware lens zoom to 1x if supported
-      const caps = (track as any)?.getCapabilities?.() || {};
-      const hasZoom =
-        typeof (caps as any).zoom !== "undefined" ||
-        typeof (caps as any)?.zoom?.min !== "undefined";
-      if (hasZoom) {
-        (track as any)?.applyConstraints?.({ advanced: [{ zoom: 1 }] });
-      }
-    } catch {}
-  }, [orientation, cameraOpen]);
-
-  // Reset digital zoom when toggling orientation with camera open
-  useEffect(() => {
-    if (cameraOpen) setZoom(1);
-  }, [orientation, cameraOpen]);
+  // Removed: no re-applying constraints or zoom reset on orientation change; UI only adapts
 
   // Auto-detect device/viewport orientation while camera is open
   useEffect(() => {
@@ -393,21 +368,13 @@ export default function MixedSection({
     if (!video || !canvas) return;
     const vw = video.videoWidth || 1280;
     const vh = video.videoHeight || 720;
-    const targetAR = orientation === "portrait" ? 9 / 16 : 16 / 9;
-    const videoARNow = vw / vh;
-    let cropW: number;
-    let cropH: number;
-    if (videoARNow > targetAR) {
-      cropH = vh / zoom;
-      cropW = cropH * targetAR;
-    } else {
-      cropW = vw / zoom;
-      cropH = cropW / targetAR;
-    }
+    // Capture full frame; only crop when zoom > 1 to simulate digital zoom
+    const cropW = vw / (zoom > 1 ? zoom : 1);
+    const cropH = vh / (zoom > 1 ? zoom : 1);
     const sx = Math.max(0, (vw - cropW) / 2);
     const sy = Math.max(0, (vh - cropH) / 2);
-    const outW = orientation === "landscape" ? 1920 : 1080;
-    const outH = orientation === "landscape" ? 1080 : 1920;
+    const outW = vw;
+    const outH = vh;
     canvas.width = outW;
     canvas.height = outH;
     const ctx = canvas.getContext("2d");
@@ -683,26 +650,8 @@ export default function MixedSection({
                   <div className="absolute inset-0 bg-white/80 animate-pulse" />
                 )}
 
-                {/* Top overlay: orientation / counters / flash */}
+                {/* Top overlay: counters / flash */}
                 <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setOrientation((o) =>
-                        o === "portrait" ? "landscape" : "portrait"
-                      )
-                    }
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
-                    title="Toggle orientation"
-                  >
-                    <RotateCw className="h-3.5 w-3.5" />
-                    <span className="capitalize">
-                      Change to{" "}
-                      {orientation == "portrait"
-                        ? "Full Screen"
-                        : "Half Screen"}
-                    </span>
-                  </button>
                   <div className="flex flex-wrap items-center gap-3">
                     <div>
                       Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
