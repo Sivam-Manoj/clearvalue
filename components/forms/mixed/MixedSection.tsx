@@ -265,8 +265,6 @@ export default function MixedSection({
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
-          width: { ideal: (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(orientation: landscape)").matches) ? 1920 : 1080 },
-          height: { ideal: (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(orientation: landscape)").matches) ? 1080 : 1920 },
         },
         audio: false,
       });
@@ -623,14 +621,8 @@ export default function MixedSection({
         createPortal(
           <div
             className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden touch-none overscroll-contain select-none"
-            style={{
-              paddingTop: "max(env(safe-area-inset-top), 8px)",
-              paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
-              paddingLeft: "max(env(safe-area-inset-left), 8px)",
-              paddingRight: "max(env(safe-area-inset-right), 8px)",
-            }}
           >
-            <div className="relative w-full sm:w-[98%] max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-full max-h-full overflow-hidden flex flex-col rounded-none sm:rounded-2xl border-0 sm:border border-rose-200/30 bg-black/30 ring-0 sm:ring-1 ring-black/50 shadow-2xl">
+            <div className="relative w-full h-full max-w-none max-h-full overflow-hidden flex flex-col rounded-none border-0 bg-black/30 ring-0 shadow-none">
               <div className="relative flex-1 min-h-0 bg-black">
                 <video
                   ref={videoRef}
@@ -644,7 +636,7 @@ export default function MixedSection({
                     const h = v.videoHeight || 0;
                     if (w > 0 && h > 0) setVideoAR(w / h);
                   }}
-                  className="absolute inset-0 h-full w-full object-contain pointer-events-none"
+                  className="absolute inset-0 h-full w-full object-cover pointer-events-none"
                   style={
                     zoom > 1
                       ? {
