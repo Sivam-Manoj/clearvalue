@@ -52,7 +52,7 @@ export default function MixedSection({
   const [zoom, setZoom] = useState<number>(1);
   const [flashOn, setFlashOn] = useState<boolean>(false);
   const [orientation, setOrientation] = useState<"portrait" | "landscape">(
-    "landscape"
+    "portrait"
   );
   const [isTorchSupported, setIsTorchSupported] = useState<boolean>(false);
   const [isSimulatingFlash, setIsSimulatingFlash] = useState<boolean>(false);
@@ -254,11 +254,19 @@ export default function MixedSection({
       setCameraOpen(true);
       // Wait a tick to ensure portal mounts and ref is available
       await new Promise((r) => setTimeout(r, 0));
+      // Determine current device orientation and sync state before requesting media
+      try {
+        const isLandscape =
+          typeof window !== "undefined" &&
+          window.matchMedia &&
+          window.matchMedia("(orientation: landscape)").matches;
+        setOrientation(isLandscape ? "landscape" : "portrait");
+      } catch {}
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
-          width: { ideal: orientation === "landscape" ? 1920 : 1080 },
-          height: { ideal: orientation === "landscape" ? 1080 : 1920 },
+          width: { ideal: (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(orientation: landscape)").matches) ? 1920 : 1080 },
+          height: { ideal: (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(orientation: landscape)").matches) ? 1080 : 1920 },
         },
         audio: false,
       });
