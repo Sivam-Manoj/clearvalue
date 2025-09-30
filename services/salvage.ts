@@ -1,4 +1,5 @@
 import API from "@/lib/api";
+import type { AxiosProgressEvent } from "axios";
 
 export type SalvageDetails = {
   report_date: string; // ISO date string (yyyy-mm-dd)
@@ -15,18 +16,54 @@ export type SalvageDetails = {
   company_address: string;
   appraiser_comments: string;
   next_report_due: string; // ISO date string
+  language?: 'en' | 'fr' | 'es';
+  currency?: string; // ISO code, e.g., CAD, USD, EUR
+  // Background progress id (optional, server will use it if provided)
+  progress_id?: string;
+};
+
+export type SalvageCreateResponse = {
+  message: string;
+  // Background job ack
+  jobId?: string;
+  phase?: "upload" | "processing" | "done" | "error";
+  // Legacy immediate response fields (if any)
+  filePath?: string;
+  pdfPath?: string;
+  docxPath?: string;
+  xlsxPath?: string;
+};
+
+export type CreateOptions = {
+  onUploadProgress?: (fraction: number) => void;
 };
 
 export const SalvageService = {
-  async create(details: SalvageDetails, images: File[]): Promise<{ message: string; filePath: string }> {
+  async create(details: SalvageDetails, images: File[], options?: CreateOptions): Promise<SalvageCreateResponse> {
     const fd = new FormData();
     fd.append("details", JSON.stringify(details));
     images.slice(0, 10).forEach((file) => fd.append("images", file));
 
-    const { data } = await API.post<{ message: string; filePath: string }>(
-      "/salvage",
-      fd
-    );
+    const { data } = await API.post<SalvageCreateResponse>("/salvage", fd, {
+      onUploadProgress: (e: AxiosProgressEvent) => {
+        if (!options?.onUploadProgress) return;
+        let fraction = typeof e.progress === "number" ? e.progress : 0;
+        if (!fraction && typeof e.loaded === "number" && typeof e.total === "number" && e.total > 0) {
+          fraction = e.loaded / e.total;
+        }
+        options.onUploadProgress(Math.max(0, Math.min(1, fraction)));
+      },
+    });
     return data;
+  },
+  async progress(id: string) {
+    const { data } = await API.get(`/salvage/progress/${id}`);
+    return data as {
+      id: string;
+      phase: "upload" | "processing" | "done" | "error";
+      serverProgress01: number;
+      steps: Array<{ key: string; label: string; startedAt?: string; endedAt?: string; durationMs?: number }>;
+      message?: string;
+    };
   },
 };

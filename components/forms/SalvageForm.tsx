@@ -35,6 +35,8 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
     company_address: (user as any)?.companyAddress || "",
     appraiser_comments: "",
     next_report_due: isoDate(new Date()),
+    language: 'en',
+    currency: '',
   });
 
   const [images, setImages] = useState<File[]>([]);
@@ -46,6 +48,12 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
   const [annotOpen, setAnnotOpen] = useState(false);
   const [annotIndex, setAnnotIndex] = useState<number | null>(null);
   const [annotFile, setAnnotFile] = useState<File | null>(null);
+  // Currency detection state
+  const [currencyTouched, setCurrencyTouched] = useState(false);
+  const [currencyLoading, setCurrencyLoading] = useState(false);
+  const currencyPromptedRef = useRef(false);
+
+  // No client-side polling/progress UI; background job emails on completion
 
   function handleChange<K extends keyof SalvageDetails>(key: K, value: string) {
     setDetails((prev) => ({ ...prev, [key]: value }));
@@ -83,6 +91,58 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
       urls.forEach((u) => URL.revokeObjectURL(u));
     };
   }, [images]);
+
+  // Currency: locale fallback
+  const applyLocaleFallbackCurrency = () => {
+    try {
+      const lang = (typeof navigator !== 'undefined' && (navigator as any).language) ? (navigator as any).language : 'en-CA';
+      const region = (lang.split('-')[1] || '').toUpperCase();
+      const byRegion: Record<string, string> = {
+        US: 'USD', CA: 'CAD', GB: 'GBP', AU: 'AUD', NZ: 'NZD', IN: 'INR', LK: 'LKR',
+        JP: 'JPY', CN: 'CNY', SG: 'SGD', AE: 'AED', SA: 'SAR', PK: 'PKR', BD: 'BDT',
+        ZA: 'ZAR', NG: 'NGN', PH: 'PHP', MY: 'MYR', TH: 'THB', ID: 'IDR', KR: 'KRW', HK: 'HKD', TW: 'TWD',
+        AR: 'ARS', CL: 'CLP', CO: 'COP', PE: 'PEN', VE: 'VES', TR: 'TRY', EG: 'EGP', KE: 'KES', GH: 'GHS', VN: 'VND',
+        FR: 'EUR', DE: 'EUR', ES: 'EUR', IT: 'EUR', NL: 'EUR', IE: 'EUR', PT: 'EUR', BE: 'EUR'
+      };
+      const detected = byRegion[region] || 'CAD';
+      if (!currencyTouched) setDetails((prev) => ({ ...prev, currency: prev.currency || detected }));
+    } catch {}
+  };
+
+  // On first open, use browser geolocation to call AI currency route
+  useEffect(() => {
+    if (currencyPromptedRef.current) return;
+    currencyPromptedRef.current = true;
+    if (currencyTouched) return;
+    setCurrencyLoading(true);
+    try {
+      if (typeof navigator === 'undefined' || !(navigator as any).geolocation) { applyLocaleFallbackCurrency(); setCurrencyLoading(false); return; }
+      (navigator as any).geolocation.getCurrentPosition(
+        async (pos: any) => {
+          try {
+            const { latitude, longitude } = pos.coords || {} as any;
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) { setCurrencyLoading(false); return; }
+            const res = await fetch('/api/ai/currency', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lat: latitude, lng: longitude }),
+            });
+            if (!res.ok) { applyLocaleFallbackCurrency(); return; }
+            const data = await res.json();
+            const cc = String(data?.currency || '').toUpperCase();
+            if (!currencyTouched && /^[A-Z]{3}$/.test(cc)) {
+              setDetails((prev) => ({ ...prev, currency: cc }));
+            } else {
+              applyLocaleFallbackCurrency();
+            }
+          } catch {}
+          finally { setCurrencyLoading(false); }
+        },
+        () => { setCurrencyLoading(false); applyLocaleFallbackCurrency(); },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+      );
+    } catch { setCurrencyLoading(false); }
+  }, [currencyTouched]);
 
   function removeImage(index: number) {
     setImages((prev) => prev.filter((_, i) => i !== index));
@@ -137,12 +197,19 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
       };
 
       const res = await SalvageService.create(payload, images);
-      const successMsg = res?.message || "Report created successfully";
-      toast.success(successMsg);
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("cv:report-created"));
-      }
-      onSuccess?.(res?.message);
+      const msg =
+        res?.message ||
+        "Your report is being processed. You will receive an email when it's ready.";
+      toast.info(msg);
+      try {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("cv:report-created"));
+        }
+      } catch {}
+      // Clear local form state and notify parent to close
+      setImages([]);
+      setPreviews([]);
+      onSuccess?.(msg);
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Failed to create report";
@@ -217,6 +284,31 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
               className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={details.policy_number}
               onChange={(e) => handleChange("policy_number", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">Language</label>
+            <select
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+              value={details.language || 'en'}
+              onChange={(e) => handleChange("language", e.target.value as any)}
+            >
+              <option value="en">English</option>
+              <option value="fr">Français</option>
+              <option value="es">Español</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">Currency (ISO code){" "}{currencyLoading && (
+              <span className="ml-1 text-[11px] text-gray-500">Detecting…</span>
+            )}</label>
+            <input
+              type="text"
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+              value={details.currency || ''}
+              onChange={(e) => { setCurrencyTouched(true); handleChange('currency', e.target.value.toUpperCase().slice(0,3)); }}
+              disabled={currencyLoading && !currencyTouched}
+              placeholder={currencyLoading ? 'Detecting…' : 'e.g., CAD, USD, EUR'}
             />
           </div>
         </div>
