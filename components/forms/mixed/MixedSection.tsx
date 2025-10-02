@@ -15,6 +15,7 @@ import {
   Zap,
   ZapOff,
   Check,
+  X,
 } from "lucide-react";
 
 export type MixedMode = "single_lot" | "per_item" | "per_photo";
@@ -30,6 +31,7 @@ type Props = {
   onChange: (lots: MixedLot[]) => void;
   maxImagesPerLot?: number; // default 20
   maxTotalImages?: number; // default 500
+  downloadPrefix?: string; // optional: used for saving captured images locally
 };
 
 export default function MixedSection({
@@ -37,6 +39,7 @@ export default function MixedSection({
   onChange,
   maxImagesPerLot = 20,
   maxTotalImages = 500,
+  downloadPrefix,
 }: Props) {
   const [lots, setLots] = useState<MixedLot[]>(value || []);
   const [activeIdx, setActiveIdx] = useState<number>(
@@ -400,9 +403,21 @@ export default function MixedSection({
       canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92)
     );
     if (!blob) return;
-    const file = new File([blob], `lot-${idx + 1}-${Date.now()}.jpg`, {
+    const safePrefix = (downloadPrefix || 'asset').replace(/[^a-zA-Z0-9_-]/g, '-');
+    const lotLabel = String(idx + 1).padStart(2, '0');
+    const filename = `${safePrefix}-lot-${lotLabel}-${Date.now()}.jpg`;
+    const file = new File([blob], filename, {
       type: "image/jpeg",
     });
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+    } catch {}
     addFilesToLotWithMode(idx, [file], selectedMode);
   }
 
@@ -653,6 +668,15 @@ export default function MixedSection({
                 {/* Top overlay: counters / flash */}
                 <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
                   <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={closeCamera}
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
+                      title="Exit"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Exit</span>
+                    </button>
                     <div>
                       Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
                       {maxTotalImages}

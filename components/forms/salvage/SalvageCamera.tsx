@@ -2,18 +2,19 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Check, ChevronLeft, ChevronRight, RotateCw, Trash2, Upload, Zap, ZapOff, ZoomIn, ZoomOut } from "lucide-react";
+import { Camera, Check, ChevronLeft, ChevronRight, RotateCw, Trash2, Upload, Zap, ZapOff, ZoomIn, ZoomOut, X } from "lucide-react";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onAdd: (files: File[]) => void;
   maxCount?: number; // default 10
+  downloadPrefix?: string; // optional prefix for local filename when saving captures
 };
 
 type OrientationMode = "portrait" | "landscape";
 
-export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: Props) {
+export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10, downloadPrefix }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -152,7 +153,18 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
       canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92)
     );
     if (!blob) return;
-    const file = new File([blob], `salvage-${Date.now()}.jpg`, { type: "image/jpeg" });
+    const safePrefix = (downloadPrefix || 'salvage').replace(/[^a-zA-Z0-9_-]/g, '-');
+    const filename = `${safePrefix}-${Date.now()}.jpg`;
+    const file = new File([blob], filename, { type: "image/jpeg" });
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+    } catch {}
     setFiles((prev) => (prev.length < maxCount ? [...prev, file] : prev));
   }
 
@@ -183,6 +195,15 @@ export default function SalvageCamera({ open, onClose, onAdd, maxCount = 10 }: P
 
           {/* Top overlay */}
           <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
+            <button
+              type="button"
+              onClick={closeCamera}
+              className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
+              title="Exit"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>Exit</span>
+            </button>
             <button
               type="button"
               onClick={() => setOrientation((o) => (o === "portrait" ? "landscape" : "portrait"))}

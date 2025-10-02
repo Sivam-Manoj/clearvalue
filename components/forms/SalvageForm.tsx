@@ -500,6 +500,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         open={cameraOpen}
         onClose={() => setCameraOpen(false)}
         onAdd={(files) => addCapturedImages(files)}
+        downloadPrefix={(details.file_number || details.claim_number || 'salvage').replace(/[^a-zA-Z0-9_-]/g, '-')}
         maxCount={10}
       />
       {/* Annotator modal for drawing/text */}

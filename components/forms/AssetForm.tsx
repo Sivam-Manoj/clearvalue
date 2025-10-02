@@ -851,6 +851,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                 onChange={setMixedLots}
                 maxImagesPerLot={20}
                 maxTotalImages={500}
+                downloadPrefix={(contractNo || 'asset').replace(/[^a-zA-Z0-9_-]/g, '-')}
               />
             </section>
 

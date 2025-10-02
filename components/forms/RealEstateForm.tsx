@@ -1029,6 +1029,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         open={cameraOpen}
         onClose={() => setCameraOpen(false)}
         onAdd={(files) => addCapturedImages(files)}
+        downloadPrefix={(details?.property_details?.address || 'real-estate').replace(/[^a-zA-Z0-9_-]/g, '-')}
         maxCount={10}
       />
     </form>
