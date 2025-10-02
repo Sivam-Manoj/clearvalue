@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Camera, Check, ChevronLeft, ChevronRight, RotateCw, Trash2, Upload, X, Zap, ZapOff, ZoomIn, ZoomOut } from "lucide-react";
-import JSZip from "jszip";
 
 type Props = {
   open: boolean;
@@ -155,34 +154,12 @@ export default function RealEstateCamera({ open, onClose, onAdd, maxCount = 10, 
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  async function downloadZipAll() {
-    try {
-      if (!files.length) return;
-      const zip = new JSZip();
-      for (const f of files.slice(0, maxCount)) zip.file(f.name, f);
-      const blob = await zip.generateAsync({ type: "blob" });
-      const safePrefix = (downloadPrefix || 'real-estate').replace(/[^a-zA-Z0-9_-]/g, '-');
-      const zipName = `${safePrefix}-images-${Date.now()}.zip`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = zipName;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
-    } catch {}
-  }
-
   async function exitAndClose() {
-    if (files.length > 0) {
-      await downloadZipAll();
-    }
     closeCamera();
   }
 
   async function done() {
     if (files.length > 0) onAdd(files.slice(0, maxCount));
-    await downloadZipAll();
     closeCamera();
   }
 

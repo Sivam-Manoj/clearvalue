@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import { SalvageService, type SalvageDetails } from "@/services/salvage";
-import { X, Upload, Camera } from "lucide-react";
+import { X, Upload, Camera, Download } from "lucide-react";
 import { toast } from "react-toastify";
 import Loading from "@/components/common/Loading";
 import SalvageCamera from "./salvage/SalvageCamera";
 import ImageAnnotatorModal from "./salvage/ImageAnnotatorModal";
+import JSZip from "jszip";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -92,6 +93,31 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
       urls.forEach((u) => URL.revokeObjectURL(u));
     };
   }, [images]);
+
+  async function downloadAllImagesZip() {
+    try {
+      if (images.length === 0) return;
+      const zip = new JSZip();
+      for (const f of images) zip.file(f.name, f);
+      const safePrefix = (
+        details.file_number ||
+        details.claim_number ||
+        "salvage"
+      ).replace(/[^a-zA-Z0-9_-]/g, "-");
+      const blob = await zip.generateAsync({ type: "blob" });
+      const zipName = `${safePrefix}-images-${Date.now()}.zip`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = zipName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 2000);
+    } catch {}
+  }
 
   // Currency: locale fallback
   const applyLocaleFallbackCurrency = () => {
@@ -512,7 +538,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
 
         {/* Images */}
         <section className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-900">Images (max 10)</h3>
+          <h3 className="text-sm font-medium text-gray-900">Images (max 30)</h3>
           <input
             ref={fileInputRef}
             type="file"
@@ -539,19 +565,25 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
               <button
                 type="button"
                 onClick={() => setCameraOpen(true)}
-                className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] focus:outline-none cursor-pointer"
+                className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_RGBA(190,18,60,0.5)] focus:outline-none cursor-pointer"
               >
                 <Camera className="h-4 w-4" />
-                Open Camera
-              </button>
-            </div>
-            <p className="mt-1 text-xs text-gray-500">
-              PNG, JPG. Up to 10 images.
-            </p>
+              Open Camera
+            </button>
+            <button
+              type="button"
+              onClick={downloadAllImagesZip}
+              disabled={images.length === 0}
+              className="ml-2 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 border border-gray-200 shadow disabled:opacity-50 cursor-pointer"
+              title="Download images as ZIP"
+            >
+              <Download className="h-4 w-4" />
+              Download ZIP
+            </button>
           </div>
-          <p className="text-xs text-gray-500">
-            Selected: {images.length} file(s)
-          </p>
+          <p className="mt-1 text-xs text-gray-500">PNG, JPG. Up to 30 images.</p>
+        </div>
+        <p className="text-xs text-gray-500">Selected: {images.length} file(s)</p>
           {images.length > 0 && (
             <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -635,7 +667,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           details.claim_number ||
           "salvage"
         ).replace(/[^a-zA-Z0-9_-]/g, "-")}
-        maxCount={10}
+        maxCount={30}
       />
       {/* Annotator modal for drawing/text */}
       <ImageAnnotatorModal

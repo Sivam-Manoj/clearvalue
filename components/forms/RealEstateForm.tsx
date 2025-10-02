@@ -6,10 +6,11 @@ import {
   RealEstateService,
   type RealEstateDetails,
 } from "@/services/realEstate";
-import { X, Upload, Mic, Square, Camera, Check } from "lucide-react";
+import { X, Upload, Mic, Square, Camera, Check, Download } from "lucide-react";
 import { AIService, type RealEstateDetailsPatch } from "@/services/ai";
 import { toast } from "react-toastify";
 import RealEstateCamera from "./real-estate/RealEstateCamera";
+import JSZip from "jszip";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -196,6 +197,24 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       urls.forEach((u) => URL.revokeObjectURL(u));
     };
   }, [images]);
+
+  async function downloadAllImagesZip() {
+    try {
+      if (images.length === 0) return;
+      const zip = new JSZip();
+      for (const f of images) zip.file(f.name, f);
+      const blob = await zip.generateAsync({ type: "blob" });
+      const safePrefix = (details?.property_details?.address || 'real-estate').replace(/[^a-zA-Z0-9_-]/g, '-');
+      const zipName = `${safePrefix}-images-${Date.now()}.zip`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = zipName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+    } catch {}
+  }
 
   useEffect(() => {
     return () => {
@@ -902,6 +921,16 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
             >
               <Camera className="h-4 w-4" />
               Open Camera
+            </button>
+            <button
+              type="button"
+              onClick={downloadAllImagesZip}
+              disabled={images.length === 0}
+              className="ml-2 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 border border-gray-200 shadow disabled:opacity-50"
+              title="Download images as ZIP"
+            >
+              <Download className="h-4 w-4" />
+              Download ZIP
             </button>
           </div>
           <p className="mt-1 text-xs text-gray-500">

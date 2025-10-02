@@ -16,6 +16,7 @@ import {
   ZapOff,
   Check,
   X,
+  Download,
 } from "lucide-react";
 import JSZip from "jszip";
 
@@ -322,16 +323,21 @@ export default function MixedSection({
     } catch {}
   }
 
-  // Build a ZIP for only the files captured in this session and trigger a single download
-  async function downloadZipSession() {
+  async function finishAndClose() {
+    closeCamera();
+  }
+
+  // Manual per-lot ZIP download
+  async function downloadLotZip(idx: number) {
     try {
-      const files = sessionFilesRef.current || [];
-      if (!files.length) return;
+      const lot = lots[idx];
+      if (!lot || lot.files.length === 0) return;
       const zip = new JSZip();
-      for (const f of files) zip.file(f.name, f);
-      const blob = await zip.generateAsync({ type: "blob" });
+      for (const f of lot.files) zip.file(f.name, f);
       const safePrefix = (downloadPrefix || 'asset').replace(/[^a-zA-Z0-9_-]/g, '-');
-      const zipName = `${safePrefix}-images-${Date.now()}.zip`;
+      const lotLabel = String(idx + 1).padStart(2, '0');
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const zipName = `${safePrefix}-lot-${lotLabel}-images-${Date.now()}.zip`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -340,11 +346,6 @@ export default function MixedSection({
       a.click();
       setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
     } catch {}
-  }
-
-  async function finishAndClose() {
-    await downloadZipSession();
-    closeCamera();
   }
 
   // Audio helpers for shutter
@@ -552,13 +553,23 @@ export default function MixedSection({
                 <div className="text-sm font-semibold text-gray-900">
                   Lot {activeIdx + 1}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeLot(activeIdx)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" /> Remove Lot
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => downloadLotZip(activeIdx)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-800 hover:bg-gray-50"
+                    title="Download this lot as ZIP"
+                  >
+                    <Download className="h-4 w-4" /> Download ZIP
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeLot(activeIdx)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" /> Remove Lot
+                  </button>
+                </div>
               </div>
 
               {/* Mode selection */}
