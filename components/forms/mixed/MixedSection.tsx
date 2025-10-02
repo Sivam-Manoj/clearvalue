@@ -17,6 +17,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import JSZip from "jszip";
 
 export type MixedMode = "single_lot" | "per_item" | "per_photo";
 export type MixedLot = {
@@ -52,6 +53,8 @@ export default function MixedSection({
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  // Track files captured in this camera session for zipping on Done
+  const sessionFilesRef = useRef<File[]>([]);
   const [zoom, setZoom] = useState<number>(1);
   const [flashOn, setFlashOn] = useState<boolean>(false);
   const [orientation, setOrientation] = useState<"portrait" | "landscape">(
@@ -253,6 +256,7 @@ export default function MixedSection({
     try {
       setCameraError(null);
       setZoom(1);
+      sessionFilesRef.current = [];
       // Open overlay first so the <video> element mounts
       setCameraOpen(true);
       // Wait a tick to ensure portal mounts and ref is available
@@ -316,6 +320,31 @@ export default function MixedSection({
       streamRef.current = null;
       if (videoRef.current) (videoRef.current as any).srcObject = null;
     } catch {}
+  }
+
+  // Build a ZIP for only the files captured in this session and trigger a single download
+  async function downloadZipSession() {
+    try {
+      const files = sessionFilesRef.current || [];
+      if (!files.length) return;
+      const zip = new JSZip();
+      for (const f of files) zip.file(f.name, f);
+      const blob = await zip.generateAsync({ type: "blob" });
+      const safePrefix = (downloadPrefix || 'asset').replace(/[^a-zA-Z0-9_-]/g, '-');
+      const zipName = `${safePrefix}-images-${Date.now()}.zip`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = zipName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+    } catch {}
+  }
+
+  async function finishAndClose() {
+    await downloadZipSession();
+    closeCamera();
   }
 
   // Audio helpers for shutter
@@ -409,15 +438,8 @@ export default function MixedSection({
     const file = new File([blob], filename, {
       type: "image/jpeg",
     });
-    try {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
-    } catch {}
+    // Do not download per-shot; accumulate and zip on Done
+    sessionFilesRef.current.push(file);
     addFilesToLotWithMode(idx, [file], selectedMode);
   }
 
@@ -670,7 +692,7 @@ export default function MixedSection({
                   <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="button"
-                      onClick={closeCamera}
+                      onClick={finishAndClose}
                       className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
                       title="Exit"
                     >
@@ -795,7 +817,7 @@ export default function MixedSection({
                     </button>
                     <button
                       type="button"
-                      onClick={closeCamera}
+                      onClick={finishAndClose}
                       className="h-12 sm:h-14 w-full inline-flex items-center justify-center rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_6px_0_0_rgba(190,18,60,0.45)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_3px_0_0_rgba(190,18,60,0.45)] focus:outline-none cursor-pointer"
                       aria-label="Done"
                       title="Done"

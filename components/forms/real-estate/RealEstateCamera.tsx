@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Camera, Check, ChevronLeft, ChevronRight, RotateCw, Trash2, Upload, X, Zap, ZapOff, ZoomIn, ZoomOut } from "lucide-react";
+import JSZip from "jszip";
 
 type Props = {
   open: boolean;
@@ -29,6 +30,8 @@ export default function RealEstateCamera({ open, onClose, onAdd, maxCount = 10, 
 
   useEffect(() => {
     if (!open) return;
+    // Reset files for a fresh capture session
+    setFiles([]);
     (async () => {
       try {
         setCameraError(null);
@@ -144,15 +147,7 @@ export default function RealEstateCamera({ open, onClose, onAdd, maxCount = 10, 
     const safePrefix = (downloadPrefix || 'real-estate').replace(/[^a-zA-Z0-9_-]/g, '-');
     const filename = `${safePrefix}-${Date.now()}.jpg`;
     const file = new File([blob], filename, { type: "image/jpeg" });
-    try {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
-    } catch {}
+    // Do not trigger per-shot download; accumulate and zip on Done
     setFiles((prev) => (prev.length < maxCount ? [...prev, file] : prev));
   }
 
@@ -160,8 +155,34 @@ export default function RealEstateCamera({ open, onClose, onAdd, maxCount = 10, 
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  function done() {
+  async function downloadZipAll() {
+    try {
+      if (!files.length) return;
+      const zip = new JSZip();
+      for (const f of files.slice(0, maxCount)) zip.file(f.name, f);
+      const blob = await zip.generateAsync({ type: "blob" });
+      const safePrefix = (downloadPrefix || 'real-estate').replace(/[^a-zA-Z0-9_-]/g, '-');
+      const zipName = `${safePrefix}-images-${Date.now()}.zip`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = zipName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+    } catch {}
+  }
+
+  async function exitAndClose() {
+    if (files.length > 0) {
+      await downloadZipAll();
+    }
+    closeCamera();
+  }
+
+  async function done() {
     if (files.length > 0) onAdd(files.slice(0, maxCount));
+    await downloadZipAll();
     closeCamera();
   }
 
@@ -185,7 +206,7 @@ export default function RealEstateCamera({ open, onClose, onAdd, maxCount = 10, 
           <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[12px] text-white/90">
             <button
               type="button"
-              onClick={closeCamera}
+              onClick={exitAndClose}
               className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
               title="Exit"
             >
@@ -235,7 +256,7 @@ export default function RealEstateCamera({ open, onClose, onAdd, maxCount = 10, 
           {/* Bottom controls */}
           <div className="pointer-events-auto absolute inset-x-0 z-20 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur" style={{ bottom: "env(safe-area-inset-bottom)", paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}>
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 w-full">
-              <button type="button" onClick={onClose} className="h-12 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 text-sm font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500 cursor-pointer" aria-label="Close">
+              <button type="button" onClick={exitAndClose} className="h-12 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 text-sm font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500 cursor-pointer" aria-label="Close">
                 <ChevronLeft className="h-5 w-5" />
                 <span className="text-xs">Cancel</span>
               </button>

@@ -25,8 +25,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
     date_received: isoDate(new Date()),
     claim_number: "",
     policy_number: "",
-    appraiser_name:
-      (user as any)?.username || (user as any)?.name || "",
+    appraiser_name: (user as any)?.username || (user as any)?.name || "",
     appraiser_phone: (user as any)?.contactPhone || "",
     appraiser_email: (user as any)?.contactEmail || (user as any)?.email || "",
     adjuster_name: "",
@@ -35,8 +34,8 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
     company_address: (user as any)?.companyAddress || "",
     appraiser_comments: "",
     next_report_due: isoDate(new Date()),
-    language: 'en',
-    currency: '',
+    language: "en",
+    currency: "",
   });
 
   const [images, setImages] = useState<File[]>([]);
@@ -64,12 +63,12 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
     const incoming = Array.from(files);
     setImages((prev) => {
       const combined = [...prev, ...incoming];
-      if (combined.length > 10) {
-        setError("You can upload up to 10 images. Extra files were ignored.");
+      if (combined.length > 30) {
+        setError("You can upload up to 30 images. Extra files were ignored.");
       } else {
         setError(null);
       }
-      return combined.slice(0, 10);
+      return combined.slice(0, 30);
     });
   }
 
@@ -77,10 +76,12 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
     if (!files || files.length === 0) return;
     setImages((prev) => {
       const combined = [...prev, ...files];
-      if (combined.length > 10) {
-        toast.warn("Reached maximum of 10 images. Some captures were not added.");
+      if (combined.length > 30) {
+        toast.warn(
+          "Reached maximum of 30 images. Some captures were not added."
+        );
       }
-      return combined.slice(0, 10);
+      return combined.slice(0, 30);
     });
   }
 
@@ -95,17 +96,60 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
   // Currency: locale fallback
   const applyLocaleFallbackCurrency = () => {
     try {
-      const lang = (typeof navigator !== 'undefined' && (navigator as any).language) ? (navigator as any).language : 'en-CA';
-      const region = (lang.split('-')[1] || '').toUpperCase();
+      const lang =
+        typeof navigator !== "undefined" && (navigator as any).language
+          ? (navigator as any).language
+          : "en-CA";
+      const region = (lang.split("-")[1] || "").toUpperCase();
       const byRegion: Record<string, string> = {
-        US: 'USD', CA: 'CAD', GB: 'GBP', AU: 'AUD', NZ: 'NZD', IN: 'INR', LK: 'LKR',
-        JP: 'JPY', CN: 'CNY', SG: 'SGD', AE: 'AED', SA: 'SAR', PK: 'PKR', BD: 'BDT',
-        ZA: 'ZAR', NG: 'NGN', PH: 'PHP', MY: 'MYR', TH: 'THB', ID: 'IDR', KR: 'KRW', HK: 'HKD', TW: 'TWD',
-        AR: 'ARS', CL: 'CLP', CO: 'COP', PE: 'PEN', VE: 'VES', TR: 'TRY', EG: 'EGP', KE: 'KES', GH: 'GHS', VN: 'VND',
-        FR: 'EUR', DE: 'EUR', ES: 'EUR', IT: 'EUR', NL: 'EUR', IE: 'EUR', PT: 'EUR', BE: 'EUR'
+        US: "USD",
+        CA: "CAD",
+        GB: "GBP",
+        AU: "AUD",
+        NZ: "NZD",
+        IN: "INR",
+        LK: "LKR",
+        JP: "JPY",
+        CN: "CNY",
+        SG: "SGD",
+        AE: "AED",
+        SA: "SAR",
+        PK: "PKR",
+        BD: "BDT",
+        ZA: "ZAR",
+        NG: "NGN",
+        PH: "PHP",
+        MY: "MYR",
+        TH: "THB",
+        ID: "IDR",
+        KR: "KRW",
+        HK: "HKD",
+        TW: "TWD",
+        AR: "ARS",
+        CL: "CLP",
+        CO: "COP",
+        PE: "PEN",
+        VE: "VES",
+        TR: "TRY",
+        EG: "EGP",
+        KE: "KES",
+        GH: "GHS",
+        VN: "VND",
+        FR: "EUR",
+        DE: "EUR",
+        ES: "EUR",
+        IT: "EUR",
+        NL: "EUR",
+        IE: "EUR",
+        PT: "EUR",
+        BE: "EUR",
       };
-      const detected = byRegion[region] || 'CAD';
-      if (!currencyTouched) setDetails((prev) => ({ ...prev, currency: prev.currency || detected }));
+      const detected = byRegion[region] || "CAD";
+      if (!currencyTouched)
+        setDetails((prev) => ({
+          ...prev,
+          currency: prev.currency || detected,
+        }));
     } catch {}
   };
 
@@ -116,32 +160,49 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
     if (currencyTouched) return;
     setCurrencyLoading(true);
     try {
-      if (typeof navigator === 'undefined' || !(navigator as any).geolocation) { applyLocaleFallbackCurrency(); setCurrencyLoading(false); return; }
+      if (typeof navigator === "undefined" || !(navigator as any).geolocation) {
+        applyLocaleFallbackCurrency();
+        setCurrencyLoading(false);
+        return;
+      }
       (navigator as any).geolocation.getCurrentPosition(
         async (pos: any) => {
           try {
-            const { latitude, longitude } = pos.coords || {} as any;
-            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) { setCurrencyLoading(false); return; }
-            const res = await fetch('/api/ai/currency', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+            const { latitude, longitude } = pos.coords || ({} as any);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+              setCurrencyLoading(false);
+              return;
+            }
+            const res = await fetch("/api/ai/currency", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ lat: latitude, lng: longitude }),
             });
-            if (!res.ok) { applyLocaleFallbackCurrency(); return; }
+            if (!res.ok) {
+              applyLocaleFallbackCurrency();
+              return;
+            }
             const data = await res.json();
-            const cc = String(data?.currency || '').toUpperCase();
+            const cc = String(data?.currency || "").toUpperCase();
             if (!currencyTouched && /^[A-Z]{3}$/.test(cc)) {
               setDetails((prev) => ({ ...prev, currency: cc }));
             } else {
               applyLocaleFallbackCurrency();
             }
-          } catch {}
-          finally { setCurrencyLoading(false); }
+          } catch {
+          } finally {
+            setCurrencyLoading(false);
+          }
         },
-        () => { setCurrencyLoading(false); applyLocaleFallbackCurrency(); },
+        () => {
+          setCurrencyLoading(false);
+          applyLocaleFallbackCurrency();
+        },
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
       );
-    } catch { setCurrencyLoading(false); }
+    } catch {
+      setCurrencyLoading(false);
+    }
   }, [currencyTouched]);
 
   function removeImage(index: number) {
@@ -212,7 +273,9 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
       onSuccess?.(msg);
     } catch (err: any) {
       const msg =
-        err?.response?.data?.message || err?.message || "Failed to create report";
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to create report";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -231,246 +294,309 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
 
         {/* Report & File Info */}
         <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Report Details</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Report Date</label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.report_date}
-              onChange={(e) => handleChange("report_date", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Date Received</label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.date_received}
-              onChange={(e) => handleChange("date_received", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Next Report Due</label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.next_report_due}
-              onChange={(e) => handleChange("next_report_due", e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700">File Number</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.file_number}
-              onChange={(e) => handleChange("file_number", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Claim Number</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.claim_number}
-              onChange={(e) => handleChange("claim_number", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Policy Number</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.policy_number}
-              onChange={(e) => handleChange("policy_number", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Language</label>
-            <select
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.language || 'en'}
-              onChange={(e) => handleChange("language", e.target.value as any)}
-            >
-              <option value="en">English</option>
-              <option value="fr">Français</option>
-              <option value="es">Español</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Currency (ISO code){" "}{currencyLoading && (
-              <span className="ml-1 text-[11px] text-gray-500">Detecting…</span>
-            )}</label>
-            <input
-              type="text"
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.currency || ''}
-              onChange={(e) => { setCurrencyTouched(true); handleChange('currency', e.target.value.toUpperCase().slice(0,3)); }}
-              disabled={currencyLoading && !currencyTouched}
-              placeholder={currencyLoading ? 'Detecting…' : 'e.g., CAD, USD, EUR'}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Parties & Contacts */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Contacts</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Appraiser Name</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.appraiser_name}
-              onChange={(e) => handleChange("appraiser_name", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Appraiser Phone</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.appraiser_phone}
-              onChange={(e) => handleChange("appraiser_phone", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Appraiser Email</label>
-            <input
-              type="email"
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.appraiser_email}
-              onChange={(e) => handleChange("appraiser_email", e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Adjuster Name</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.adjuster_name}
-              onChange={(e) => handleChange("adjuster_name", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Insured Name</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.insured_name}
-              onChange={(e) => handleChange("insured_name", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">Company Name</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.company_name}
-              onChange={(e) => handleChange("company_name", e.target.value)}
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700">Company Address</label>
-          <input
-            className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-            value={details.company_address}
-            onChange={(e) => handleChange("company_address", e.target.value)}
-          />
-        </div>
-      </section>
-
-      {/* Comments */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Comments</h3>
-        <div>
-          <label className="block text-xs font-medium text-gray-700">Appraiser Comments</label>
-          <textarea
-            className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-            rows={3}
-            value={details.appraiser_comments}
-            onChange={(e) => handleChange("appraiser_comments", e.target.value)}
-          />
-        </div>
-      </section>
-
-      {/* Images */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Images (max 10)</h3>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => {
-            handleImagesChange(e.target.files);
-            e.currentTarget.value = "";
-          }}
-          className="sr-only"
-        />
-        <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
-          <Upload className="mx-auto h-8 w-8 text-gray-400" />
-          <p className="mt-2 text-sm text-gray-700">Add images</p>
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] focus:outline-none cursor-pointer"
-            >
-              <Upload className="h-4 w-4" />
-              Select Images
-            </button>
-            <button
-              type="button"
-              onClick={() => setCameraOpen(true)}
-              className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] focus:outline-none cursor-pointer"
-            >
-              <Camera className="h-4 w-4" />
-              Open Camera
-            </button>
-          </div>
-          <p className="mt-1 text-xs text-gray-500">PNG, JPG. Up to 10 images.</p>
-        </div>
-        <p className="text-xs text-gray-500">Selected: {images.length} file(s)</p>
-        {images.length > 0 && (
-          <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {previews.map((src, idx) => (
-                <div
-                  key={idx}
-                  className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={src}
-                    alt={images[idx]?.name || `image-${idx + 1}`}
-                    className="h-28 w-full object-cover cursor-crosshair"
-                    onClick={() => openAnnotator(idx)}
-                  />
-                  {/* Edit overlay button */}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); openAnnotator(idx); }}
-                    className="absolute left-1 bottom-1 rounded-full bg-black/70 px-2 py-1 text-[11px] text-white shadow-lg hover:bg-black/80 transition cursor-pointer"
-                    aria-label="Edit image"
-                    title="Edit"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Remove image"
-                    onClick={(e) => { e.stopPropagation(); removeImage(idx); }}
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1.5 text-white shadow-lg hover:bg-black/80 transition cursor-pointer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+          <h3 className="text-sm font-medium text-gray-900">Report Details</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Report Date
+              </label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.report_date}
+                onChange={(e) => handleChange("report_date", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Date Received
+              </label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.date_received}
+                onChange={(e) => handleChange("date_received", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Next Report Due
+              </label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.next_report_due}
+                onChange={(e) =>
+                  handleChange("next_report_due", e.target.value)
+                }
+              />
             </div>
           </div>
-        )}
-      </section>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                File Number
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.file_number}
+                onChange={(e) => handleChange("file_number", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Claim Number
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.claim_number}
+                onChange={(e) => handleChange("claim_number", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Policy Number
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.policy_number}
+                onChange={(e) => handleChange("policy_number", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Language
+              </label>
+              <select
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.language || "en"}
+                onChange={(e) =>
+                  handleChange("language", e.target.value as any)
+                }
+              >
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Currency (ISO code){" "}
+                {currencyLoading && (
+                  <span className="ml-1 text-[11px] text-gray-500">
+                    Detecting…
+                  </span>
+                )}
+              </label>
+              <input
+                type="text"
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.currency || ""}
+                onChange={(e) => {
+                  setCurrencyTouched(true);
+                  handleChange(
+                    "currency",
+                    e.target.value.toUpperCase().slice(0, 3)
+                  );
+                }}
+                disabled={currencyLoading && !currencyTouched}
+                placeholder={
+                  currencyLoading ? "Detecting…" : "e.g., CAD, USD, EUR"
+                }
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Parties & Contacts */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Contacts</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Appraiser Name
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.appraiser_name}
+                onChange={(e) => handleChange("appraiser_name", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Appraiser Phone
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.appraiser_phone}
+                onChange={(e) =>
+                  handleChange("appraiser_phone", e.target.value)
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Appraiser Email
+              </label>
+              <input
+                type="email"
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.appraiser_email}
+                onChange={(e) =>
+                  handleChange("appraiser_email", e.target.value)
+                }
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Adjuster Name
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.adjuster_name}
+                onChange={(e) => handleChange("adjuster_name", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Insured Name
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.insured_name}
+                onChange={(e) => handleChange("insured_name", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Company Name
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.company_name}
+                onChange={(e) => handleChange("company_name", e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">
+              Company Address
+            </label>
+            <input
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+              value={details.company_address}
+              onChange={(e) => handleChange("company_address", e.target.value)}
+            />
+          </div>
+        </section>
+
+        {/* Comments */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Comments</h3>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">
+              Appraiser Comments
+            </label>
+            <textarea
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+              rows={3}
+              value={details.appraiser_comments}
+              onChange={(e) =>
+                handleChange("appraiser_comments", e.target.value)
+              }
+            />
+          </div>
+        </section>
+
+        {/* Images */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Images (max 10)</h3>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => {
+              handleImagesChange(e.target.files);
+              e.currentTarget.value = "";
+            }}
+            className="sr-only"
+          />
+          <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
+            <Upload className="mx-auto h-8 w-8 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-700">Add images</p>
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] focus:outline-none cursor-pointer"
+              >
+                <Upload className="h-4 w-4" />
+                Select Images
+              </button>
+              <button
+                type="button"
+                onClick={() => setCameraOpen(true)}
+                className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] focus:outline-none cursor-pointer"
+              >
+                <Camera className="h-4 w-4" />
+                Open Camera
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              PNG, JPG. Up to 10 images.
+            </p>
+          </div>
+          <p className="text-xs text-gray-500">
+            Selected: {images.length} file(s)
+          </p>
+          {images.length > 0 && (
+            <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {previews.map((src, idx) => (
+                  <div
+                    key={idx}
+                    className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt={images[idx]?.name || `image-${idx + 1}`}
+                      className="h-28 w-full object-cover cursor-crosshair"
+                      onClick={() => openAnnotator(idx)}
+                    />
+                    {/* Edit overlay button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openAnnotator(idx);
+                      }}
+                      className="absolute left-1 bottom-1 rounded-full bg-black/70 px-2 py-1 text-[11px] text-white shadow-lg hover:bg-black/80 transition cursor-pointer"
+                      aria-label="Edit image"
+                      title="Edit"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Remove image"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeImage(idx);
+                      }}
+                      className="absolute right-1 top-1 rounded-full bg-black/70 p-1.5 text-white shadow-lg hover:bg-black/80 transition cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
 
         <div className="flex items-center gap-2 pt-2">
           <button
@@ -491,7 +617,11 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         </div>
         {submitting && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
-            <Loading message="Creating your report..." height={220} width={220} />
+            <Loading
+              message="Creating your report..."
+              height={220}
+              width={220}
+            />
           </div>
         )}
       </div>
@@ -500,7 +630,11 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         open={cameraOpen}
         onClose={() => setCameraOpen(false)}
         onAdd={(files) => addCapturedImages(files)}
-        downloadPrefix={(details.file_number || details.claim_number || 'salvage').replace(/[^a-zA-Z0-9_-]/g, '-')}
+        downloadPrefix={(
+          details.file_number ||
+          details.claim_number ||
+          "salvage"
+        ).replace(/[^a-zA-Z0-9_-]/g, "-")}
         maxCount={10}
       />
       {/* Annotator modal for drawing/text */}
@@ -510,7 +644,9 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         onClose={() => setAnnotOpen(false)}
         onSave={(annotated) => {
           if (annotIndex == null) return;
-          setImages((prev) => prev.map((f, i) => (i === annotIndex ? annotated : f)));
+          setImages((prev) =>
+            prev.map((f, i) => (i === annotIndex ? annotated : f))
+          );
           setAnnotOpen(false);
         }}
       />
