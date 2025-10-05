@@ -486,10 +486,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         toast.error(msg);
         return;
       }
-      filesToSend = mixedLots.flatMap((l) => l.files);
+      filesToSend = mixedLots.flatMap((l) => [...l.files, ...(l.extraFiles || [])]);
       extraDetails = {
         mixed_lots: mixedLots.map((l) => ({
           count: l.files.length,
+          extra_count: (l.extraFiles || []).length,
           cover_index: Math.max(
             0,
             Math.min(l.files.length - 1, l.coverIndex || 0)

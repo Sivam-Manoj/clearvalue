@@ -23,7 +23,8 @@ import JSZip from "jszip";
 export type MixedMode = "single_lot" | "per_item" | "per_photo";
 export type MixedLot = {
   id: string;
-  files: File[];
+  files: File[]; // Main images for AI (max 30)
+  extraFiles: File[]; // Extra images for report only (max 100)
   coverIndex: number; // 0-based within files
   mode?: MixedMode;
 };
@@ -31,7 +32,8 @@ export type MixedLot = {
 type Props = {
   value: MixedLot[];
   onChange: (lots: MixedLot[]) => void;
-  maxImagesPerLot?: number; // default 20
+  maxImagesPerLot?: number; // default 30 (main AI images)
+  maxExtraImagesPerLot?: number; // default 100 (extra report images)
   maxTotalImages?: number; // default 500
   downloadPrefix?: string; // optional: used for saving captured images locally
 };
@@ -39,7 +41,8 @@ type Props = {
 export default function MixedSection({
   value,
   onChange,
-  maxImagesPerLot = 20,
+  maxImagesPerLot = 30,
+  maxExtraImagesPerLot = 100,
   maxTotalImages = 500,
   downloadPrefix,
 }: Props) {
@@ -121,7 +124,7 @@ export default function MixedSection({
 
   function createLot() {
     const id = `lot-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const next: MixedLot[] = [...lots, { id, files: [], coverIndex: 0 }];
+    const next: MixedLot[] = [...lots, { id, files: [], extraFiles: [], coverIndex: 0 }];
     setLots(next);
     setActiveIdx(next.length - 1);
   }
@@ -180,13 +183,32 @@ export default function MixedSection({
   function addFilesToLotWithMode(
     idx: number,
     incoming: File[],
-    selectedMode?: MixedMode
+    selectedMode?: MixedMode,
+    isExtra: boolean = false
   ) {
     setLots((prev) => {
       const out = [...prev];
       const lot = out[idx];
       if (!lot) return prev;
-      // If no mode set yet and a desiredMode was provided, set it now
+      
+      if (isExtra) {
+        // Add to extra files (no mode check needed)
+        const current = out[idx];
+        const roomInLot = Math.max(0, maxExtraImagesPerLot - current.extraFiles.length);
+        if (roomInLot <= 0) {
+          toast.error(`This lot already has ${maxExtraImagesPerLot} extra images.`);
+          return prev;
+        }
+        const allowedCount = Math.min(roomInLot, incoming.length);
+        const accepted = incoming.slice(0, allowedCount);
+        if (accepted.length < incoming.length) {
+          toast.warn("Some extra images were not added due to limits.");
+        }
+        out[idx] = { ...current, extraFiles: [...current.extraFiles, ...accepted] };
+        return out;
+      }
+      
+      // Main files handling
       let mode = lot.mode;
       if (!mode && selectedMode) {
         mode = selectedMode;
@@ -391,16 +413,26 @@ export default function MixedSection({
     osc2.stop(now + 0.16);
   }
 
-  async function captureFromStream(selectedMode?: MixedMode) {
+  async function captureFromStream(selectedMode?: MixedMode, isExtra: boolean = false) {
     const idx = activeIdx < 0 ? 0 : activeIdx;
     const lot = lots[idx];
     if (!lot) return;
-    const totalSoFar = lots.reduce((s, l) => s + l.files.length, 0);
-    if (lot.files.length >= maxImagesPerLot || totalSoFar >= maxTotalImages) {
-      toast.warn(
-        `Limit reached (caps: ${maxImagesPerLot}/lot, ${maxTotalImages} total).`
-      );
-      return;
+    
+    if (isExtra) {
+      // Check extra images limit
+      if (lot.extraFiles.length >= maxExtraImagesPerLot) {
+        toast.warn(`Extra images limit reached (${maxExtraImagesPerLot}/lot).`);
+        return;
+      }
+    } else {
+      // Check main images limit
+      const totalSoFar = lots.reduce((s, l) => s + l.files.length, 0);
+      if (lot.files.length >= maxImagesPerLot || totalSoFar >= maxTotalImages) {
+        toast.warn(
+          `Limit reached (caps: ${maxImagesPerLot}/lot, ${maxTotalImages} total).`
+        );
+        return;
+      }
     }
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -441,7 +473,7 @@ export default function MixedSection({
     });
     // Do not download per-shot; accumulate and zip on Done
     sessionFilesRef.current.push(file);
-    addFilesToLotWithMode(idx, [file], selectedMode);
+    addFilesToLotWithMode(idx, [file], selectedMode, isExtra);
   }
 
   function goPrevLot() {
@@ -453,7 +485,7 @@ export default function MixedSection({
         const id = `lot-${Date.now()}-${Math.random()
           .toString(36)
           .slice(2, 7)}`;
-        const next = [...prev, { id, files: [], coverIndex: 0 } as MixedLot];
+        const next = [...prev, { id, files: [], extraFiles: [], coverIndex: 0 } as MixedLot];
         setActiveIdx(next.length - 1);
         return next;
       } else {
@@ -464,11 +496,11 @@ export default function MixedSection({
     });
   }
 
-  function handleCapture(mode: MixedMode) {
+  function handleCapture(mode: MixedMode, isExtra: boolean = false) {
     const idx = activeIdx < 0 ? 0 : activeIdx;
     const lot = lots[idx];
     if (!lot) return;
-    if (lot.mode && lot.mode !== mode) {
+    if (!isExtra && lot.mode && lot.mode !== mode) {
       toast.warn(
         `This lot is already set to ${lot.mode.replace(
           "_",
@@ -477,7 +509,7 @@ export default function MixedSection({
       );
       return;
     }
-    captureFromStream(mode);
+    captureFromStream(mode, isExtra);
   }
 
   const totalImages = lots.reduce((s, l) => s + l.files.length, 0);
@@ -540,7 +572,7 @@ export default function MixedSection({
                   {lot.mode ? lot.mode.replace("_", " ") : "Select mode"}
                 </div>
                 <div className="text-[11px] text-gray-600">
-                  {lot.files.length} image(s)
+                  AI: {lot.files.length} | Extra: {lot.extraFiles?.length || 0}
                 </div>
               </button>
             ))}
@@ -716,7 +748,11 @@ export default function MixedSection({
                     </div>
                     <div>
                       Lot {activeIdx + 1}: {lots[activeIdx]?.files.length ?? 0}/
-                      {maxImagesPerLot}
+                      {maxImagesPerLot} (AI)
+                    </div>
+                    <div>
+                      Extra: {lots[activeIdx]?.extraFiles.length ?? 0}/
+                      {maxExtraImagesPerLot}
                     </div>
                     <div>
                       Mode:{" "}
@@ -762,30 +798,60 @@ export default function MixedSection({
                 {/* Landscape capture overlay (right side) */}
                 {orientation === "landscape" && (
                   <div className="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleCapture("single_lot")}
-                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                      title="Capture - Single Lot"
-                    >
-                      <Camera className="h-5 w-5" /> Bundle
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCapture("per_item")}
-                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                      title="Capture - Per Item"
-                    >
-                      <Camera className="h-5 w-5" /> Item
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCapture("per_photo")}
-                      className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                      title="Capture - Per Photo"
-                    >
-                      <Camera className="h-5 w-5" /> Photo
-                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleCapture("single_lot")}
+                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        title="Capture - Bundle (AI)"
+                      >
+                        <Camera className="h-4 w-4" /> Bundle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCapture("single_lot", true)}
+                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_4px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                        title="Capture - Bundle Extra (Report Only)"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleCapture("per_item")}
+                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        title="Capture - Item (AI)"
+                      >
+                        <Camera className="h-4 w-4" /> Item
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCapture("per_item", true)}
+                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_4px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                        title="Capture - Item Extra (Report Only)"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleCapture("per_photo")}
+                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        title="Capture - Photo (AI)"
+                      >
+                        <Camera className="h-4 w-4" /> Photo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCapture("per_photo", true)}
+                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_4px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                        title="Capture - Photo Extra (Report Only)"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -848,30 +914,60 @@ export default function MixedSection({
                   {/* Row 2: Capture buttons - right side for landscape, bottom for portrait */}
                   {orientation !== "landscape" && (
                     <div className="mt-2 grid grid-cols-3 gap-2 w-full">
-                      <button
-                        type="button"
-                        onClick={() => handleCapture("single_lot")}
-                        className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                        title="Capture - Single Lot"
-                      >
-                        <Camera className="h-5 w-5" /> Bundle
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCapture("per_item")}
-                        className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                        title="Capture - Per Item"
-                      >
-                        <Camera className="h-5 w-5" /> Item
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCapture("per_photo")}
-                        className="h-11 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-sm font-semibold text-white shadow-[0_5px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                        title="Capture - Per Photo"
-                      >
-                        <Camera className="h-5 w-5" /> Photo
-                      </button>
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleCapture("single_lot")}
+                          className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                          title="Capture - Bundle (AI)"
+                        >
+                          <Camera className="h-4 w-4" /> Bundle
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCapture("single_lot", true)}
+                          className="h-7 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                          title="Capture - Bundle Extra (Report Only)"
+                        >
+                          + Extra
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleCapture("per_item")}
+                          className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                          title="Capture - Item (AI)"
+                        >
+                          <Camera className="h-4 w-4" /> Item
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCapture("per_item", true)}
+                          className="h-7 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                          title="Capture - Item Extra (Report Only)"
+                        >
+                          + Extra
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleCapture("per_photo")}
+                          className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                          title="Capture - Photo (AI)"
+                        >
+                          <Camera className="h-4 w-4" /> Photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCapture("per_photo", true)}
+                          className="h-7 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                          title="Capture - Photo Extra (Report Only)"
+                        >
+                          + Extra
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
