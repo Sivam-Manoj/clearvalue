@@ -61,6 +61,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     {
       id: string;
       files: File[];
+      extraFiles: File[];
       coverIndex: number;
       mode?: "single_lot" | "per_item" | "per_photo";
     }[]
@@ -469,7 +470,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       filesToSend = images;
       extraDetails = { combined_modes: combinedModes };
     } else if (grouping === "mixed") {
-      // Mixed: multiple lots with per-lot mode, each lot 1-20 images, cannot be empty
+      // Mixed: multiple lots with per-lot mode, each lot 1-30 images (+ optional 0-100 extra), cannot be empty
       const total = mixedLots.reduce((s, l) => s + l.files.length, 0);
       if (total === 0) {
         const msg = "Please add at least one image (Mixed).";
@@ -478,10 +479,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         return;
       }
       const perLotOk = mixedLots.every(
-        (l) => l.files.length > 0 && l.files.length <= 20 && !!l.mode
+        (l) => l.files.length > 0 && l.files.length <= 30 && !!l.mode
       );
       if (!perLotOk) {
-        const msg = "Each lot must have 1-20 images and a selected mode.";
+        const msg = "Each lot must have 1-30 images and a selected mode.";
         setError(msg);
         toast.error(msg);
         return;
@@ -850,7 +851,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               <MixedSection
                 value={mixedLots}
                 onChange={setMixedLots}
-                maxImagesPerLot={20}
+                maxImagesPerLot={30}
+                maxExtraImagesPerLot={100}
                 maxTotalImages={500}
                 downloadPrefix={(contractNo || 'asset').replace(/[^a-zA-Z0-9_-]/g, '-')}
               />
