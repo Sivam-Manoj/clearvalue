@@ -69,6 +69,7 @@ export default function MixedSection({
   const [videoAR, setVideoAR] = useState<number | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const extraFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
@@ -255,6 +256,17 @@ export default function MixedSection({
     });
   }
 
+  function removeExtraImage(idx: number, imgIdx: number) {
+    setLots((prev) => {
+      const out = [...prev];
+      const lot = out[idx];
+      if (!lot) return prev;
+      const extraFiles = (lot.extraFiles || []).filter((_, i) => i !== imgIdx);
+      out[idx] = { ...lot, extraFiles } as MixedLot;
+      return out;
+    });
+  }
+
   function setCover(idx: number, imgIdx: number) {
     setLots((prev) => {
       const out = [...prev];
@@ -272,6 +284,15 @@ export default function MixedSection({
     const incoming = Array.from(files);
     addFilesToLot(activeIdx < 0 ? 0 : activeIdx, incoming);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  // Manual upload for Extra images (report-only)
+  function onManualUploadExtra(files: FileList | null) {
+    if (activeIdx < 0) createLot();
+    if (!files) return;
+    const incoming = Array.from(files);
+    addFilesToLotWithMode(activeIdx < 0 ? 0 : activeIdx, incoming, undefined, true);
+    if (extraFileInputRef.current) extraFileInputRef.current.value = "";
   }
 
   // Camera overlay logic
@@ -547,6 +568,21 @@ export default function MixedSection({
           className="sr-only"
           onChange={(e) => onManualUpload(e.target.files)}
         />
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-2 text-sm font-semibold text-white shadow"
+          onClick={() => extraFileInputRef.current?.click()}
+        >
+          <Upload className="h-4 w-4" /> Upload Extra
+        </button>
+        <input
+          ref={extraFileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="sr-only"
+          onChange={(e) => onManualUploadExtra(e.target.files)}
+        />
         <div className="ml-auto text-xs text-gray-600">
           Total: {totalImages} image(s)
         </div>
@@ -636,7 +672,7 @@ export default function MixedSection({
                 )}
               </div>
 
-              {/* Images grid */}
+              {/* Images grid (AI processing images) */}
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {lots[activeIdx].files.map((f, i) => {
                   const url = URL.createObjectURL(f);
@@ -678,6 +714,50 @@ export default function MixedSection({
                   );
                 })}
               </div>
+
+              {/* Extra Images (Report Only) with divider */}
+              {(lots[activeIdx]?.extraFiles?.length ?? 0) > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-gray-200" />
+                    <div className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                      Extra Images (Report Only)
+                    </div>
+                    <div className="h-px flex-1 bg-gray-200" />
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {lots[activeIdx].extraFiles.map((f, i) => {
+                      const url = URL.createObjectURL(f);
+                      return (
+                        <div
+                          key={i}
+                          className="relative group rounded-xl overflow-hidden border border-blue-200"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={url}
+                            alt={f.name}
+                            className="h-28 w-full object-cover"
+                            onLoad={() => URL.revokeObjectURL(url)}
+                          />
+                          <div className="absolute left-1 top-1 rounded bg-blue-600/80 px-1.5 py-0.5 text-[10px] text-white shadow">
+                            Extra
+                          </div>
+                          <div className="absolute inset-x-0 bottom-1 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
+                            <button
+                              type="button"
+                              className="rounded bg-white/90 px-2 py-0.5 text-[10px] shadow text-red-600"
+                              onClick={() => removeExtraImage(activeIdx, i)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -798,11 +878,11 @@ export default function MixedSection({
                 {/* Landscape capture overlay (right side) */}
                 {orientation === "landscape" && (
                   <div className="pointer-events-auto absolute right-2 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2">
-                    <div className="flex gap-1">
+                    <div className="flex items-stretch gap-1">
                       <button
                         type="button"
                         onClick={() => handleCapture("single_lot")}
-                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        className="h-10 min-w-[120px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                         title="Capture - Bundle (AI)"
                       >
                         <Camera className="h-4 w-4" /> Bundle
@@ -810,17 +890,17 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("single_lot", true)}
-                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_4px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                        className="h-10 w-9 min-w-[36px] inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_4px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
                         title="Capture - Bundle Extra (Report Only)"
                       >
                         +
                       </button>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex items-stretch gap-1">
                       <button
                         type="button"
                         onClick={() => handleCapture("per_item")}
-                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        className="h-10 min-w-[120px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                         title="Capture - Item (AI)"
                       >
                         <Camera className="h-4 w-4" /> Item
@@ -828,17 +908,17 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("per_item", true)}
-                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_4px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                        className="h-10 w-9 min-w-[36px] inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_4px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
                         title="Capture - Item Extra (Report Only)"
                       >
                         +
                       </button>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex items-stretch gap-1">
                       <button
                         type="button"
                         onClick={() => handleCapture("per_photo")}
-                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        className="h-10 min-w-[120px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                         title="Capture - Photo (AI)"
                       >
                         <Camera className="h-4 w-4" /> Photo
@@ -846,7 +926,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("per_photo", true)}
-                        className="h-10 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_4px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                        className="h-10 w-9 min-w-[36px] inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_4px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
                         title="Capture - Photo Extra (Report Only)"
                       >
                         +
