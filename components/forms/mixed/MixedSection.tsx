@@ -202,13 +202,18 @@ export default function MixedSection({
       const out = [...prev];
       const lot = out[idx];
       if (!lot) return prev;
-      
+
       if (isExtra) {
         // Add to extra files (no mode check needed)
         const current = out[idx];
-        const roomInLot = Math.max(0, maxExtraImagesPerLot - current.extraFiles.length);
+        const roomInLot = Math.max(
+          0,
+          maxExtraImagesPerLot - current.extraFiles.length
+        );
         if (roomInLot <= 0) {
-          toast.error(`This lot already has ${maxExtraImagesPerLot} extra images.`);
+          toast.error(
+            `This lot already has ${maxExtraImagesPerLot} extra images.`
+          );
           return prev;
         }
         const allowedCount = Math.min(roomInLot, incoming.length);
@@ -216,10 +221,13 @@ export default function MixedSection({
         if (accepted.length < incoming.length) {
           toast.warn("Some extra images were not added due to limits.");
         }
-        out[idx] = { ...current, extraFiles: [...current.extraFiles, ...accepted] };
+        out[idx] = {
+          ...current,
+          extraFiles: [...current.extraFiles, ...accepted],
+        };
         return out;
       }
-      
+
       // Main files handling
       let mode = lot.mode;
       if (!mode && selectedMode) {
@@ -325,7 +333,12 @@ export default function MixedSection({
     if (activeIdx < 0) createLot();
     if (!files) return;
     const incoming = Array.from(files);
-    addFilesToLotWithMode(activeIdx < 0 ? 0 : activeIdx, incoming, undefined, true);
+    addFilesToLotWithMode(
+      activeIdx < 0 ? 0 : activeIdx,
+      incoming,
+      undefined,
+      true
+    );
     if (extraFileInputRef.current) extraFileInputRef.current.value = "";
   }
 
@@ -436,23 +449,40 @@ export default function MixedSection({
       ];
       let chosen: string | undefined;
       for (const m of mimeCandidates) {
-        if ((window as any).MediaRecorder && (MediaRecorder as any).isTypeSupported?.(m)) {
-          chosen = m; break;
+        if (
+          (window as any).MediaRecorder &&
+          (MediaRecorder as any).isTypeSupported?.(m)
+        ) {
+          chosen = m;
+          break;
         }
       }
-      const mr = new MediaRecorder(streamRef.current, chosen ? { mimeType: chosen } : undefined);
+      const mr = new MediaRecorder(
+        streamRef.current,
+        chosen ? { mimeType: chosen } : undefined
+      );
       mediaRecorderRef.current = mr;
       mr.ondataavailable = (e: BlobEvent) => {
         if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
       };
       mr.onstop = async () => {
         if (recordedChunksRef.current.length) {
-          const blob = new Blob(recordedChunksRef.current, { type: mr.mimeType || "video/webm" });
+          const blob = new Blob(recordedChunksRef.current, {
+            type: mr.mimeType || "video/webm",
+          });
           const idx = activeIdx < 0 ? 0 : activeIdx;
-          const safePrefix = (downloadPrefix || "asset").replace(/[^a-zA-Z0-9_-]/g, "-");
-          const lotLabel = String((idx) + 1).padStart(2, "0");
-          const ext = (mr.mimeType && mr.mimeType.includes("mp4")) ? ".mp4" : ".webm";
-          const file = new File([blob], `${safePrefix}-lot-${lotLabel}-${Date.now()}${ext}`, { type: mr.mimeType || "video/webm" });
+          const safePrefix = (downloadPrefix || "asset").replace(
+            /[^a-zA-Z0-9_-]/g,
+            "-"
+          );
+          const lotLabel = String(idx + 1).padStart(2, "0");
+          const ext =
+            mr.mimeType && mr.mimeType.includes("mp4") ? ".mp4" : ".webm";
+          const file = new File(
+            [blob],
+            `${safePrefix}-lot-${lotLabel}-${Date.now()}${ext}`,
+            { type: mr.mimeType || "video/webm" }
+          );
           addVideosToLot(idx, [file]);
         }
       };
@@ -460,7 +490,10 @@ export default function MixedSection({
       setIsRecording(true);
       setRecMillis(0);
       const startedAt = Date.now();
-      recIntervalRef.current = setInterval(() => setRecMillis(Date.now() - startedAt), 250);
+      recIntervalRef.current = setInterval(
+        () => setRecMillis(Date.now() - startedAt),
+        250
+      );
     } catch (e: any) {
       toast.error(e?.message || "Unable to start recording");
     }
@@ -486,17 +519,23 @@ export default function MixedSection({
       if (!lot || lot.files.length === 0) return;
       const zip = new JSZip();
       for (const f of lot.files) zip.file(f.name, f);
-      const safePrefix = (downloadPrefix || 'asset').replace(/[^a-zA-Z0-9_-]/g, '-');
-      const lotLabel = String(idx + 1).padStart(2, '0');
-      const blob = await zip.generateAsync({ type: 'blob' });
+      const safePrefix = (downloadPrefix || "asset").replace(
+        /[^a-zA-Z0-9_-]/g,
+        "-"
+      );
+      const lotLabel = String(idx + 1).padStart(2, "0");
+      const blob = await zip.generateAsync({ type: "blob" });
       const zipName = `${safePrefix}-lot-${lotLabel}-images-${Date.now()}.zip`;
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = zipName;
       document.body.appendChild(a);
       a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 2000);
     } catch {}
   }
 
@@ -533,7 +572,10 @@ export default function MixedSection({
     osc.frequency.setValueAtTime(freq, start);
     g.gain.setValueAtTime(0, start);
     g.gain.linearRampToValueAtTime(Math.max(0.001, vol), start + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0009, start + Math.max(0.02, duration));
+    g.gain.exponentialRampToValueAtTime(
+      0.0009,
+      start + Math.max(0.02, duration)
+    );
     osc.connect(g);
     g.connect(ctx.destination);
     osc.start(start);
@@ -560,7 +602,7 @@ export default function MixedSection({
     // Three short ascending beeps
     playBeep(500, 0.08, "square", 0.22, 0);
     playBeep(600, 0.08, "square", 0.22, 0.09);
-    playBeep(720, 0.10, "square", 0.22, 0.18);
+    playBeep(720, 0.1, "square", 0.22, 0.18);
   }
   function playExtraSound() {
     // Single short high chirp
@@ -600,11 +642,14 @@ export default function MixedSection({
     osc2.stop(now + 0.16);
   }
 
-  async function captureFromStream(selectedMode?: MixedMode, isExtra: boolean = false) {
+  async function captureFromStream(
+    selectedMode?: MixedMode,
+    isExtra: boolean = false
+  ) {
     const idx = activeIdx < 0 ? 0 : activeIdx;
     const lot = lots[idx];
     if (!lot) return;
-    
+
     if (isExtra) {
       // Check extra images limit
       if (lot.extraFiles.length >= maxExtraImagesPerLot) {
@@ -649,8 +694,11 @@ export default function MixedSection({
       canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92)
     );
     if (!blob) return;
-    const safePrefix = (downloadPrefix || 'asset').replace(/[^a-zA-Z0-9_-]/g, '-');
-    const lotLabel = String(idx + 1).padStart(2, '0');
+    const safePrefix = (downloadPrefix || "asset").replace(
+      /[^a-zA-Z0-9_-]/g,
+      "-"
+    );
+    const lotLabel = String(idx + 1).padStart(2, "0");
     const filename = `${safePrefix}-lot-${lotLabel}-${Date.now()}.jpg`;
     const file = new File([blob], filename, {
       type: "image/jpeg",
@@ -669,7 +717,10 @@ export default function MixedSection({
         const id = `lot-${Date.now()}-${Math.random()
           .toString(36)
           .slice(2, 7)}`;
-        const next = [...prev, { id, files: [], extraFiles: [], coverIndex: 0 } as MixedLot];
+        const next = [
+          ...prev,
+          { id, files: [], extraFiles: [], coverIndex: 0 } as MixedLot,
+        ];
         setActiveIdx(next.length - 1);
         return next;
       } else {
@@ -693,7 +744,9 @@ export default function MixedSection({
       );
       return;
     }
-    try { playCaptureSound(mode, isExtra); } catch {}
+    try {
+      playCaptureSound(mode, isExtra);
+    } catch {}
     captureFromStream(mode, isExtra);
   }
 
@@ -702,24 +755,24 @@ export default function MixedSection({
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="grid grid-cols-2 grid-flow-dense gap-2 sm:flex sm:flex-wrap sm:items-center">
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-sm font-semibold text-white shadow"
+          className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-sm font-semibold text-white shadow"
           onClick={createLot}
         >
           <Plus className="h-4 w-4" /> New Lot
         </button>
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-sm font-semibold text-white shadow"
+          className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-sm font-semibold text-white shadow"
           onClick={openCamera}
         >
           <Camera className="h-4 w-4" /> Open Camera
         </button>
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-800 border border-gray-200 shadow"
+          className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-gray-800 border border-gray-200 shadow"
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="h-4 w-4" /> Manual Upload
@@ -734,7 +787,7 @@ export default function MixedSection({
         />
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-2 text-sm font-semibold text-white shadow"
+          className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-2 text-sm font-semibold text-white shadow"
           onClick={() => extraFileInputRef.current?.click()}
         >
           <Upload className="h-4 w-4" /> Upload Extra
@@ -749,7 +802,7 @@ export default function MixedSection({
         />
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-indigo-500 to-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow"
+          className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-indigo-500 to-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow"
           onClick={() => videoUploadInputRef.current?.click()}
         >
           <Upload className="h-4 w-4" /> Upload Video
@@ -762,13 +815,13 @@ export default function MixedSection({
           className="sr-only"
           onChange={(e) => onManualUploadVideo(e.target.files)}
         />
-        <div className="ml-auto text-xs text-gray-600">
+        <div className="justify-self-end sm:ml-auto text-xs text-gray-600">
           Total: {totalImages} image(s)
         </div>
       </div>
 
       {/* Lots selector */}
-      {lots.length > 0 ? (
+      {lots.length > 0 && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 overflow-x-auto">
             {lots.map((lot, i) => (
@@ -787,7 +840,8 @@ export default function MixedSection({
                   {lot.mode ? lot.mode.replace("_", " ") : "Select mode"}
                 </div>
                 <div className="text-[11px] text-gray-600">
-                  AI: {lot.files.length} | Extra: {lot.extraFiles?.length || 0} | Video: {lot.videoFiles?.length || 0}
+                  AI: {lot.files.length} | Extra: {lot.extraFiles?.length || 0}{" "}
+                  | Video: {lot.videoFiles?.length || 0}
                 </div>
               </button>
             ))}
@@ -956,7 +1010,9 @@ export default function MixedSection({
                           key={i}
                           className="relative group rounded-xl overflow-hidden border border-indigo-200"
                           onClick={(e) => {
-                            const video = (e.currentTarget.querySelector('video') as HTMLVideoElement | null);
+                            const video = e.currentTarget.querySelector(
+                              "video"
+                            ) as HTMLVideoElement | null;
                             video?.play?.();
                           }}
                         >
@@ -974,7 +1030,10 @@ export default function MixedSection({
                             <button
                               type="button"
                               className="rounded bg-white/90 px-2 py-0.5 text-[10px] shadow text-red-600"
-                              onClick={(e) => { e.stopPropagation(); removeVideo(activeIdx, i); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeVideo(activeIdx, i);
+                              }}
                             >
                               Remove
                             </button>
@@ -988,27 +1047,12 @@ export default function MixedSection({
             </div>
           )}
         </div>
-      ) : (
-        <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
-          <div className="mb-2 text-sm text-gray-700">
-            Create your first lot
-          </div>
-          <button
-            type="button"
-            onClick={createLot}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow"
-          >
-            <Plus className="h-4 w-4" /> New Lot
-          </button>
-        </div>
       )}
 
       {/* Camera Overlay (portal) */}
       {cameraOpen &&
         createPortal(
-          <div
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden touch-none overscroll-contain select-none"
-          >
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden touch-none overscroll-contain select-none">
             <div className="relative w-full h-full max-w-none max-h-full overflow-hidden flex flex-col rounded-none border-0 bg-black/30 ring-0 shadow-none">
               <div className="relative flex-1 min-h-0 bg-black">
                 <video
@@ -1173,15 +1217,29 @@ export default function MixedSection({
                         onClick={() => {
                           if (!lots[activeIdx]?.mode) return;
                           if (isRecording) {
-                            try { playRecordStop(); } catch {}
+                            try {
+                              playRecordStop();
+                            } catch {}
                             stopRecording();
                           } else {
-                            try { playRecordStart(); } catch {}
+                            try {
+                              playRecordStart();
+                            } catch {}
                             startRecording();
                           }
                         }}
-                        className={`h-10 min-w-[140px] inline-flex cursor-pointer items-center justify-center rounded-full px-3 text-xs font-semibold ring-1 ring-white/20 ${isRecording ? "bg-gray-900 text-white hover:bg-black" : "bg-red-600 text-white hover:bg-red-500"} ${!lots[activeIdx]?.mode ? "opacity-50 cursor-not-allowed" : ""}`}
-                        title={isRecording ? "Stop Recording" : "Start Recording"}
+                        className={`h-10 min-w-[140px] inline-flex cursor-pointer items-center justify-center rounded-full px-3 text-xs font-semibold ring-1 ring-white/20 ${
+                          isRecording
+                            ? "bg-blue-900 text-white hover:bg-blue-800"
+                            : "bg-blue-600 text-white hover:bg-blue-500"
+                        } ${
+                          !lots[activeIdx]?.mode
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                        }`}
+                        title={
+                          isRecording ? "Stop Recording" : "Start Recording"
+                        }
                       >
                         {isRecording ? "Stop" : "Record"}
                       </button>
@@ -1309,15 +1367,29 @@ export default function MixedSection({
                           onClick={() => {
                             if (!lots[activeIdx]?.mode) return;
                             if (isRecording) {
-                              try { playRecordStop(); } catch {}
+                              try {
+                                playRecordStop();
+                              } catch {}
                               stopRecording();
                             } else {
-                              try { playRecordStart(); } catch {}
+                              try {
+                                playRecordStart();
+                              } catch {}
                               startRecording();
                             }
                           }}
-                          className={`h-10 inline-flex cursor-pointer items-center justify-center rounded-full px-3 text-xs font-semibold ring-1 ring-white/20 ${isRecording ? "bg-gray-900 text-white hover:bg-black" : "bg-red-600 text-white hover:bg-red-500"} ${!lots[activeIdx]?.mode ? "opacity-50 cursor-not-allowed" : ""}`}
-                          title={isRecording ? "Stop Recording" : "Start Recording"}
+                          className={`h-10 inline-flex cursor-pointer items-center justify-center rounded-full px-3 text-xs font-semibold ring-1 ring-white/20 ${
+                            isRecording
+                              ? "bg-blue-900 text-white hover:bg-blue-800"
+                              : "bg-blue-600 text-white hover:bg-blue-500"
+                          } ${
+                            !lots[activeIdx]?.mode
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
+                          title={
+                            isRecording ? "Stop Recording" : "Start Recording"
+                          }
                         >
                           {isRecording ? "Stop" : "Record"}
                         </button>
