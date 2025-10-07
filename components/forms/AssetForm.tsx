@@ -62,6 +62,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       id: string;
       files: File[];
       extraFiles: File[];
+      videoFiles?: File[];
       coverIndex: number;
       mode?: "single_lot" | "per_item" | "per_photo";
     }[]
@@ -414,6 +415,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
 
     // Prepare files + details depending on grouping
     let filesToSend: File[] = images;
+    let videosToSend: File[] | undefined = undefined;
     let extraDetails: Partial<AssetCreateDetails> = {};
     if (grouping === "catalogue") {
       const total = catalogueLots.reduce((s, l) => s + l.files.length, 0);
@@ -488,6 +490,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         return;
       }
       filesToSend = mixedLots.flatMap((l) => [...l.files, ...(l.extraFiles || [])]);
+      videosToSend = mixedLots.flatMap((l) => l.videoFiles || []);
       extraDetails = {
         mixed_lots: mixedLots.map((l) => ({
           count: l.files.length,
@@ -593,7 +596,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         }, 800);
       };
 
-      const res = await AssetService.create(payload, filesToSend, {
+      const res = await AssetService.create(payload, filesToSend, videosToSend, {
         onUploadProgress: (fraction: number) => {
           const pct = Math.max(0, Math.min(1, fraction));
           const weighted = pct * PROG_WEIGHTS.client_upload * 100;

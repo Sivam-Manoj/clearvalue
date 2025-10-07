@@ -73,6 +73,7 @@ export const AssetService = {
   async create(
     details: AssetCreateDetails,
     images: File[],
+    videos?: File[] | undefined,
     options?: CreateOptions
   ): Promise<AssetCreateResponse> {
     const fd = new FormData();
@@ -84,6 +85,9 @@ export const AssetService = {
         ? images
         : images.slice(0, 10);
     filesToSend.forEach((file) => fd.append("images", file));
+    // Append videos (if any) under a separate field; backend will include them in the zip, not AI
+    const videoFiles = Array.isArray(videos) ? videos : [];
+    videoFiles.forEach((file) => fd.append("videos", file));
 
     const { data } = await API.post<AssetCreateResponse>("/asset", fd, {
       onUploadProgress: (e: AxiosProgressEvent) => {
