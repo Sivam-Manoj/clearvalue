@@ -1160,7 +1160,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("single_lot")}
-                        className="h-10 min-w-[120px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        className="h-10 min-w-[88px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                         title="Capture - Bundle (AI)"
                       >
                         <Camera className="h-4 w-4" /> Bundle
@@ -1178,7 +1178,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("per_item")}
-                        className="h-10 min-w-[120px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        className="h-10 min-w-[88px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                         title="Capture - Item (AI)"
                       >
                         <Camera className="h-4 w-4" /> Item
@@ -1196,7 +1196,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("per_photo")}
-                        className="h-10 min-w-[120px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2.5 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        className="h-10 min-w-[88px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                         title="Capture - Photo (AI)"
                       >
                         <Camera className="h-4 w-4" /> Photo
@@ -1229,7 +1229,7 @@ export default function MixedSection({
                             startRecording();
                           }
                         }}
-                        className={`h-10 min-w-[140px] inline-flex cursor-pointer items-center justify-center rounded-full px-3 text-xs font-semibold ring-1 ring-white/20 ${
+                        className={`h-10 min-w-[88px] inline-flex cursor-pointer items-center justify-center rounded-full px-3 text-xs font-semibold ring-1 ring-white/20 ${
                           isRecording
                             ? "bg-blue-900 text-white hover:bg-blue-800"
                             : "bg-blue-600 text-white hover:bg-blue-500"
@@ -1254,30 +1254,44 @@ export default function MixedSection({
                   style={{
                     bottom: 0,
                     paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)",
-                    paddingRight: orientation === "landscape" ? "180px" : undefined,
-                    paddingLeft: orientation === "landscape" ? "180px" : undefined,
                   }}
                 >
-                  <div className="mx-auto w-full max-w-[520px] sm:max-w-[620px]">
-                    {/* Always show bottom zoom control; reserve right-side space via paddingRight in landscape */}
-                    <div className="mb-1 flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/15 backdrop-blur">
-                      <ZoomOut className="h-3.5 w-3.5 text-white/90" />
-                      <input
-                        type="range"
-                        min={1}
-                        max={5}
-                        step={0.1}
-                        value={zoom}
-                        onChange={(e) => setZoom(parseFloat(e.target.value))}
-                        className="flex-1 min-w-[100px] accent-rose-500 cursor-pointer text-[16px]"
-                      />
-                      <ZoomIn className="h-3.5 w-3.5 text-white/90" />
-                      <div className="ml-2 w-8 text-right text-[10px] text-white/90">
-                        {zoom.toFixed(1)}x
+                  <div className="mx-auto w-full max-w-[560px] sm:max-w-[780px]">
+                    {/* Portrait: zoom above controls. Landscape: zoom moves inline to the right */}
+                    {orientation !== "landscape" && (
+                      <div className="mb-1 flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/15 backdrop-blur">
+                        <ZoomOut className="h-3.5 w-3.5 text-white/90" />
+                        <input
+                          type="range"
+                          min={1}
+                          max={5}
+                          step={0.1}
+                          value={zoom}
+                          onChange={(e) => setZoom(parseFloat(e.target.value))}
+                          className="flex-1 min-w-[100px] accent-rose-500 cursor-pointer text-[16px]"
+                        />
+                        <ZoomIn className="h-3.5 w-3.5 text-white/90" />
+                        <div className="ml-2 w-8 text-right text-[10px] text-white/90">{zoom.toFixed(1)}x</div>
                       </div>
-                    </div>
-                    {/* Controls: 40% | 20% | 40% */}
-                    <div className="grid grid-cols-[2fr_1fr_2fr] items-center gap-2 w-full">
+                    )}
+                    {/* Controls row: 3 cols portrait, 4 cols (zoom at left) landscape */}
+                    <div className={`grid items-center gap-2 w-full ${orientation === "landscape" ? "grid-cols-[auto_2fr_1fr_2fr]" : "grid-cols-[2fr_1fr_2fr]"}`}>
+                      {orientation === "landscape" && (
+                        <div className="justify-self-start flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/15 backdrop-blur">
+                          <ZoomOut className="h-3.5 w-3.5 text-white/90" />
+                          <input
+                            type="range"
+                            min={1}
+                            max={5}
+                            step={0.1}
+                            value={zoom}
+                            onChange={(e) => setZoom(parseFloat(e.target.value))}
+                            className="w-[140px] sm:w-[200px] accent-rose-500 cursor-pointer text-[16px]"
+                          />
+                          <ZoomIn className="h-3.5 w-3.5 text-white/90" />
+                          <div className="ml-1 w-8 text-right text-[10px] text-white/90">{zoom.toFixed(1)}x</div>
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={goPrevLot}
@@ -1306,6 +1320,7 @@ export default function MixedSection({
                         <span className="text-[10px]">Next</span>
                         <ChevronRight className="h-3 w-3" />
                       </button>
+                      
                     </div>
                     {/* Row 2: Capture buttons - right side for landscape, bottom for portrait */}
                     {orientation !== "landscape" && (
