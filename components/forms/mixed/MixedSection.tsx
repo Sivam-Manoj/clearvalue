@@ -1329,7 +1329,7 @@ export default function MixedSection({
                           <button
                             type="button"
                             onClick={() => handleCapture("single_lot")}
-                            className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                            className="h-7 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                             title="Capture - Bundle (AI)"
                           >
                             <Camera className="h-4 w-4" /> Bundle
@@ -1347,7 +1347,7 @@ export default function MixedSection({
                           <button
                             type="button"
                             onClick={() => handleCapture("per_item")}
-                            className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                            className="h-7 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                             title="Capture - Item (AI)"
                           >
                             <Camera className="h-4 w-4" /> Item
@@ -1365,7 +1365,7 @@ export default function MixedSection({
                           <button
                             type="button"
                             onClick={() => handleCapture("per_photo")}
-                            className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                            className="h-7 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                             title="Capture - Photo (AI)"
                           >
                             <Camera className="h-4 w-4" /> Photo
@@ -1397,7 +1397,7 @@ export default function MixedSection({
                                 startRecording();
                               }
                             }}
-                            className={`h-10 inline-flex cursor-pointer items-center justify-center rounded-full px-3 text-xs font-semibold ring-1 ring-white/20 ${
+                            className={`h-7 inline-flex cursor-pointer items-center justify-center rounded-full px-2 text-[10px] font-semibold ring-1 ring-white/20 ${
                               isRecording
                                 ? "bg-blue-900 text-white hover:bg-blue-800"
                                 : "bg-blue-600 text-white hover:bg-blue-500"
