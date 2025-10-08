@@ -1106,7 +1106,7 @@ export default function MixedSection({
                       {maxExtraImagesPerLot}
                     </div>
                     <div>
-                      Mode:{" "}
+                      Mode: {" "}
                       {lots[activeIdx]?.mode === "single_lot"
                         ? "Bundle"
                         : lots[activeIdx]?.mode === "per_item"
@@ -1122,6 +1122,7 @@ export default function MixedSection({
                       </div>
                     )}
                   </div>
+                  
                   <button
                     type="button"
                     onClick={async () => {
@@ -1253,149 +1254,153 @@ export default function MixedSection({
                   style={{
                     bottom: 0,
                     paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)",
+                    paddingRight: orientation === "landscape" ? "180px" : undefined,
+                    paddingLeft: orientation === "landscape" ? "180px" : undefined,
                   }}
                 >
-                  {/* Zoom: above controls for clarity (compact) */}
-                  <div className="mb-1 flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/15 backdrop-blur">
-                    <ZoomOut className="h-3.5 w-3.5 text-white/90" />
-                    <input
-                      type="range"
-                      min={1}
-                      max={5}
-                      step={0.1}
-                      value={zoom}
-                      onChange={(e) => setZoom(parseFloat(e.target.value))}
-                      className="flex-1 min-w-[100px] accent-rose-500 cursor-pointer text-[16px]"
-                    />
-                    <ZoomIn className="h-3.5 w-3.5 text-white/90" />
-                    <div className="ml-2 w-8 text-right text-[10px] text-white/90">
-                      {zoom.toFixed(1)}x
+                  <div className="mx-auto w-full max-w-[520px] sm:max-w-[620px]">
+                    {/* Always show bottom zoom control; reserve right-side space via paddingRight in landscape */}
+                    <div className="mb-1 flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/15 backdrop-blur">
+                      <ZoomOut className="h-3.5 w-3.5 text-white/90" />
+                      <input
+                        type="range"
+                        min={1}
+                        max={5}
+                        step={0.1}
+                        value={zoom}
+                        onChange={(e) => setZoom(parseFloat(e.target.value))}
+                        className="flex-1 min-w-[100px] accent-rose-500 cursor-pointer text-[16px]"
+                      />
+                      <ZoomIn className="h-3.5 w-3.5 text-white/90" />
+                      <div className="ml-2 w-8 text-right text-[10px] text-white/90">
+                        {zoom.toFixed(1)}x
+                      </div>
                     </div>
-                  </div>
-                  {/* Controls: 40% | 20% | 40% */}
-                  <div className="grid grid-cols-[2fr_1fr_2fr] items-center gap-2 w-full">
-                    <button
-                      type="button"
-                      onClick={goPrevLot}
-                      disabled={activeIdx <= 0}
-                      className="h-8 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-2 text-[10px] font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                      aria-label="Previous lot"
-                    >
-                      <ChevronLeft className="h-3 w-3" />
-                      <span className="text-[10px]">Previous</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={finishAndClose}
-                      className="h-12 sm:h-14 w-full inline-flex items-center justify-center rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_6px_0_0_rgba(190,18,60,0.45)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_3px_0_0_rgba(190,18,60,0.45)] focus:outline-none cursor-pointer"
-                      aria-label="Done"
-                      title="Done"
-                    >
-                      <Check className="h-7 w-7" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={goNextLot}
-                      className="h-8 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-green-600 px-2 text-[10px] font-semibold text-white ring-1 ring-white/10 hover:bg-green-500 cursor-pointer"
-                      aria-label="Next lot"
-                    >
-                      <span className="text-[10px]">Next</span>
-                      <ChevronRight className="h-3 w-3" />
-                    </button>
-                  </div>
-                  {/* Row 2: Capture buttons - right side for landscape, bottom for portrait */}
-                  {orientation !== "landscape" && (
-                    <div className="mt-2 grid grid-cols-4 gap-2 w-full">
-                      <div className="flex flex-col gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleCapture("single_lot")}
-                          className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                          title="Capture - Bundle (AI)"
-                        >
-                          <Camera className="h-4 w-4" /> Bundle
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleCapture("single_lot", true)}
-                          className="h-7 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
-                          title="Capture - Bundle Extra (Report Only)"
-                        >
-                          + Extra
-                        </button>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleCapture("per_item")}
-                          className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                          title="Capture - Item (AI)"
-                        >
-                          <Camera className="h-4 w-4" /> Item
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleCapture("per_item", true)}
-                          className="h-7 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
-                          title="Capture - Item Extra (Report Only)"
-                        >
-                          + Extra
-                        </button>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleCapture("per_photo")}
-                          className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                          title="Capture - Photo (AI)"
-                        >
-                          <Camera className="h-4 w-4" /> Photo
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleCapture("per_photo", true)}
-                          className="h-7 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
-                          title="Capture - Photo Extra (Report Only)"
-                        >
-                          + Extra
-                        </button>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <button
-                          type="button"
-                          disabled={!lots[activeIdx]?.mode}
-                          onClick={() => {
-                            if (!lots[activeIdx]?.mode) return;
-                            if (isRecording) {
-                              try {
-                                playRecordStop();
-                              } catch {}
-                              stopRecording();
-                            } else {
-                              try {
-                                playRecordStart();
-                              } catch {}
-                              startRecording();
+                    {/* Controls: 40% | 20% | 40% */}
+                    <div className="grid grid-cols-[2fr_1fr_2fr] items-center gap-2 w-full">
+                      <button
+                        type="button"
+                        onClick={goPrevLot}
+                        disabled={activeIdx <= 0}
+                        className="h-8 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-2 text-[10px] font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                        aria-label="Previous lot"
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                        <span className="text-[10px]">Previous</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={finishAndClose}
+                        className="h-12 sm:h-14 w-full inline-flex items-center justify-center rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_6px_0_0_rgba(190,18,60,0.45)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_3px_0_0_rgba(190,18,60,0.45)] focus:outline-none cursor-pointer"
+                        aria-label="Done"
+                        title="Done"
+                      >
+                        <Check className="h-7 w-7" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goNextLot}
+                        className="h-8 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-green-600 px-2 text-[10px] font-semibold text-white ring-1 ring-white/10 hover:bg-green-500 cursor-pointer"
+                        aria-label="Next lot"
+                      >
+                        <span className="text-[10px]">Next</span>
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                    {/* Row 2: Capture buttons - right side for landscape, bottom for portrait */}
+                    {orientation !== "landscape" && (
+                      <div className="mt-2 grid grid-cols-4 gap-2 w-full">
+                        <div className="flex flex-col gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleCapture("single_lot")}
+                            className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                            title="Capture - Bundle (AI)"
+                          >
+                            <Camera className="h-4 w-4" /> Bundle
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCapture("single_lot", true)}
+                            className="h-7 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                            title="Capture - Bundle Extra (Report Only)"
+                          >
+                            + Extra
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleCapture("per_item")}
+                            className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                            title="Capture - Item (AI)"
+                          >
+                            <Camera className="h-4 w-4" /> Item
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCapture("per_item", true)}
+                            className="h-7 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                            title="Capture - Item Extra (Report Only)"
+                          >
+                            + Extra
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleCapture("per_photo")}
+                            className="h-10 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                            title="Capture - Photo (AI)"
+                          >
+                            <Camera className="h-4 w-4" /> Photo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCapture("per_photo", true)}
+                            className="h-7 inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                            title="Capture - Photo Extra (Report Only)"
+                          >
+                            + Extra
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button
+                            type="button"
+                            disabled={!lots[activeIdx]?.mode}
+                            onClick={() => {
+                              if (!lots[activeIdx]?.mode) return;
+                              if (isRecording) {
+                                try {
+                                  playRecordStop();
+                                } catch {}
+                                stopRecording();
+                              } else {
+                                try {
+                                  playRecordStart();
+                                } catch {}
+                                startRecording();
+                              }
+                            }}
+                            className={`h-10 inline-flex cursor-pointer items-center justify-center rounded-full px-3 text-xs font-semibold ring-1 ring-white/20 ${
+                              isRecording
+                                ? "bg-blue-900 text-white hover:bg-blue-800"
+                                : "bg-blue-600 text-white hover:bg-blue-500"
+                            } ${
+                              !lots[activeIdx]?.mode
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                            title={
+                              isRecording ? "Stop Recording" : "Start Recording"
                             }
-                          }}
-                          className={`h-10 inline-flex cursor-pointer items-center justify-center rounded-full px-3 text-xs font-semibold ring-1 ring-white/20 ${
-                            isRecording
-                              ? "bg-blue-900 text-white hover:bg-blue-800"
-                              : "bg-blue-600 text-white hover:bg-blue-500"
-                          } ${
-                            !lots[activeIdx]?.mode
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
-                          title={
-                            isRecording ? "Stop Recording" : "Start Recording"
-                          }
-                        >
-                          {isRecording ? "Stop" : "Record"}
-                        </button>
+                          >
+                            {isRecording ? "Stop" : "Record"}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Error overlay */}
