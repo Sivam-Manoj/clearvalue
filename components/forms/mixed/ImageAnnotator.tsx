@@ -283,7 +283,7 @@ export default function ImageAnnotator({
 
   return (
     <div className="fixed inset-0 z-[95] bg-black/80">
-      <div className="relative w-screen h-screen overflow-hidden bg-gray-900/80 flex flex-col">
+      <div className="relative w-screen h-[100dvh] overflow-hidden bg-gray-900/80 flex flex-col pb-[env(safe-area-inset-bottom)]">
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-white/10 text-white">
           <div className="text-sm font-semibold">Annotate Image</div>
@@ -316,7 +316,7 @@ export default function ImageAnnotator({
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <div
             ref={wrapperRef}
             className="relative block w-full h-full select-none touch-none"
@@ -376,9 +376,9 @@ export default function ImageAnnotator({
               ))}
             </div>
           </div>
-          <div className="px-3 py-2 text-[11px] text-white/70">
-            Tip: Click and drag on the image to add a box. Drag a box to move. Use corner handles to resize. Select a box by clicking it; then use Delete Box.
-          </div>
+        </div>
+        <div className="flex-shrink-0 px-3 py-2 text-[11px] text-white/70 pb-[max(0px,env(safe-area-inset-bottom))]">
+          Tip: Click and drag on the image to add a box. Drag a box to move. Use corner handles to resize. Select a box by clicking it; then use Delete Box.
         </div>
       </div>
     </div>

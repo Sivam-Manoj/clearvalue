@@ -297,7 +297,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         draft.language === "es"
       )
         setLanguage(draft.language);
-      if (typeof draft.currency === "string" && draft.currency.trim()) setCurrency(draft.currency.trim());
+      if (typeof draft.currency === "string" && draft.currency.trim())
+        setCurrency(draft.currency.trim());
       toast.success("Draft restored.");
     } catch {}
   }
@@ -347,17 +348,60 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   // Fallback helper: detect currency from browser locale
   const applyLocaleFallbackCurrency = () => {
     try {
-      const lang = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-CA';
-      const region = (lang.split('-')[1] || '').toUpperCase();
+      const lang =
+        typeof navigator !== "undefined" && navigator.language
+          ? navigator.language
+          : "en-CA";
+      const region = (lang.split("-")[1] || "").toUpperCase();
       const byRegion: Record<string, string> = {
-        US: 'USD', CA: 'CAD', GB: 'GBP', AU: 'AUD', NZ: 'NZD', IN: 'INR', LK: 'LKR',
-        JP: 'JPY', CN: 'CNY', SG: 'SGD', AE: 'AED', SA: 'SAR', PK: 'PKR', BD: 'BDT',
-        ZA: 'ZAR', NG: 'NGN', PH: 'PHP', MY: 'MYR', TH: 'THB', ID: 'IDR', KR: 'KRW', HK: 'HKD', TW: 'TWD',
-        AR: 'ARS', CL: 'CLP', CO: 'COP', PE: 'PEN', VE: 'VES', TR: 'TRY', EG: 'EGP', KE: 'KES', GH: 'GHS', VN: 'VND',
-        FR: 'EUR', DE: 'EUR', ES: 'EUR', IT: 'EUR', NL: 'EUR', IE: 'EUR', PT: 'EUR', BE: 'EUR'
+        US: "USD",
+        CA: "CAD",
+        GB: "GBP",
+        AU: "AUD",
+        NZ: "NZD",
+        IN: "INR",
+        LK: "LKR",
+        JP: "JPY",
+        CN: "CNY",
+        SG: "SGD",
+        AE: "AED",
+        SA: "SAR",
+        PK: "PKR",
+        BD: "BDT",
+        ZA: "ZAR",
+        NG: "NGN",
+        PH: "PHP",
+        MY: "MYR",
+        TH: "THB",
+        ID: "IDR",
+        KR: "KRW",
+        HK: "HKD",
+        TW: "TWD",
+        AR: "ARS",
+        CL: "CLP",
+        CO: "COP",
+        PE: "PEN",
+        VE: "VES",
+        TR: "TRY",
+        EG: "EGP",
+        KE: "KES",
+        GH: "GHS",
+        VN: "VND",
+        FR: "EUR",
+        DE: "EUR",
+        ES: "EUR",
+        IT: "EUR",
+        NL: "EUR",
+        IE: "EUR",
+        PT: "EUR",
+        BE: "EUR",
       };
-      const detected = byRegion[region] || 'CAD';
-      console.log('[CurrencyDetect] Locale fallback', { acceptLanguage: lang, region, detected });
+      const detected = byRegion[region] || "CAD";
+      console.log("[CurrencyDetect] Locale fallback", {
+        acceptLanguage: lang,
+        region,
+        detected,
+      });
       if (!currencyTouched) setCurrency((prev) => prev || detected);
     } catch {}
   };
@@ -369,41 +413,62 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     if (currencyTouched) return;
     setCurrencyLoading(true);
     try {
-      console.log('[CurrencyDetect] Starting geolocation-based detection');
-      if (typeof navigator === 'undefined' || !navigator.geolocation) { console.warn('[CurrencyDetect] Geolocation API not available'); applyLocaleFallbackCurrency(); setCurrencyLoading(false); return; }
+      console.log("[CurrencyDetect] Starting geolocation-based detection");
+      if (typeof navigator === "undefined" || !navigator.geolocation) {
+        console.warn("[CurrencyDetect] Geolocation API not available");
+        applyLocaleFallbackCurrency();
+        setCurrencyLoading(false);
+        return;
+      }
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           try {
-            const { latitude, longitude } = pos.coords || {} as any;
-            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) { console.warn('[CurrencyDetect] Invalid coordinates from geolocation', pos.coords); setCurrencyLoading(false); return; }
-            console.log('[CurrencyDetect] Geolocation success', { latitude, longitude });
-            const res = await fetch('/api/ai/currency', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+            const { latitude, longitude } = pos.coords || ({} as any);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+              console.warn(
+                "[CurrencyDetect] Invalid coordinates from geolocation",
+                pos.coords
+              );
+              setCurrencyLoading(false);
+              return;
+            }
+            console.log("[CurrencyDetect] Geolocation success", {
+              latitude,
+              longitude,
+            });
+            const res = await fetch("/api/ai/currency", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ lat: latitude, lng: longitude }),
             });
-            console.log('[CurrencyDetect] Currency API status', res.status);
-            if (!res.ok) { console.warn('[CurrencyDetect] Currency API returned non-OK'); applyLocaleFallbackCurrency(); return; }
+            console.log("[CurrencyDetect] Currency API status", res.status);
+            if (!res.ok) {
+              console.warn("[CurrencyDetect] Currency API returned non-OK");
+              applyLocaleFallbackCurrency();
+              return;
+            }
             const data = await res.json();
-            console.log('[CurrencyDetect] Currency API response', data);
-            const cc = String(data?.currency || '').toUpperCase();
+            console.log("[CurrencyDetect] Currency API response", data);
+            const cc = String(data?.currency || "").toUpperCase();
             if (!currencyTouched && /^[A-Z]{3}$/.test(cc)) {
               setCurrency(cc);
-              console.log('[CurrencyDetect] Currency chosen', cc);
+              console.log("[CurrencyDetect] Currency chosen", cc);
               toast.success(`Currency detected: ${cc}`);
             } else {
-              console.warn('[CurrencyDetect] Invalid or missing currency from API, applying locale fallback');
+              console.warn(
+                "[CurrencyDetect] Invalid or missing currency from API, applying locale fallback"
+              );
               applyLocaleFallbackCurrency();
             }
-          } catch {}
-          finally {
+          } catch {
+          } finally {
             setCurrencyLoading(false);
           }
         },
         (error) => {
           // User denied or error; rely on locale fallback above
           setCurrencyLoading(false);
-          console.warn('[CurrencyDetect] Geolocation error', error);
+          console.warn("[CurrencyDetect] Geolocation error", error);
           applyLocaleFallbackCurrency();
         },
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
@@ -489,7 +554,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         toast.error(msg);
         return;
       }
-      filesToSend = mixedLots.flatMap((l) => [...l.files, ...(l.extraFiles || [])]);
+      filesToSend = mixedLots.flatMap((l) => [
+        ...l.files,
+        ...(l.extraFiles || []),
+      ]);
       videosToSend = mixedLots.flatMap((l) => l.videoFiles || []);
       extraDetails = {
         mixed_lots: mixedLots.map((l) => ({
@@ -596,14 +664,19 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         }, 800);
       };
 
-      const res = await AssetService.create(payload, filesToSend, videosToSend, {
-        onUploadProgress: (fraction: number) => {
-          const pct = Math.max(0, Math.min(1, fraction));
-          const weighted = pct * PROG_WEIGHTS.client_upload * 100;
-          setProgressPhase("upload");
-          setProgressPercent((prev) => (weighted > prev ? weighted : prev));
-        },
-      });
+      const res = await AssetService.create(
+        payload,
+        filesToSend,
+        videosToSend,
+        {
+          onUploadProgress: (fraction: number) => {
+            const pct = Math.max(0, Math.min(1, fraction));
+            const weighted = pct * PROG_WEIGHTS.client_upload * 100;
+            setProgressPhase("upload");
+            setProgressPercent((prev) => (weighted > prev ? weighted : prev));
+          },
+        }
+      );
 
       // Response received: notify and end. Backend will email when ready.
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
@@ -831,9 +904,14 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-600">Currency (ISO code){" "}{currencyLoading && (
-                    <span className="ml-1 text-[11px] text-gray-500">Detecting…</span>
-                  )}</label>
+                  <label className="text-xs text-gray-600">
+                    Currency (ISO code){" "}
+                    {currencyLoading && (
+                      <span className="ml-1 text-[11px] text-gray-500">
+                        Detecting…
+                      </span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     value={currency}
@@ -842,7 +920,9 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                       setCurrency(e.target.value.toUpperCase().slice(0, 3));
                     }}
                     disabled={currencyLoading && !currencyTouched}
-                    placeholder={currencyLoading ? 'Detecting…' : 'e.g., CAD, USD, EUR'}
+                    placeholder={
+                      currencyLoading ? "Detecting…" : "e.g., CAD, USD, EUR"
+                    }
                   />
                 </div>
               </div>
@@ -856,31 +936,34 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                 maxImagesPerLot={30}
                 maxExtraImagesPerLot={100}
                 maxTotalImages={500}
-                downloadPrefix={(contractNo || 'asset').replace(/[^a-zA-Z0-9_-]/g, '-')}
+                downloadPrefix={(contractNo || "asset").replace(
+                  /[^a-zA-Z0-9_-]/g,
+                  "-"
+                )}
               />
             </section>
             <button
               type="button"
               className="rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
               onClick={saveDraft}
-              >
-                Save for later
-              </button>
-              <button
-                type="button"
-                className="rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
-                onClick={clearForm}
-                disabled={submitting}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 cursor-pointer rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50"
-                disabled={submitting}
-              >
-                {submitting ? "Creating..." : "Create Report"}
-              </button>
+            >
+              Save for later
+            </button>
+            <button
+              type="button"
+              className="rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+              onClick={clearForm}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 cursor-pointer rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50"
+              disabled={submitting}
+            >
+              {submitting ? "Creating..." : "Create Report"}
+            </button>
           </Fragment>
         )}
       </div>

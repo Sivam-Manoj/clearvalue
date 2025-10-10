@@ -982,7 +982,7 @@ export default function MixedSection({
                           {annCount} box{annCount > 1 ? "es" : ""}
                         </div>
                       )}
-                      <div className="absolute inset-x-0 bottom-1 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
+                      <div className="absolute inset-x-0 bottom-1 flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
                         <button
                           type="button"
                           className="rounded bg-white/90 px-2 py-0.5 text-[10px] shadow"
@@ -1038,7 +1038,7 @@ export default function MixedSection({
                           <div className="absolute left-1 top-1 rounded bg-blue-600/80 px-1.5 py-0.5 text-[10px] text-white shadow">
                             Extra
                           </div>
-                          <div className="absolute inset-x-0 bottom-1 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
+                          <div className="absolute inset-x-0 bottom-1 flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
                             <button
                               type="button"
                               className="rounded bg-white/90 px-2 py-0.5 text-[10px] shadow text-red-600"
@@ -1088,7 +1088,7 @@ export default function MixedSection({
                           <div className="absolute left-1 top-1 rounded bg-indigo-600/80 px-1.5 py-0.5 text-[10px] text-white shadow">
                             Video
                           </div>
-                          <div className="absolute inset-x-0 bottom-1 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
+                          <div className="absolute inset-x-0 bottom-1 flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
                             <button
                               type="button"
                               className="rounded bg-white/90 px-2 py-0.5 text-[10px] shadow text-red-600"
