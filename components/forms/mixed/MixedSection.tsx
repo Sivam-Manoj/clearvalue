@@ -19,6 +19,7 @@ import {
   Download,
 } from "lucide-react";
 import JSZip from "jszip";
+import ImageAnnotator, { AnnBox } from "./ImageAnnotator";
 
 export type MixedMode = "single_lot" | "per_item" | "per_photo";
 export type MixedLot = {
@@ -28,6 +29,7 @@ export type MixedLot = {
   coverIndex: number; // 0-based within files
   mode?: MixedMode;
   videoFiles?: File[]; // Videos (report-only; zipped with originals)
+  annotations?: Record<string, AnnBox[]>; // normalized boxes per file key
 };
 
 type Props = {
@@ -78,6 +80,14 @@ export default function MixedSection({
   const recIntervalRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  // Image annotation editor state
+  const [editing, setEditing] = useState<{
+    lotIdx: number;
+    imgIdx: number;
+    url: string;
+  } | null>(null);
+
+  const getFileKey = (f: File) => `${f.name}|${f.size}|${(f as any).lastModified || 0}`;
 
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
@@ -288,12 +298,16 @@ export default function MixedSection({
       const out = [...prev];
       const lot = out[idx];
       if (!lot) return prev;
+      const fileToRemove = lot.files[imgIdx];
+      const key = fileToRemove ? getFileKey(fileToRemove) : null;
       const files = lot.files.filter((_, i) => i !== imgIdx);
       const coverIndex = Math.max(
         0,
         Math.min(files.length - 1, lot.coverIndex)
       );
-      out[idx] = { ...lot, files, coverIndex };
+      const annotations = { ...(lot.annotations || {}) };
+      if (key && annotations[key]) delete annotations[key];
+      out[idx] = { ...lot, files, coverIndex, annotations };
       return out;
     });
   }
@@ -317,6 +331,40 @@ export default function MixedSection({
       out[idx] = { ...lot, coverIndex: imgIdx };
       return out;
     });
+  }
+
+  function openEditor(lotIdx: number, imgIdx: number) {
+    try {
+      const file = lots[lotIdx]?.files?.[imgIdx];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      setEditing({ lotIdx, imgIdx, url });
+    } catch {}
+  }
+
+  function closeEditor() {
+    try {
+      if (editing?.url) URL.revokeObjectURL(editing.url);
+    } catch {}
+    setEditing(null);
+  }
+
+  function handleSaveAnnotations(boxes: AnnBox[]) {
+    if (!editing) return;
+    const { lotIdx, imgIdx } = editing;
+    setLots((prev) => {
+      const out = [...prev];
+      const lot = out[lotIdx];
+      if (!lot) return prev;
+      const file = lot.files?.[imgIdx];
+      if (!file) return prev;
+      const key = getFileKey(file);
+      const annotations = { ...(lot.annotations || {}) };
+      annotations[key] = boxes;
+      out[lotIdx] = { ...lot, annotations };
+      return out;
+    });
+    closeEditor();
   }
 
   // Manual upload
@@ -910,6 +958,8 @@ export default function MixedSection({
                 {lots[activeIdx].files.map((f, i) => {
                   const url = URL.createObjectURL(f);
                   const isCover = lots[activeIdx].coverIndex === i;
+                  const key = getFileKey(f);
+                  const annCount = (lots[activeIdx].annotations?.[key] || []).length;
                   return (
                     <div
                       key={i}
@@ -927,6 +977,11 @@ export default function MixedSection({
                           Cover
                         </div>
                       )}
+                      {annCount > 0 && (
+                        <div className="absolute right-1 top-1 rounded bg-red-600/80 px-1.5 py-0.5 text-[10px] text-white shadow">
+                          {annCount} box{annCount > 1 ? "es" : ""}
+                        </div>
+                      )}
                       <div className="absolute inset-x-0 bottom-1 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
                         <button
                           type="button"
@@ -934,6 +989,13 @@ export default function MixedSection({
                           onClick={() => setCover(activeIdx, i)}
                         >
                           Set Cover
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded bg-white/90 px-2 py-0.5 text-[10px] shadow"
+                          onClick={() => openEditor(activeIdx, i)}
+                        >
+                          Edit
                         </button>
                         <button
                           type="button"
@@ -1430,6 +1492,20 @@ export default function MixedSection({
             </div>
           </div>,
           document.body
+        )}
+        {editing && (
+          <ImageAnnotator
+            imageUrl={editing.url}
+            initialBoxes={(() => {
+              const lot = lots[editing.lotIdx];
+              const file = lot?.files?.[editing.imgIdx];
+              if (!lot || !file) return [] as AnnBox[];
+              const key = getFileKey(file);
+              return (lot.annotations?.[key] || []) as AnnBox[];
+            })()}
+            onSave={handleSaveAnnotations}
+            onCancel={closeEditor}
+          />
         )}
     </div>
   );

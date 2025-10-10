@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Fragment } from "react";
 import dynamic from "next/dynamic";
 import {
   AssetService,
@@ -714,7 +714,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         )}
 
         {!submitting && (
-          <>
+          <Fragment>
             {/* Grouping selector removed: Mixed mode only */}
 
             {/* Report Details */}
@@ -843,12 +843,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     }}
                     disabled={currencyLoading && !currencyTouched}
                     placeholder={currencyLoading ? 'Detecting…' : 'e.g., CAD, USD, EUR'}
-                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </div>
               </div>
             </section>
-            {/* Mixed mode only */}
+            {/* Mixed mode only (contained) */}
             <section className="space-y-3">
               <h3 className="text-sm font-medium text-gray-900">Mixed Lots</h3>
               <MixedSection
@@ -860,13 +859,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                 downloadPrefix={(contractNo || 'asset').replace(/[^a-zA-Z0-9_-]/g, '-')}
               />
             </section>
-
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="button"
-                className="rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
-                onClick={saveDraft}
-                disabled={submitting}
+            <button
+              type="button"
+              className="rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+              onClick={saveDraft}
               >
                 Save for later
               </button>
@@ -885,8 +881,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               >
                 {submitting ? "Creating..." : "Create Report"}
               </button>
-            </div>
-          </>
+          </Fragment>
         )}
       </div>
     </form>
