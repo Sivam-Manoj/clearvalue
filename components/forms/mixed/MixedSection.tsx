@@ -1206,7 +1206,9 @@ export default function MixedSection({
                 <div className="pointer-events-auto absolute top-0 left-0 right-0 z-30">
                   <div
                     className={`w-full px-1.5 sm:px-2 py-0.5`}
-                    style={{ paddingTop: "calc(env(safe-area-inset-top) + 2px)" }}
+                    style={{
+                      paddingTop: "calc(env(safe-area-inset-top) + 2px)",
+                    }}
                   >
                     <div className="sm:hidden text-white">
                       {orientation !== "landscape" ? (
@@ -1249,7 +1251,9 @@ export default function MixedSection({
                                 ) : (
                                   <ZapOff className="h-5 w-5" />
                                 )}
-                                <span className="text-[12px]">{flashOn ? "On" : "Off"}</span>
+                                <span className="text-[12px]">
+                                  {flashOn ? "On" : "Off"}
+                                </span>
                               </button>
                               <button
                                 type="button"
@@ -1269,12 +1273,14 @@ export default function MixedSection({
                             </div>
                           </div>
                           <div className="mt-0.5 text-center text-[12px] font-medium truncate">
-                            Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
+                            Total:{" "}
+                            {lots.reduce((s, l) => s + l.files.length, 0)}/
                             {maxTotalImages}
                             {" | "}Lot {activeIdx + 1}:{" "}
-                            {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}{" "}
-                            (AI)
-                            {" | "}Extra: {lots[activeIdx]?.extraFiles.length ?? 0}/
+                            {lots[activeIdx]?.files.length ?? 0}/
+                            {maxImagesPerLot} (AI)
+                            {" | "}Extra:{" "}
+                            {lots[activeIdx]?.extraFiles.length ?? 0}/
                             {maxExtraImagesPerLot}
                             {" | "}Mode:{" "}
                             {lots[activeIdx]?.mode === "single_lot"
@@ -1292,18 +1298,22 @@ export default function MixedSection({
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-row flex-nowrap items-center justify-between gap-2 w-full">
                           <button
                             type="button"
                             onClick={finishAndClose}
-                            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/20 hover:bg-white/15 shrink-0"
+                            className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/20 hover:bg-white/15 shrink-0"
                             title="Exit"
                             aria-label="Exit"
                           >
                             <X className="h-5 w-5" />
+                            <span className="text-[14px] leading-none font-medium whitespace-nowrap">Exit</span>
                           </button>
-                          <div className="min-w-0 flex-1 text-center">
-                            <span className="block truncate text-[12px] leading-none">
+                          <div className="min-w-0 flex-1 text-center overflow-hidden px-2">
+                            <span
+                              className="block truncate whitespace-nowrap leading-none font-semibold tracking-tight"
+                              style={{ fontSize: "clamp(14px, 3vw, 18px)" }}
+                            >
                               Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
                               {maxTotalImages}
                               {" | "}Lot {activeIdx + 1}:{" "}
@@ -1340,7 +1350,7 @@ export default function MixedSection({
                                   }
                                 } catch {}
                               }}
-                              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/20 hover:bg-white/15"
+                              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/20 hover:bg-white/15 whitespace-nowrap"
                               title="Flash"
                               aria-label="Flash"
                             >
@@ -1349,11 +1359,12 @@ export default function MixedSection({
                               ) : (
                                 <ZapOff className="h-5 w-5" />
                               )}
+                              <span className="text-[13px] leading-none whitespace-nowrap">{flashOn ? "On" : "Off"}</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => setFocusOn((v) => !v)}
-                              className={`inline-flex h-9 cursor-pointer items-center rounded-lg px-2 ring-1 ring-white/20 hover:bg-white/15 ${
+                              className={`inline-flex h-9 cursor-pointer items-center rounded-lg px-2 ring-1 ring-white/20 hover:bg-white/15 whitespace-nowrap ${
                                 focusOn
                                   ? "bg-red-600/80 text-white"
                                   : "bg-white/10 text-white"
@@ -1361,8 +1372,8 @@ export default function MixedSection({
                               title="Focus"
                               aria-label="Focus"
                             >
-                              <span className="text-[12px] leading-none whitespace-nowrap">Focus</span>
-                              <span className="text-[11px] ml-1 opacity-90 whitespace-nowrap">
+                              <span className="text-[13px] leading-none whitespace-nowrap">Focus</span>
+                              <span className="text-[12px] ml-1 opacity-90 whitespace-nowrap">
                                 {focusOn ? "On" : "Off"}
                               </span>
                             </button>
@@ -1370,22 +1381,17 @@ export default function MixedSection({
                         </div>
                       )}
                     </div>
-                    <div className="hidden sm:grid w-full grid-cols-[auto,1fr,auto] items-center gap-1.5 sm:gap-2 text-[15px] leading-tight text-white">
-                      {/* Left: Exit */}
-                      <div className="flex items-center">
-                        <button
-                          type="button"
-                          onClick={finishAndClose}
-                          className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-0 ring-1 ring-white/20 hover:bg-white/15"
-                          title="Exit"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                          <span>Exit</span>
-                        </button>
-                      </div>
-
-                      {/* Center: single-line stats */}
-                      <div className="min-w-0 text-center">
+                    <div className="hidden sm:flex flex-row flex-nowrap w-full items-center justify-between gap-2 text-[15px] leading-tight text-white">
+                      <button
+                        type="button"
+                        onClick={finishAndClose}
+                        className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-0 ring-1 ring-white/20 hover:bg-white/15 shrink-0"
+                        title="Exit"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        <span>Exit</span>
+                      </button>
+                      <div className="min-w-0 flex-1 text-center overflow-hidden px-2">
                         <span
                           className="block truncate leading-none text-white/95"
                           title={`Total: ${lots.reduce(
@@ -1432,9 +1438,7 @@ export default function MixedSection({
                           )}
                         </span>
                       </div>
-
-                      {/* Right: Toggles */}
-                      <div className="flex items-center justify-end gap-2 sm:gap-3">
+                      <div className="flex items-center justify-end gap-2 shrink-0">
                         <button
                           type="button"
                           onClick={async () => {
