@@ -69,6 +69,10 @@ export default function MixedSection({
   );
   const [isTorchSupported, setIsTorchSupported] = useState<boolean>(false);
   const [isSimulatingFlash, setIsSimulatingFlash] = useState<boolean>(false);
+  const [focusOn, setFocusOn] = useState<boolean>(false);
+  const FOCUS_BOX_FRACTION = 0.36; // fraction of min(image width/height)
+  const bottomControlsRef = useRef<HTMLDivElement>(null);
+  const [controlsHeight, setControlsHeight] = useState<number>(0);
   const [videoAR, setVideoAR] = useState<number | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,7 +91,8 @@ export default function MixedSection({
     url: string;
   } | null>(null);
 
-  const getFileKey = (f: File) => `${f.name}|${f.size}|${(f as any).lastModified || 0}`;
+  const getFileKey = (f: File) =>
+    `${f.name}|${f.size}|${(f as any).lastModified || 0}`;
 
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
@@ -129,6 +134,33 @@ export default function MixedSection({
       window.removeEventListener("resize", onResize);
     };
   }, [cameraOpen]);
+
+  // Measure bottom controls height to keep focus box fully visible above it
+  useEffect(() => {
+    if (!cameraOpen) {
+      setControlsHeight(0);
+      return;
+    }
+    const measure = () => {
+      try {
+        const el = bottomControlsRef.current;
+        const h = el ? el.offsetHeight || 0 : 0;
+        setControlsHeight(h);
+      } catch {}
+    };
+    measure();
+    let ro: ResizeObserver | null = null;
+    try {
+      // @ts-ignore - ResizeObserver available in browser
+      ro = new ResizeObserver(measure);
+      if (bottomControlsRef.current) ro.observe(bottomControlsRef.current);
+    } catch {}
+    window.addEventListener("resize", measure);
+    return () => {
+      try { ro?.disconnect(); } catch {}
+      window.removeEventListener("resize", measure);
+    };
+  }, [cameraOpen, orientation]);
 
   // Cleanup camera on unmount
   useEffect(() => {
@@ -738,6 +770,16 @@ export default function MixedSection({
       setTimeout(() => setIsSimulatingFlash(false), 120);
     }
     ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, outW, outH);
+    if (focusOn) {
+      const side = Math.floor(FOCUS_BOX_FRACTION * Math.min(outW, outH));
+      const fx = Math.floor((outW - side) / 2);
+      const fy = Math.floor((outH - side) / 2);
+      ctx.save();
+      ctx.lineWidth = Math.max(3, Math.floor(outW * 0.01));
+      ctx.strokeStyle = "#ef4444"; // tailwind red-500
+      ctx.strokeRect(fx, fy, side, side);
+      ctx.restore();
+    }
     const blob: Blob | null = await new Promise((resolve) =>
       canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92)
     );
@@ -959,7 +1001,8 @@ export default function MixedSection({
                   const url = URL.createObjectURL(f);
                   const isCover = lots[activeIdx].coverIndex === i;
                   const key = getFileKey(f);
-                  const annCount = (lots[activeIdx].annotations?.[key] || []).length;
+                  const annCount = (lots[activeIdx].annotations?.[key] || [])
+                    .length;
                   return (
                     <div
                       key={i}
@@ -1143,6 +1186,15 @@ export default function MixedSection({
                   <div className="absolute inset-0 bg-white/80 animate-pulse" />
                 )}
 
+                {focusOn && (
+                  <div
+                    className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex items-center justify-center"
+                    style={{ bottom: controlsHeight }}
+                  >
+                    <div className="border-4 border-red-500 rounded-sm w-[36vmin] aspect-square" />
+                  </div>
+                )}
+
                 {/* Top overlay: counters / flash */}
                 <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[13px] sm:text-[16px] text-white/90 font-semibold">
                   <div className="flex flex-wrap items-center gap-3">
@@ -1168,7 +1220,7 @@ export default function MixedSection({
                       {maxExtraImagesPerLot}
                     </div>
                     <div>
-                      Mode: {" "}
+                      Mode:{" "}
                       {lots[activeIdx]?.mode === "single_lot"
                         ? "Bundle"
                         : lots[activeIdx]?.mode === "per_item"
@@ -1184,7 +1236,7 @@ export default function MixedSection({
                       </div>
                     )}
                   </div>
-                  
+
                   <button
                     type="button"
                     onClick={async () => {
@@ -1212,6 +1264,22 @@ export default function MixedSection({
                       <ZapOff className="h-3.5 w-3.5" />
                     )}
                     <span>{flashOn ? "On" : "Off"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFocusOn((v) => !v)}
+                    className={`inline-flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15 ${
+                      focusOn
+                        ? "bg-red-600/80 text-white"
+                        : "bg-white/10 text-white"
+                    }`}
+                    title="Focus"
+                  >
+                    <span>Focus</span>
+                    <span className="text-[10px] ml-1 opacity-90">
+                      {focusOn ? "On" : "Off"}
+                    </span>
                   </button>
                 </div>
 
@@ -1312,6 +1380,7 @@ export default function MixedSection({
 
                 {/* Bottom controls */}
                 <div
+                  ref={bottomControlsRef}
                   className="pointer-events-auto absolute inset-x-0 z-20 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur"
                   style={{
                     bottom: 0,
@@ -1333,11 +1402,19 @@ export default function MixedSection({
                           className="flex-1 min-w-[100px] accent-rose-500 cursor-pointer text-[16px]"
                         />
                         <ZoomIn className="h-3.5 w-3.5 text-white/90" />
-                        <div className="ml-2 w-8 text-right text-[10px] text-white/90">{zoom.toFixed(1)}x</div>
+                        <div className="ml-2 w-8 text-right text-[10px] text-white/90">
+                          {zoom.toFixed(1)}x
+                        </div>
                       </div>
                     )}
                     {/* Controls row: 3 cols portrait, 4 cols (zoom at left) landscape */}
-                    <div className={`grid items-center gap-2 w-full ${orientation === "landscape" ? "grid-cols-[auto_2fr_1fr_2fr]" : "grid-cols-[2fr_1fr_2fr]"}`}>
+                    <div
+                      className={`grid items-center gap-2 w-full ${
+                        orientation === "landscape"
+                          ? "grid-cols-[auto_2fr_1fr_2fr]"
+                          : "grid-cols-[2fr_1fr_2fr]"
+                      }`}
+                    >
                       {orientation === "landscape" && (
                         <div className="justify-self-start flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/15 backdrop-blur">
                           <ZoomOut className="h-3.5 w-3.5 text-white/90" />
@@ -1347,11 +1424,15 @@ export default function MixedSection({
                             max={5}
                             step={0.1}
                             value={zoom}
-                            onChange={(e) => setZoom(parseFloat(e.target.value))}
+                            onChange={(e) =>
+                              setZoom(parseFloat(e.target.value))
+                            }
                             className="w-[140px] sm:w-[200px] accent-rose-500 cursor-pointer text-[16px]"
                           />
                           <ZoomIn className="h-3.5 w-3.5 text-white/90" />
-                          <div className="ml-1 w-8 text-right text-[10px] text-white/90">{zoom.toFixed(1)}x</div>
+                          <div className="ml-1 w-8 text-right text-[10px] text-white/90">
+                            {zoom.toFixed(1)}x
+                          </div>
                         </div>
                       )}
                       <button
@@ -1382,7 +1463,6 @@ export default function MixedSection({
                         <span className="text-[10px]">Next</span>
                         <ChevronRight className="h-3 w-3" />
                       </button>
-                      
                     </div>
                     {/* Row 2: Capture buttons - right side for landscape, bottom for portrait */}
                     {orientation !== "landscape" && (
@@ -1493,20 +1573,20 @@ export default function MixedSection({
           </div>,
           document.body
         )}
-        {editing && (
-          <ImageAnnotator
-            imageUrl={editing.url}
-            initialBoxes={(() => {
-              const lot = lots[editing.lotIdx];
-              const file = lot?.files?.[editing.imgIdx];
-              if (!lot || !file) return [] as AnnBox[];
-              const key = getFileKey(file);
-              return (lot.annotations?.[key] || []) as AnnBox[];
-            })()}
-            onSave={handleSaveAnnotations}
-            onCancel={closeEditor}
-          />
-        )}
+      {editing && (
+        <ImageAnnotator
+          imageUrl={editing.url}
+          initialBoxes={(() => {
+            const lot = lots[editing.lotIdx];
+            const file = lot?.files?.[editing.imgIdx];
+            if (!lot || !file) return [] as AnnBox[];
+            const key = getFileKey(file);
+            return (lot.annotations?.[key] || []) as AnnBox[];
+          })()}
+          onSave={handleSaveAnnotations}
+          onCancel={closeEditor}
+        />
+      )}
     </div>
   );
 }
