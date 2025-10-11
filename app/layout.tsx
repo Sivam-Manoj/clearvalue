@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppProviders from "@/components/providers/AppProviders";
@@ -60,6 +60,15 @@ export const metadata: Metadata = {
   other: {
     tags: "real estate valuation, property appraisal, home valuation, fair market value, FMV report, real estate report, appraisal report, property assessment, real estate analytics, ClearValue",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

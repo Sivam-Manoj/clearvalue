@@ -135,6 +135,11 @@ export default function MixedSection({
     };
   }, [cameraOpen]);
 
+  useEffect(() => {
+    if (!cameraOpen) return;
+    setZoom(1);
+  }, [orientation, cameraOpen]);
+
   // Measure bottom controls height to keep focus box fully visible above it
   useEffect(() => {
     if (!cameraOpen) {
@@ -1159,7 +1164,7 @@ export default function MixedSection({
       {/* Camera Overlay (portal) */}
       {cameraOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-hidden touch-none overscroll-contain select-none">
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 overflow-hidden touch-none overscroll-contain select-none">
             <div className="relative w-full h-full max-w-none max-h-full overflow-hidden flex flex-col rounded-none border-0 bg-black/30 ring-0 shadow-none">
               <div className="relative flex-1 min-h-0 bg-black">
                 <video
@@ -1200,7 +1205,7 @@ export default function MixedSection({
                 {/* Top overlay: counters / flash */}
                 <div className="pointer-events-auto absolute top-0 left-0 right-0 z-30">
                   <div
-                    className={`w-full rounded-lg bg-black/40 ring-1 ring-white/15 px-1.5 sm:px-2 py-0.5`}
+                    className={`w-full px-1.5 sm:px-2 py-0.5`}
                     style={{ paddingTop: "calc(env(safe-area-inset-top) + 2px)" }}
                   >
                     <div className="sm:hidden text-white">
@@ -1291,7 +1296,7 @@ export default function MixedSection({
                           <button
                             type="button"
                             onClick={finishAndClose}
-                            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/20 hover:bg-white/15"
+                            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/20 hover:bg-white/15 shrink-0"
                             title="Exit"
                             aria-label="Exit"
                           >
@@ -1315,7 +1320,7 @@ export default function MixedSection({
                               {isRecording && ` | REC ${formatTimer(recMillis)}`}
                             </span>
                           </div>
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-end gap-1.5 shrink-0">
                             <button
                               type="button"
                               onClick={async () => {
@@ -1356,8 +1361,8 @@ export default function MixedSection({
                               title="Focus"
                               aria-label="Focus"
                             >
-                              <span className="text-[12px] leading-none">Focus</span>
-                              <span className="text-[11px] ml-1 opacity-90">
+                              <span className="text-[12px] leading-none whitespace-nowrap">Focus</span>
+                              <span className="text-[11px] ml-1 opacity-90 whitespace-nowrap">
                                 {focusOn ? "On" : "Off"}
                               </span>
                             </button>
