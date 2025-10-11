@@ -157,7 +157,9 @@ export default function MixedSection({
     } catch {}
     window.addEventListener("resize", measure);
     return () => {
-      try { ro?.disconnect(); } catch {}
+      try {
+        ro?.disconnect();
+      } catch {}
       window.removeEventListener("resize", measure);
     };
   }, [cameraOpen, orientation]);
@@ -1196,91 +1198,203 @@ export default function MixedSection({
                 )}
 
                 {/* Top overlay: counters / flash */}
-                <div className="pointer-events-auto absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 text-[13px] sm:text-[16px] text-white/90 font-semibold">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={finishAndClose}
-                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
-                      title="Exit"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      <span>Exit</span>
-                    </button>
-                    <div>
-                      Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
-                      {maxTotalImages}
-                    </div>
-                    <div>
-                      Lot {activeIdx + 1}: {lots[activeIdx]?.files.length ?? 0}/
-                      {maxImagesPerLot} (AI)
-                    </div>
-                    <div>
-                      Extra: {lots[activeIdx]?.extraFiles.length ?? 0}/
-                      {maxExtraImagesPerLot}
-                    </div>
-                    <div>
-                      Mode:{" "}
-                      {lots[activeIdx]?.mode === "single_lot"
-                        ? "Bundle"
-                        : lots[activeIdx]?.mode === "per_item"
-                        ? "Per Item"
-                        : lots[activeIdx]?.mode === "per_photo"
-                        ? "Per Photo"
-                        : "—"}
-                    </div>
-                    {isRecording && (
-                      <div className="ml-2 inline-flex items-center gap-1 rounded bg-red-600/80 px-2 py-0.5 text-white font-semibold">
-                        <span className="inline-block h-2 w-2 rounded-full bg-white animate-pulse" />
-                        REC {formatTimer(recMillis)}
+                <div className="pointer-events-auto absolute top-2 left-0 right-0 z-30">
+                  <div
+                    className={`w-full rounded-lg bg-black/40 ring-1 ring-white/15 backdrop-blur px-1.5 sm:px-2 py-1`}
+                  >
+                    <div className="sm:hidden text-white">
+                      <div className="flex items-center justify-between gap-2 text-[18px] font-semibold">
+                        <button
+                          type="button"
+                          onClick={finishAndClose}
+                          className="inline-flex h-11 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 ring-1 ring-white/20 hover:bg-white/15"
+                          title="Exit"
+                        >
+                          <X className="h-5 w-5" />
+                          <span>Exit</span>
+                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setFlashOn((v) => !v);
+                              try {
+                                const stream = videoRef.current
+                                  ?.srcObject as MediaStream | null;
+                                const track =
+                                  stream?.getVideoTracks?.()[0] as any;
+                                if (track?.getCapabilities?.()?.torch) {
+                                  await track.applyConstraints({
+                                    advanced: [{ torch: !flashOn }],
+                                  });
+                                  setIsTorchSupported(true);
+                                } else {
+                                  setIsTorchSupported(false);
+                                }
+                              } catch {}
+                            }}
+                            className="inline-flex h-11 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 ring-1 ring-white/20 hover:bg-white/15"
+                            title="Flash"
+                          >
+                            {flashOn ? (
+                              <Zap className="h-5 w-5 text-yellow-300" />
+                            ) : (
+                              <ZapOff className="h-5 w-5" />
+                            )}
+                            <span>{flashOn ? "On" : "Off"}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFocusOn((v) => !v)}
+                            className={`inline-flex h-11 cursor-pointer items-center gap-1 rounded-lg px-3 py-1.5 ring-1 ring-white/20 hover:bg-white/15 ${
+                              focusOn
+                                ? "bg-red-600/80 text-white"
+                                : "bg-white/10 text-white"
+                            }`}
+                            title="Focus"
+                          >
+                            <span>Focus</span>
+                            <span className="text-[12px] ml-1 opacity-90">
+                              {focusOn ? "On" : "Off"}
+                            </span>
+                          </button>
+                        </div>
                       </div>
-                    )}
+                      <div className="mt-1 text-center text-[18px] font-semibold truncate">
+                        Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
+                        {maxTotalImages}
+                        {" | "}Lot {activeIdx + 1}:{" "}
+                        {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}{" "}
+                        (AI)
+                        {" | "}Extra: {lots[activeIdx]?.extraFiles.length ?? 0}/
+                        {maxExtraImagesPerLot}
+                        {" | "}Mode:{" "}
+                        {lots[activeIdx]?.mode === "single_lot"
+                          ? "Bundle"
+                          : lots[activeIdx]?.mode === "per_item"
+                          ? "Per Item"
+                          : lots[activeIdx]?.mode === "per_photo"
+                          ? "Per Photo"
+                          : "—"}
+                        {isRecording && (
+                          <>
+                            {" | "}REC {formatTimer(recMillis)}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="hidden sm:grid w-full grid-cols-[auto,1fr,auto] items-center gap-1.5 sm:gap-2 text-[15px] leading-tight text-white">
+                      {/* Left: Exit */}
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={finishAndClose}
+                          className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-0 ring-1 ring-white/20 hover:bg-white/15"
+                          title="Exit"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          <span>Exit</span>
+                        </button>
+                      </div>
+
+                      {/* Center: single-line stats */}
+                      <div className="min-w-0 text-center">
+                        <span
+                          className="block truncate leading-none text-white/95"
+                          title={`Total: ${lots.reduce(
+                            (s, l) => s + l.files.length,
+                            0
+                          )}/${maxTotalImages} | Lot ${activeIdx + 1}: ${
+                            lots[activeIdx]?.files.length ?? 0
+                          }/${maxImagesPerLot} (AI) | Extra: ${
+                            lots[activeIdx]?.extraFiles.length ?? 0
+                          }/${maxExtraImagesPerLot} | Mode: ${
+                            lots[activeIdx]?.mode === "single_lot"
+                              ? "Bundle"
+                              : lots[activeIdx]?.mode === "per_item"
+                              ? "Per Item"
+                              : lots[activeIdx]?.mode === "per_photo"
+                              ? "Per Photo"
+                              : "—"
+                          }${
+                            isRecording
+                              ? ` | REC ${formatTimer(recMillis)}`
+                              : ""
+                          }`}
+                        >
+                          Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
+                          {maxTotalImages}
+                          {" | "}Lot {activeIdx + 1}:{" "}
+                          {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}{" "}
+                          (AI)
+                          {" | "}Extra:{" "}
+                          {lots[activeIdx]?.extraFiles.length ?? 0}/
+                          {maxExtraImagesPerLot}
+                          {" | "}Mode:{" "}
+                          {lots[activeIdx]?.mode === "single_lot"
+                            ? "Bundle"
+                            : lots[activeIdx]?.mode === "per_item"
+                            ? "Per Item"
+                            : lots[activeIdx]?.mode === "per_photo"
+                            ? "Per Photo"
+                            : "—"}
+                          {isRecording && (
+                            <>
+                              {" | "}REC {formatTimer(recMillis)}
+                            </>
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Right: Toggles */}
+                      <div className="flex items-center justify-end gap-2 sm:gap-3">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setFlashOn((v) => !v);
+                            try {
+                              const stream = videoRef.current
+                                ?.srcObject as MediaStream | null;
+                              const track =
+                                stream?.getVideoTracks?.()[0] as any;
+                              if (track?.getCapabilities?.()?.torch) {
+                                await track.applyConstraints({
+                                  advanced: [{ torch: !flashOn }],
+                                });
+                                setIsTorchSupported(true);
+                              } else {
+                                setIsTorchSupported(false);
+                              }
+                            } catch {}
+                          }}
+                          className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-0 ring-1 ring-white/20 hover:bg-white/15"
+                          title="Flash"
+                        >
+                          {flashOn ? (
+                            <Zap className="h-3.5 w-3.5 text-yellow-300" />
+                          ) : (
+                            <ZapOff className="h-3.5 w-3.5" />
+                          )}
+                          <span>{flashOn ? "On" : "Off"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFocusOn((v) => !v)}
+                          className={`inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-2 py-0 ring-1 ring-white/20 hover:bg-white/15 ${
+                            focusOn
+                              ? "bg-red-600/80 text-white"
+                              : "bg-white/10 text-white"
+                          }`}
+                          title="Focus"
+                        >
+                          <span>Focus</span>
+                          <span className="text-[12px] ml-1 opacity-90">
+                            {focusOn ? "On" : "Off"}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setFlashOn((v) => !v);
-                      try {
-                        const stream = videoRef.current
-                          ?.srcObject as MediaStream | null;
-                        const track = stream?.getVideoTracks?.()[0] as any;
-                        if (track?.getCapabilities?.()?.torch) {
-                          await track.applyConstraints({
-                            advanced: [{ torch: !flashOn }],
-                          });
-                          setIsTorchSupported(true);
-                        } else {
-                          setIsTorchSupported(false);
-                        }
-                      } catch {}
-                    }}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15"
-                    title="Flash"
-                  >
-                    {flashOn ? (
-                      <Zap className="h-3.5 w-3.5 text-yellow-300" />
-                    ) : (
-                      <ZapOff className="h-3.5 w-3.5" />
-                    )}
-                    <span>{flashOn ? "On" : "Off"}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFocusOn((v) => !v)}
-                    className={`inline-flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 backdrop-blur ring-1 ring-white/20 hover:bg-white/15 ${
-                      focusOn
-                        ? "bg-red-600/80 text-white"
-                        : "bg-white/10 text-white"
-                    }`}
-                    title="Focus"
-                  >
-                    <span>Focus</span>
-                    <span className="text-[10px] ml-1 opacity-90">
-                      {focusOn ? "On" : "Off"}
-                    </span>
-                  </button>
                 </div>
 
                 {/* Landscape capture overlay (right side) */}
