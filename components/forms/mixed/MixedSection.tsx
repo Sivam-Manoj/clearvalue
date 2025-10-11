@@ -70,7 +70,7 @@ export default function MixedSection({
   const [isTorchSupported, setIsTorchSupported] = useState<boolean>(false);
   const [isSimulatingFlash, setIsSimulatingFlash] = useState<boolean>(false);
   const [focusOn, setFocusOn] = useState<boolean>(false);
-  const FOCUS_BOX_FRACTION = 0.36; // fraction of min(image width/height)
+  const FOCUS_BOX_FRACTION = 0.62; // fraction of min(image width/height)
   const bottomControlsRef = useRef<HTMLDivElement>(null);
   const [controlsHeight, setControlsHeight] = useState<number>(0);
   const [videoAR, setVideoAR] = useState<number | null>(null);
@@ -1191,7 +1191,7 @@ export default function MixedSection({
                     className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex items-center justify-center"
                     style={{ bottom: controlsHeight }}
                   >
-                    <div className="border-4 border-red-500 rounded-sm w-[36vmin] aspect-square" />
+                    <div className="border-4 border-red-500 rounded-sm w-[62vmin] aspect-square" />
                   </div>
                 )}
 
