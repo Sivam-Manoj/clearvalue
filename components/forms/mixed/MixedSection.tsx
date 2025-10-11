@@ -1198,90 +1198,172 @@ export default function MixedSection({
                 )}
 
                 {/* Top overlay: counters / flash */}
-                <div className="pointer-events-auto absolute top-2 left-0 right-0 z-30">
+                <div className="pointer-events-auto absolute top-0 left-0 right-0 z-30">
                   <div
-                    className={`w-full rounded-lg bg-black/40 ring-1 ring-white/15 backdrop-blur px-1.5 sm:px-2 py-1`}
+                    className={`w-full rounded-lg bg-black/40 ring-1 ring-white/15 backdrop-blur px-1.5 sm:px-2 py-0.5`}
+                    style={{ paddingTop: "calc(env(safe-area-inset-top) + 2px)" }}
                   >
                     <div className="sm:hidden text-white">
-                      <div className="flex items-center justify-between gap-2 text-[18px] font-semibold">
-                        <button
-                          type="button"
-                          onClick={finishAndClose}
-                          className="inline-flex h-11 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 ring-1 ring-white/20 hover:bg-white/15"
-                          title="Exit"
-                        >
-                          <X className="h-5 w-5" />
-                          <span>Exit</span>
-                        </button>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              setFlashOn((v) => !v);
-                              try {
-                                const stream = videoRef.current
-                                  ?.srcObject as MediaStream | null;
-                                const track =
-                                  stream?.getVideoTracks?.()[0] as any;
-                                if (track?.getCapabilities?.()?.torch) {
-                                  await track.applyConstraints({
-                                    advanced: [{ torch: !flashOn }],
-                                  });
-                                  setIsTorchSupported(true);
-                                } else {
-                                  setIsTorchSupported(false);
-                                }
-                              } catch {}
-                            }}
-                            className="inline-flex h-11 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 ring-1 ring-white/20 hover:bg-white/15"
-                            title="Flash"
-                          >
-                            {flashOn ? (
-                              <Zap className="h-5 w-5 text-yellow-300" />
-                            ) : (
-                              <ZapOff className="h-5 w-5" />
+                      {orientation !== "landscape" ? (
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={finishAndClose}
+                              className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/20 hover:bg-white/15"
+                              title="Exit"
+                            >
+                              <X className="h-5 w-5" />
+                              <span className="text-[13px]">Exit</span>
+                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  setFlashOn((v) => !v);
+                                  try {
+                                    const stream = videoRef.current
+                                      ?.srcObject as MediaStream | null;
+                                    const track =
+                                      stream?.getVideoTracks?.()[0] as any;
+                                    if (track?.getCapabilities?.()?.torch) {
+                                      await track.applyConstraints({
+                                        advanced: [{ torch: !flashOn }],
+                                      });
+                                      setIsTorchSupported(true);
+                                    } else {
+                                      setIsTorchSupported(false);
+                                    }
+                                  } catch {}
+                                }}
+                                className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/20 hover:bg-white/15"
+                                title="Flash"
+                              >
+                                {flashOn ? (
+                                  <Zap className="h-5 w-5 text-yellow-300" />
+                                ) : (
+                                  <ZapOff className="h-5 w-5" />
+                                )}
+                                <span className="text-[12px]">{flashOn ? "On" : "Off"}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setFocusOn((v) => !v)}
+                                className={`inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 ring-1 ring-white/20 hover:bg-white/15 ${
+                                  focusOn
+                                    ? "bg-red-600/80 text-white"
+                                    : "bg-white/10 text-white"
+                                }`}
+                                title="Focus"
+                              >
+                                <span className="text-[13px]">Focus</span>
+                                <span className="text-[11px] ml-1 opacity-90">
+                                  {focusOn ? "On" : "Off"}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-0.5 text-center text-[12px] font-medium truncate">
+                            Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
+                            {maxTotalImages}
+                            {" | "}Lot {activeIdx + 1}:{" "}
+                            {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}{" "}
+                            (AI)
+                            {" | "}Extra: {lots[activeIdx]?.extraFiles.length ?? 0}/
+                            {maxExtraImagesPerLot}
+                            {" | "}Mode:{" "}
+                            {lots[activeIdx]?.mode === "single_lot"
+                              ? "Bundle"
+                              : lots[activeIdx]?.mode === "per_item"
+                              ? "Per Item"
+                              : lots[activeIdx]?.mode === "per_photo"
+                              ? "Per Photo"
+                              : "—"}
+                            {isRecording && (
+                              <>
+                                {" | "}REC {formatTimer(recMillis)}
+                              </>
                             )}
-                            <span>{flashOn ? "On" : "Off"}</span>
-                          </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2">
                           <button
                             type="button"
-                            onClick={() => setFocusOn((v) => !v)}
-                            className={`inline-flex h-11 cursor-pointer items-center gap-1 rounded-lg px-3 py-1.5 ring-1 ring-white/20 hover:bg-white/15 ${
-                              focusOn
-                                ? "bg-red-600/80 text-white"
-                                : "bg-white/10 text-white"
-                            }`}
-                            title="Focus"
+                            onClick={finishAndClose}
+                            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/20 hover:bg-white/15"
+                            title="Exit"
+                            aria-label="Exit"
                           >
-                            <span>Focus</span>
-                            <span className="text-[12px] ml-1 opacity-90">
-                              {focusOn ? "On" : "Off"}
-                            </span>
+                            <X className="h-5 w-5" />
                           </button>
+                          <div className="min-w-0 flex-1 text-center">
+                            <span className="block truncate text-[12px] leading-none">
+                              Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
+                              {maxTotalImages}
+                              {" | "}Lot {activeIdx + 1}:{" "}
+                              {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot} (AI)
+                              {" | "}Extra: {lots[activeIdx]?.extraFiles.length ?? 0}/
+                              {maxExtraImagesPerLot}
+                              {" | "}Mode: {lots[activeIdx]?.mode === "single_lot"
+                                ? "Bundle"
+                                : lots[activeIdx]?.mode === "per_item"
+                                ? "Per Item"
+                                : lots[activeIdx]?.mode === "per_photo"
+                                ? "Per Photo"
+                                : "—"}
+                              {isRecording && ` | REC ${formatTimer(recMillis)}`}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                setFlashOn((v) => !v);
+                                try {
+                                  const stream = videoRef.current
+                                    ?.srcObject as MediaStream | null;
+                                  const track =
+                                    stream?.getVideoTracks?.()[0] as any;
+                                  if (track?.getCapabilities?.()?.torch) {
+                                    await track.applyConstraints({
+                                      advanced: [{ torch: !flashOn }],
+                                    });
+                                    setIsTorchSupported(true);
+                                  } else {
+                                    setIsTorchSupported(false);
+                                  }
+                                } catch {}
+                              }}
+                              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/20 hover:bg-white/15"
+                              title="Flash"
+                              aria-label="Flash"
+                            >
+                              {flashOn ? (
+                                <Zap className="h-5 w-5 text-yellow-300" />
+                              ) : (
+                                <ZapOff className="h-5 w-5" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFocusOn((v) => !v)}
+                              className={`inline-flex h-9 cursor-pointer items-center rounded-lg px-2 ring-1 ring-white/20 hover:bg-white/15 ${
+                                focusOn
+                                  ? "bg-red-600/80 text-white"
+                                  : "bg-white/10 text-white"
+                              }`}
+                              title="Focus"
+                              aria-label="Focus"
+                            >
+                              <span className="text-[12px] leading-none">Focus</span>
+                              <span className="text-[11px] ml-1 opacity-90">
+                                {focusOn ? "On" : "Off"}
+                              </span>
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="mt-1 text-center text-[18px] font-semibold truncate">
-                        Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
-                        {maxTotalImages}
-                        {" | "}Lot {activeIdx + 1}:{" "}
-                        {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}{" "}
-                        (AI)
-                        {" | "}Extra: {lots[activeIdx]?.extraFiles.length ?? 0}/
-                        {maxExtraImagesPerLot}
-                        {" | "}Mode:{" "}
-                        {lots[activeIdx]?.mode === "single_lot"
-                          ? "Bundle"
-                          : lots[activeIdx]?.mode === "per_item"
-                          ? "Per Item"
-                          : lots[activeIdx]?.mode === "per_photo"
-                          ? "Per Photo"
-                          : "—"}
-                        {isRecording && (
-                          <>
-                            {" | "}REC {formatTimer(recMillis)}
-                          </>
-                        )}
-                      </div>
+                      )}
                     </div>
                     <div className="hidden sm:grid w-full grid-cols-[auto,1fr,auto] items-center gap-1.5 sm:gap-2 text-[15px] leading-tight text-white">
                       {/* Left: Exit */}
