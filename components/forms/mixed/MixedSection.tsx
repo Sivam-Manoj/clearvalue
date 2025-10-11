@@ -1200,7 +1200,7 @@ export default function MixedSection({
                 {/* Top overlay: counters / flash */}
                 <div className="pointer-events-auto absolute top-0 left-0 right-0 z-30">
                   <div
-                    className={`w-full rounded-lg bg-black/40 ring-1 ring-white/15 backdrop-blur px-1.5 sm:px-2 py-0.5`}
+                    className={`w-full rounded-lg bg-black/40 ring-1 ring-white/15 px-1.5 sm:px-2 py-0.5`}
                     style={{ paddingTop: "calc(env(safe-area-inset-top) + 2px)" }}
                   >
                     <div className="sm:hidden text-white">
