@@ -71,6 +71,8 @@ export default function MixedSection({
   const [isSimulatingFlash, setIsSimulatingFlash] = useState<boolean>(false);
   const [focusOn, setFocusOn] = useState<boolean>(false);
   const FOCUS_BOX_FRACTION = 0.62; // fraction of min(image width/height)
+  const [focusBoxFrac, setFocusBoxFrac] = useState<number>(0.62);
+  const pinchStateRef = useRef<{ active: boolean; startDist: number; startFrac: number } | null>(null);
   const bottomControlsRef = useRef<HTMLDivElement>(null);
   const [controlsHeight, setControlsHeight] = useState<number>(0);
   const [videoAR, setVideoAR] = useState<number | null>(null);
@@ -778,7 +780,7 @@ export default function MixedSection({
     }
     ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, outW, outH);
     if (focusOn) {
-      const side = Math.floor(FOCUS_BOX_FRACTION * Math.min(outW, outH));
+      const side = Math.floor((focusBoxFrac || FOCUS_BOX_FRACTION) * Math.min(outW, outH));
       const fx = Math.floor((outW - side) / 2);
       const fy = Math.floor((outH - side) / 2);
       ctx.save();
@@ -1195,10 +1197,39 @@ export default function MixedSection({
 
                 {focusOn && (
                   <div
-                    className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex items-center justify-center"
-                    style={{ bottom: controlsHeight }}
+                    className="pointer-events-auto absolute left-0 right-0 top-0 z-10 flex items-center justify-center"
+                    style={{ bottom: controlsHeight, touchAction: "none" }}
+                    onTouchStart={(e) => {
+                      if (e.touches.length >= 2) {
+                        const dx = e.touches[0].clientX - e.touches[1].clientX;
+                        const dy = e.touches[0].clientY - e.touches[1].clientY;
+                        const dist = Math.hypot(dx, dy) || 1;
+                        pinchStateRef.current = {
+                          active: true,
+                          startDist: dist,
+                          startFrac: focusBoxFrac,
+                        };
+                      }
+                    }}
+                    onTouchMove={(e) => {
+                      const s = pinchStateRef.current;
+                      if (!s?.active || e.touches.length < 2) return;
+                      const dx = e.touches[0].clientX - e.touches[1].clientX;
+                      const dy = e.touches[0].clientY - e.touches[1].clientY;
+                      const dist = Math.hypot(dx, dy) || 1;
+                      const ratio = dist / (s.startDist || 1);
+                      let next = s.startFrac * ratio;
+                      next = Math.max(0.2, Math.min(0.95, next));
+                      setFocusBoxFrac(next);
+                    }}
+                    onTouchEnd={(e) => {
+                      if (e.touches.length < 2) pinchStateRef.current = null;
+                    }}
                   >
-                    <div className="border-4 border-red-500 rounded-sm w-[62vmin] aspect-square" />
+                    <div
+                      className="border-4 border-red-500 rounded-sm aspect-square"
+                      style={{ width: `${Math.round(focusBoxFrac * 100)}vmin` }}
+                    />
                   </div>
                 )}
 
