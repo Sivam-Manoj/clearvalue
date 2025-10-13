@@ -43,25 +43,71 @@ export default function ReportsPage() {
     };
   }, []);
 
-  const filteredReports = useMemo(() => {
+  type ReportGroup = {
+    key: string;
+    address: string;
+    filename?: string;
+    fairMarketValue: string;
+    createdAt: string;
+    contract_no?: string;
+    approvalStatus?: 'pending' | 'approved' | 'rejected';
+    type?: string;
+    variants: { pdf?: PdfReport; docx?: PdfReport; xlsx?: PdfReport; images?: PdfReport };
+  };
+
+  const groups = useMemo<ReportGroup[]>(() => {
+    const map = new Map<string, ReportGroup>();
+    for (const r of reports) {
+      const key = String(((r as any).report as string | undefined) || r._id);
+      let g = map.get(key);
+      if (!g) {
+        g = {
+          key,
+          address: r.address || "",
+          filename: r.filename,
+          fairMarketValue: r.fairMarketValue || "",
+          createdAt: r.createdAt,
+          contract_no: (r as any).contract_no,
+          approvalStatus: r.approvalStatus,
+          type: (r as any).type,
+          variants: {},
+        };
+        map.set(key, g);
+      }
+
+      if (!g.filename) g.filename = r.filename;
+      if (!g.contract_no && (r as any).contract_no) g.contract_no = (r as any).contract_no;
+      if (!g.approvalStatus && r.approvalStatus) g.approvalStatus = r.approvalStatus;
+      if (!g.type && (r as any).type) g.type = (r as any).type;
+      if (new Date(r.createdAt).getTime() > new Date(g.createdAt).getTime()) g.createdAt = r.createdAt;
+      const ft = ((r.fileType || String(r.filename || '').split('.').pop() || '') as string).toLowerCase();
+      if (ft === 'pdf') g.variants.pdf = r;
+      else if (ft === 'docx') g.variants.docx = r;
+      else if (ft === 'xlsx') g.variants.xlsx = r;
+      else if (ft === 'images' || ft === 'zip') g.variants.images = r;
+    }
+    return Array.from(map.values());
+  }, [reports]);
+
+  const filteredGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let arr = reports as PdfReport[];
+    let arr = groups as ReportGroup[];
 
     if (q) {
-      arr = arr.filter((r) => {
-        const address = String(r.address ?? "").toLowerCase();
-        const filename = String((r as any).filename ?? "").toLowerCase();
-        const id = String(r._id ?? "").toLowerCase();
-        const fmv = String(r.fairMarketValue ?? "").toLowerCase();
-        const dateStr = new Date(r.createdAt).toLocaleDateString().toLowerCase();
-        const contractNo = String((r as any).contract_no ?? "").toLowerCase();
+      arr = arr.filter((g) => {
+        const address = String(g.address ?? "").toLowerCase();
+        const filename = String(g.filename ?? "").toLowerCase();
+        const id = String(g.key ?? "").toLowerCase();
+        const fmv = String(g.fairMarketValue ?? "").toLowerCase();
+        const dateStr = new Date(g.createdAt).toLocaleDateString().toLowerCase();
+        const contractNo = String(g.contract_no ?? "").toLowerCase();
         return [address, filename, id, fmv, dateStr, contractNo].some((s) => s.includes(q));
       });
     }
 
     if (typeFilter) {
       arr = arr.filter(
-        (r) => String((r as any).type ?? "") === String(typeFilter)
+        (g) => String((g as any).type ?? "") === String(typeFilter)
       );
     }
 
@@ -101,7 +147,7 @@ export default function ReportsPage() {
     });
 
     return sorted;
-  }, [reports, query, typeFilter, sortBy]);
+  }, [groups, query, typeFilter, sortBy]);
 
   const availableTypes = useMemo(() => {
     const s = new Set<string>();
@@ -171,15 +217,15 @@ export default function ReportsPage() {
   };
 
   // Pagination derivations
-  const totalItems = filteredReports.length;
+  const totalItems = filteredGroups.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const clampedPage = Math.min(page, totalPages);
   const startIndex = totalItems === 0 ? 0 : (clampedPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalItems);
 
-  const paginatedReports = useMemo(
-    () => filteredReports.slice(startIndex, endIndex),
-    [filteredReports, startIndex, endIndex]
+  const paginatedGroups = useMemo(
+    () => filteredGroups.slice(startIndex, endIndex),
+    [filteredGroups, startIndex, endIndex]
   );
 
   // Reset/clamp page when filters or page size change
@@ -188,9 +234,9 @@ export default function ReportsPage() {
   }, [query, typeFilter]);
 
   useEffect(() => {
-    const tp = Math.max(1, Math.ceil(filteredReports.length / pageSize));
+    const tp = Math.max(1, Math.ceil(filteredGroups.length / pageSize));
     if (page > tp) setPage(tp);
-  }, [filteredReports.length, pageSize, page]);
+  }, [filteredGroups.length, pageSize, page]);
 
   async function handleDownload(id: string) {
     try {
@@ -224,6 +270,31 @@ export default function ReportsPage() {
       await ReportsService.deleteReport(id);
       setReports((prev) => prev.filter((r) => r._id !== id));
       toast.success(`Report deleted${r?.address ? `: ${r.address}` : ""}`);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || "Delete failed";
+      toast.error(msg);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function handleDeleteGroup(g: ReportGroup) {
+    if (!confirm("Delete this report (all variants)? This cannot be undone.")) return;
+    try {
+      setDeletingId(g.key);
+      const ids: string[] = [
+        g.variants.pdf?._id,
+        g.variants.docx?._id,
+        g.variants.xlsx?._id,
+        g.variants.images?._id,
+      ].filter(Boolean) as string[];
+      if (ids.length === 0) return;
+      await Promise.allSettled(ids.map((id) => ReportsService.deleteReport(id)));
+      setReports((prev) => prev.filter((r) => {
+        const grp = String(((r as any).report as string | undefined) || r._id);
+        return grp !== g.key;
+      }));
+      toast.success("Report deleted");
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || "Delete failed";
       toast.error(msg);
@@ -348,7 +419,7 @@ export default function ReportsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredReports.length > 0 && (
+              {filteredGroups.length > 0 && (
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-700">
                   <div>
                     Showing {totalItems === 0 ? 0 : startIndex + 1}–{endIndex} of {totalItems}
@@ -378,100 +449,66 @@ export default function ReportsPage() {
               )}
               {/* Mobile list view */}
               <div className="sm:hidden">
-                {filteredReports.length === 0 && reports.length > 0 ? (
+                {filteredGroups.length === 0 && reports.length > 0 ? (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 shadow-sm">
                     No matches for "{query}".
                   </div>
                 ) : (
                   <div className="max-h-[70vh] overflow-y-auto pr-1">
-                    <div className="space-y-3">
-                      {paginatedReports.map((r) => {
-                        const acc = accentFor((r as any).type);
+                    <div className="space-y-2">
+                      {paginatedGroups.map((g) => {
+                        const acc = accentFor((g as any).type);
                         return (
                           <div
-                            key={r._id}
-                            className="rounded-2xl bg-white ring-1 ring-slate-100 p-3 shadow-sm"
+                            key={g.key}
+                            className="rounded-xl bg-white ring-1 ring-slate-100 px-3 py-2 shadow-sm"
                           >
-                            <div className="flex items-start gap-3">
-                              <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${acc.iconBg} ${acc.iconText} ${acc.iconRing} ring-1 shadow-inner`}>
+                            <div className="flex items-center gap-2">
+                              <div className={`flex h-7 w-7 items-center justify-center rounded-xl ${acc.iconBg} ${acc.iconText} ${acc.iconRing} ring-1 shadow-inner`}>
                                 <FileText className="h-3 w-3" />
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="text-xs font-semibold text-slate-900 truncate">
-                                  {r.address || "Untitled report"}
+                                  {g.address || "Untitled report"}
                                 </div>
-                                <div className="mt-0.5 text-[11px] text-slate-600 truncate">
-                                  {r.filename || r._id}
+                                <div className="text-[11px] text-slate-600 truncate">
+                                  {g.filename || g.key}
                                 </div>
                               </div>
-                            </div>
-                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                              <div className="text-[11px] text-slate-900">
-                                {new Date(r.createdAt).toLocaleDateString()}
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  onClick={() => g.variants.pdf && handleDownload(g.variants.pdf._id)}
+                                  disabled={!g.variants.pdf || downloadingId === g.variants.pdf?._id || (!!g.variants.pdf?.approvalStatus && g.variants.pdf?.approvalStatus !== 'approved')}
+                                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white shadow hover:bg-blue-500 disabled:opacity-60 cursor-pointer"
+                                  title="Download PDF"
+                                >
+                                  PDF
+                                </button>
+                                <button
+                                  onClick={() => g.variants.docx && handleDownload(g.variants.docx._id)}
+                                  disabled={!g.variants.docx || downloadingId === g.variants.docx?._id || (!!g.variants.docx?.approvalStatus && g.variants.docx?.approvalStatus !== 'approved')}
+                                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white shadow hover:bg-blue-500 disabled:opacity-60 cursor-pointer"
+                                  title="Download DOCX"
+                                >
+                                  DOCX
+                                </button>
+                                <button
+                                  onClick={() => g.variants.xlsx && handleDownload(g.variants.xlsx._id)}
+                                  disabled={!g.variants.xlsx || downloadingId === g.variants.xlsx?._id || (!!g.variants.xlsx?.approvalStatus && g.variants.xlsx?.approvalStatus !== 'approved')}
+                                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white shadow hover:bg-blue-500 disabled:opacity-60 cursor-pointer"
+                                  title="Download Excel"
+                                >
+                                  Excel
+                                </button>
+                                <button
+                                  onClick={() => g.variants.images && handleDownload(g.variants.images._id)}
+                                  disabled={!g.variants.images || downloadingId === g.variants.images?._id || (!!g.variants.images?.approvalStatus && g.variants.images?.approvalStatus !== 'approved')}
+                                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white shadow hover:bg-blue-500 disabled:opacity-60 cursor-pointer"
+                                  title="Download Images Zip"
+                                >
+                                  Images
+                                </button>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm bg-emerald-50 text-emerald-700 ring-emerald-200">
-                                  {String(r.fairMarketValue ?? "")}
-                                </span>
-                                {(r as any).contract_no ? (
-                                  <span className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm bg-slate-50 text-slate-700 ring-slate-200">
-                                    CN: {(r as any).contract_no}
-                                  </span>
-                                ) : null}
-                                {(() => {
-                                  const st = (r as any).approvalStatus as 'pending' | 'approved' | 'rejected' | undefined;
-                                  const label = st === 'approved' ? 'Approved' : st === 'rejected' ? 'Rejected' : 'Waiting approval';
-                                  const cls = st === 'approved'
-                                    ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                                    : st === 'rejected'
-                                    ? 'bg-rose-50 text-rose-700 ring-rose-200'
-                                    : 'bg-amber-50 text-amber-700 ring-amber-200';
-                                  return (
-                                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm ${cls}`}>
-                                      {label}
-                                    </span>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                            {((r as any).approvalStatus === 'rejected' && (r as any).approvalNote) ? (
-                              <div className="mt-2 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2">
-                                Reason: {(r as any).approvalNote}
-                              </div>
-                            ) : null}
-                            <div className="mt-3 flex gap-2">
-                              <button
-                                onClick={() => handleDownload(r._id)}
-                                disabled={
-                                  downloadingId === r._id ||
-                                  (!!(r as any).approvalStatus && (r as any).approvalStatus !== 'approved')
-                                }
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
-                                title={(() => {
-                                  const st = (r as any).approvalStatus as string | undefined;
-                                  if (st === 'pending') return 'Waiting for approval';
-                                  if (st === 'rejected') return 'Rejected';
-                                  const ft = ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase();
-                                  return ft === 'images' || ft === 'zip' ? 'Download Images' : 'Download';
-                                })()}
-                              >
-                                <Download className="h-3.5 w-3.5" />
-                                {downloadingId === r._id
-                                  ? "Downloading..."
-                                  : ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase() === 'images' ||
-                                    ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase() === 'zip'
-                                  ? "Download Images"
-                                  : "Download"}
-                              </button>
-                              <button
-                                onClick={() => handleDelete(r._id)}
-                                disabled={deletingId === r._id}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
-                                title="Delete"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                {deletingId === r._id ? "Deleting..." : "Delete"}
-                              </button>
                             </div>
                           </div>
                         );
@@ -528,7 +565,7 @@ export default function ReportsPage() {
                           </tr>
                         </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredReports.length === 0 && reports.length > 0 ? (
+                        {filteredGroups.length === 0 && reports.length > 0 ? (
                           <tr>
                             <td
                               colSpan={6}
@@ -538,10 +575,10 @@ export default function ReportsPage() {
                             </td>
                           </tr>
                         ) : (
-                          paginatedReports.map((r) => {
-                            const acc = accentFor((r as any).type);
+                          paginatedGroups.map((g) => {
+                            const acc = accentFor((g as any).type);
                             return (
-                              <tr key={r._id} className={acc.rowHover}>
+                              <tr key={g.key} className={acc.rowHover}>
                                 <td className="px-3 py-2">
                                   <div className="flex items-center gap-2">
                                     <div className={`flex h-7 w-7 items-center justify-center rounded-xl ${acc.iconBg} ${acc.iconText} ${acc.iconRing} ring-1 shadow-inner`}>
@@ -549,28 +586,28 @@ export default function ReportsPage() {
                                     </div>
                                     <div className="min-w-0">
                                       <div className="text-xs font-semibold text-slate-900 truncate">
-                                        {r.address || "Untitled report"}
+                                        {g.address || "Untitled report"}
                                       </div>
                                       <div className="text-[11px] text-slate-600 truncate">
-                                        {r.filename || r._id}
+                                        {g.filename || g.key}
                                       </div>
                                     </div>
                                   </div>
                                 </td>
                                 <td className="px-3 py-2 text-xs text-slate-900 truncate max-w-[14rem]">
-                                  {(r as any).contract_no || "—"}
+                                  {g.contract_no || "—"}
                                 </td>
                                 <td className="px-3 py-2 text-xs text-slate-900">
-                                  {new Date(r.createdAt).toLocaleDateString()}
+                                  {new Date(g.createdAt).toLocaleDateString()}
                                 </td>
                                 <td className="px-3 py-2">
                                   <span className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm bg-emerald-50 text-emerald-700 ring-emerald-200">
-                                    {String(r.fairMarketValue ?? "")}
+                                    {String(g.fairMarketValue ?? "")}
                                   </span>
                                 </td>
                                 <td className="px-3 py-2">
                                   {(() => {
-                                    const st = (r as any).approvalStatus as 'pending' | 'approved' | 'rejected' | undefined;
+                                    const st = (g as any).approvalStatus as 'pending' | 'approved' | 'rejected' | undefined;
                                     const label = st === 'approved' ? 'Approved' : st === 'rejected' ? 'Rejected' : 'Waiting approval';
                                     const cls = st === 'approved'
                                       ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
@@ -587,36 +624,36 @@ export default function ReportsPage() {
                                 <td className="px-3 py-2">
                                   <div className="flex justify-end gap-2">
                                     <button
-                                      onClick={() => handleDownload(r._id)}
-                                      disabled={
-                                        downloadingId === r._id ||
-                                        (!!(r as any).approvalStatus && (r as any).approvalStatus !== 'approved')
-                                      }
+                                      onClick={() => g.variants.pdf && handleDownload(g.variants.pdf._id)}
+                                      disabled={!g.variants.pdf || downloadingId === g.variants.pdf?._id || (!!g.variants.pdf?.approvalStatus && g.variants.pdf?.approvalStatus !== 'approved')}
                                       className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
-                                      title={(() => {
-                                        const st = (r as any).approvalStatus as string | undefined;
-                                        if (st === 'pending') return 'Waiting for approval';
-                                        if (st === 'rejected') return 'Rejected';
-                                        const ft = ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase();
-                                        return ft === 'images' || ft === 'zip' ? 'Download Images' : 'Download';
-                                      })()}
+                                      title="Download PDF"
                                     >
-                                      <Download className="h-3.5 w-3.5" />
-                                      {downloadingId === r._id
-                                        ? "Downloading..."
-                                        : ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase() === 'images' ||
-                                          ((r as any).fileType || String(r.filename || '').split('.').pop() || '').toLowerCase() === 'zip'
-                                        ? "Download Images"
-                                        : "Download"}
+                                      PDF
                                     </button>
                                     <button
-                                      onClick={() => handleDelete(r._id)}
-                                      disabled={deletingId === r._id}
-                                      className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
-                                      title="Delete"
+                                      onClick={() => g.variants.docx && handleDownload(g.variants.docx._id)}
+                                      disabled={!g.variants.docx || downloadingId === g.variants.docx?._id || (!!g.variants.docx?.approvalStatus && g.variants.docx?.approvalStatus !== 'approved')}
+                                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
+                                      title="Download DOCX"
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                      {deletingId === r._id ? "Deleting..." : "Delete"}
+                                      DOCX
+                                    </button>
+                                    <button
+                                      onClick={() => g.variants.xlsx && handleDownload(g.variants.xlsx._id)}
+                                      disabled={!g.variants.xlsx || downloadingId === g.variants.xlsx?._id || (!!g.variants.xlsx?.approvalStatus && g.variants.xlsx?.approvalStatus !== 'approved')}
+                                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
+                                      title="Download Excel"
+                                    >
+                                      Excel
+                                    </button>
+                                    <button
+                                      onClick={() => g.variants.images && handleDownload(g.variants.images._id)}
+                                      disabled={!g.variants.images || downloadingId === g.variants.images?._id || (!!g.variants.images?.approvalStatus && g.variants.images?.approvalStatus !== 'approved')}
+                                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
+                                      title="Download Images Zip"
+                                    >
+                                      Images
                                     </button>
                                   </div>
                                 </td>
@@ -630,7 +667,7 @@ export default function ReportsPage() {
                   </div>
                 </div>
               </div>
-              {filteredReports.length > 0 && (
+              {filteredGroups.length > 0 && (
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-700">
                   <div>
                     Showing {totalItems === 0 ? 0 : startIndex + 1}–{endIndex} of {totalItems}
