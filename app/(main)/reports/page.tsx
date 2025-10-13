@@ -469,10 +469,11 @@ export default function ReportsPage() {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="text-xs font-semibold text-slate-900 truncate">
-                                  {g.address || "Untitled report"}
-                                </div>
-                                <div className="text-[11px] text-slate-600 truncate">
-                                  {g.filename || g.key}
+                                  {(() => {
+                                    const t = String((g as any).type || '').toLowerCase();
+                                    const base = t === 'realestate' ? 'Real Estate' : t === 'salvage' ? 'Salvage' : 'Asset';
+                                    return g.contract_no ? `${base} - ${g.contract_no}` : (g.address || base);
+                                  })()}
                                 </div>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
@@ -586,10 +587,11 @@ export default function ReportsPage() {
                                     </div>
                                     <div className="min-w-0">
                                       <div className="text-xs font-semibold text-slate-900 truncate">
-                                        {g.address || "Untitled report"}
-                                      </div>
-                                      <div className="text-[11px] text-slate-600 truncate">
-                                        {g.filename || g.key}
+                                        {(() => {
+                                          const t = String((g as any).type || '').toLowerCase();
+                                          const base = t === 'realestate' ? 'Real Estate' : t === 'salvage' ? 'Salvage' : 'Asset';
+                                          return g.contract_no ? `${base} - ${g.contract_no}` : (g.address || base);
+                                        })()}
                                       </div>
                                     </div>
                                   </div>
