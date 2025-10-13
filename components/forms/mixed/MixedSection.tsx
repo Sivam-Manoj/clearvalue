@@ -75,6 +75,8 @@ export default function MixedSection({
   const pinchStateRef = useRef<{ active: boolean; startDist: number; startFrac: number } | null>(null);
   const bottomControlsRef = useRef<HTMLDivElement>(null);
   const [controlsHeight, setControlsHeight] = useState<number>(0);
+  const cameraViewRef = useRef<HTMLDivElement>(null);
+  const [cameraViewSize, setCameraViewSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [videoAR, setVideoAR] = useState<number | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -161,6 +163,35 @@ export default function MixedSection({
       // @ts-ignore - ResizeObserver available in browser
       ro = new ResizeObserver(measure);
       if (bottomControlsRef.current) ro.observe(bottomControlsRef.current);
+    } catch {}
+    window.addEventListener("resize", measure);
+    return () => {
+      try {
+        ro?.disconnect();
+      } catch {}
+      window.removeEventListener("resize", measure);
+    };
+  }, [cameraOpen, orientation]);
+
+  useEffect(() => {
+    if (!cameraOpen) {
+      setCameraViewSize({ w: 0, h: 0 });
+      return;
+    }
+    const measure = () => {
+      try {
+        const el = cameraViewRef.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        setCameraViewSize({ w: Math.round(r.width), h: Math.round(r.height) });
+      } catch {}
+    };
+    measure();
+    let ro: ResizeObserver | null = null;
+    try {
+      // @ts-ignore
+      ro = new ResizeObserver(measure);
+      if (cameraViewRef.current) ro.observe(cameraViewRef.current);
     } catch {}
     window.addEventListener("resize", measure);
     return () => {
@@ -780,7 +811,17 @@ export default function MixedSection({
     }
     ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, outW, outH);
     if (focusOn) {
-      const side = Math.floor((focusBoxFrac || FOCUS_BOX_FRACTION) * Math.min(outW, outH));
+      let side = Math.floor((focusBoxFrac || FOCUS_BOX_FRACTION) * Math.min(outW, outH));
+      try {
+        const dispW = cameraViewSize.w;
+        const dispH = cameraViewSize.h;
+        if (dispW > 0 && dispH > 0 && vw > 0 && vh > 0) {
+          // object-cover scale factor (before CSS zoom); zoom cancels out in output mapping
+          const s = Math.max(dispW / vw, dispH / vh);
+          const boxSideDisp = (focusBoxFrac || FOCUS_BOX_FRACTION) * Math.min(dispW, dispH);
+          side = Math.max(1, Math.floor(boxSideDisp / s));
+        }
+      } catch {}
       const fx = Math.floor((outW - side) / 2);
       const fy = Math.floor((outH - side) / 2);
       ctx.save();
@@ -1168,7 +1209,7 @@ export default function MixedSection({
         createPortal(
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 overflow-hidden touch-none overscroll-contain select-none">
             <div className="relative w-full h-full max-w-none max-h-full overflow-hidden flex flex-col rounded-none border-0 bg-black/30 ring-0 shadow-none">
-              <div className="relative flex-1 min-h-0 bg-black">
+              <div className="relative flex-1 min-h-0 bg-black" ref={cameraViewRef}>
                 <video
                   ref={videoRef}
                   autoPlay
@@ -1197,8 +1238,8 @@ export default function MixedSection({
 
                 {focusOn && (
                   <div
-                    className="pointer-events-auto absolute left-0 right-0 top-0 z-10 flex items-center justify-center"
-                    style={{ bottom: controlsHeight, touchAction: "none" }}
+                    className="pointer-events-auto absolute inset-0 z-10 flex items-center justify-center"
+                    style={{ touchAction: "none" }}
                     onTouchStart={(e) => {
                       if (e.touches.length >= 2) {
                         const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -1228,7 +1269,15 @@ export default function MixedSection({
                   >
                     <div
                       className="border-4 border-red-500 rounded-sm aspect-square"
-                      style={{ width: `${Math.round(focusBoxFrac * 100)}vmin` }}
+                      style={{
+                        width:
+                          cameraViewSize.w > 0 && cameraViewSize.h > 0
+                            ? `${Math.round(
+                                focusBoxFrac *
+                                  Math.min(cameraViewSize.w, cameraViewSize.h)
+                              )}px`
+                            : `${Math.round(focusBoxFrac * 100)}vmin`,
+                      }}
                     />
                   </div>
                 )}
