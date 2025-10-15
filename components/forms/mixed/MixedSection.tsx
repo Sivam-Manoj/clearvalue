@@ -72,7 +72,17 @@ export default function MixedSection({
   const [focusOn, setFocusOn] = useState<boolean>(false);
   const FOCUS_BOX_FRACTION = 0.62; // fraction of min(image width/height)
   const [focusBoxFrac, setFocusBoxFrac] = useState<number>(0.62);
+  const [focusBoxCX, setFocusBoxCX] = useState<number>(0.5);
+  const [focusBoxCY, setFocusBoxCY] = useState<number>(0.5);
   const pinchStateRef = useRef<{ active: boolean; startDist: number; startFrac: number } | null>(null);
+  const dragStateRef = useRef<{
+    type: "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+    startX: number;
+    startY: number;
+    startCx: number; // px
+    startCy: number; // px
+    startSide: number; // px
+  } | null>(null);
   const bottomControlsRef = useRef<HTMLDivElement>(null);
   const [controlsHeight, setControlsHeight] = useState<number>(0);
   const cameraViewRef = useRef<HTMLDivElement>(null);
@@ -812,6 +822,8 @@ export default function MixedSection({
     ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, outW, outH);
     if (focusOn) {
       let side = Math.floor((focusBoxFrac || FOCUS_BOX_FRACTION) * Math.min(outW, outH));
+      let fx = Math.floor((outW - side) / 2);
+      let fy = Math.floor((outH - side) / 2);
       try {
         const dispW = cameraViewSize.w;
         const dispH = cameraViewSize.h;
@@ -820,10 +832,14 @@ export default function MixedSection({
           const s = Math.max(dispW / vw, dispH / vh);
           const boxSideDisp = (focusBoxFrac || FOCUS_BOX_FRACTION) * Math.min(dispW, dispH);
           side = Math.max(1, Math.floor(boxSideDisp / s));
+          const cxDisp = (typeof focusBoxCX === 'number' ? focusBoxCX : 0.5) * dispW;
+          const cyDisp = (typeof focusBoxCY === 'number' ? focusBoxCY : 0.5) * dispH;
+          const cxVid = cxDisp / s;
+          const cyVid = cyDisp / s;
+          fx = Math.max(0, Math.min(outW - side, Math.floor(cxVid - side / 2)));
+          fy = Math.max(0, Math.min(outH - side, Math.floor(cyVid - side / 2)));
         }
       } catch {}
-      const fx = Math.floor((outW - side) / 2);
-      const fy = Math.floor((outH - side) / 2);
       ctx.save();
       ctx.lineWidth = Math.max(3, Math.floor(outW * 0.01));
       ctx.strokeStyle = "#ef4444"; // tailwind red-500
