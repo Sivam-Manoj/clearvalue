@@ -79,9 +79,13 @@ export default function MixedSection({
     type: "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
     startX: number;
     startY: number;
-    startCx: number; // px
-    startCy: number; // px
-    startSide: number; // px
+    startCx: number;
+    startCy: number;
+    startSide: number;
+    anchorX: number;
+    anchorY: number;
+    startCornerX: number;
+    startCornerY: number;
   } | null>(null);
   const bottomControlsRef = useRef<HTMLDivElement>(null);
   const [controlsHeight, setControlsHeight] = useState<number>(0);
@@ -642,6 +646,226 @@ export default function MixedSection({
     }
   }
 
+  type DragType = "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+  function startDrag(type: DragType, e: React.PointerEvent | PointerEvent) {
+    try {
+      const dispW = cameraViewSize.w;
+      const dispH = cameraViewSize.h;
+      if (!(dispW > 0 && dispH > 0)) return;
+      const minDisp = Math.min(dispW, dispH);
+      const side = Math.round(
+        (focusBoxFrac || FOCUS_BOX_FRACTION) * Math.max(1, minDisp)
+      );
+      const cx = Math.round(
+        (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * dispW
+      );
+      const cy = Math.round(
+        (typeof focusBoxCY === "number" ? focusBoxCY : 0.5) * dispH
+      );
+      let anchorX = cx;
+      let anchorY = cy;
+      let startCornerX = cx;
+      let startCornerY = cy;
+      const half = side / 2;
+      switch (type) {
+        case "ne":
+          anchorX = cx - half; // SW corner x
+          anchorY = cy + half; // SW corner y
+          startCornerX = cx + half; // NE start x
+          startCornerY = cy - half; // NE start y
+          break;
+        case "nw":
+          anchorX = cx + half; // SE
+          anchorY = cy + half;
+          startCornerX = cx - half; // NW
+          startCornerY = cy - half;
+          break;
+        case "se":
+          anchorX = cx - half; // NW
+          anchorY = cy - half;
+          startCornerX = cx + half; // SE
+          startCornerY = cy + half;
+          break;
+        case "sw":
+          anchorX = cx + half; // NE
+          anchorY = cy - half;
+          startCornerX = cx - half; // SW
+          startCornerY = cy + half;
+          break;
+        case "n":
+          anchorX = cx; // south edge center
+          anchorY = cy + half;
+          startCornerX = cx;
+          startCornerY = cy - half; // top edge center
+          break;
+        case "s":
+          anchorX = cx;
+          anchorY = cy - half; // top edge center
+          startCornerX = cx;
+          startCornerY = cy + half; // bottom edge center
+          break;
+        case "e":
+          anchorX = cx - half; // left edge center
+          anchorY = cy;
+          startCornerX = cx + half; // right edge center
+          startCornerY = cy;
+          break;
+        case "w":
+          anchorX = cx + half; // right edge center
+          anchorY = cy;
+          startCornerX = cx - half; // left edge center
+          startCornerY = cy;
+          break;
+        default:
+          anchorX = cx;
+          anchorY = cy;
+          startCornerX = cx;
+          startCornerY = cy;
+      }
+      dragStateRef.current = {
+        type,
+        startX: (e as PointerEvent).clientX,
+        startY: (e as PointerEvent).clientY,
+        startCx: cx,
+        startCy: cy,
+        startSide: side,
+        anchorX,
+        anchorY,
+        startCornerX,
+        startCornerY,
+      };
+      const onMove = (ev: PointerEvent) => {
+        const s = dragStateRef.current;
+        if (!s) return;
+        const dx = ev.clientX - s.startX;
+        const dy = ev.clientY - s.startY;
+        let newCx = s.startCx;
+        let newCy = s.startCy;
+        let newSide = s.startSide;
+
+        const minSide = Math.max(40, Math.floor(0.1 * minDisp));
+        const globalMax = Math.max(minSide, Math.floor(0.98 * minDisp));
+
+        const px = s.startCornerX + dx;
+        const py = s.startCornerY + dy;
+
+        switch (s.type) {
+          case "move": {
+            newCx = s.startCx + dx;
+            newCy = s.startCy + dy;
+            // keep within bounds with current side
+            let l = newCx - newSide / 2;
+            let t = newCy - newSide / 2;
+            l = Math.max(0, Math.min(dispW - newSide, Math.floor(l)));
+            t = Math.max(0, Math.min(dispH - newSide, Math.floor(t)));
+            newCx = Math.floor(l + newSide / 2);
+            newCy = Math.floor(t + newSide / 2);
+            break;
+          }
+          case "ne": {
+            const sideX = Math.max(0, Math.min(dispW, px)) - s.anchorX;
+            const sideY = s.anchorY - Math.max(0, Math.min(dispH, py));
+            let lim = Math.min(dispW - s.anchorX, s.anchorY);
+            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, Math.max(sideX, sideY))));
+            newCx = s.anchorX + newSide / 2;
+            newCy = s.anchorY - newSide / 2;
+            break;
+          }
+          case "nw": {
+            const sideX = s.anchorX - Math.max(0, Math.min(dispW, px));
+            const sideY = s.anchorY - Math.max(0, Math.min(dispH, py));
+            let lim = Math.min(s.anchorX, s.anchorY);
+            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, Math.max(sideX, sideY))));
+            newCx = s.anchorX - newSide / 2;
+            newCy = s.anchorY - newSide / 2;
+            break;
+          }
+          case "se": {
+            const sideX = Math.max(0, Math.min(dispW, px)) - s.anchorX;
+            const sideY = Math.max(0, Math.min(dispH, py)) - s.anchorY;
+            let lim = Math.min(dispW - s.anchorX, dispH - s.anchorY);
+            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, Math.max(sideX, sideY))));
+            newCx = s.anchorX + newSide / 2;
+            newCy = s.anchorY + newSide / 2;
+            break;
+          }
+          case "sw": {
+            const sideX = s.anchorX - Math.max(0, Math.min(dispW, px));
+            const sideY = Math.max(0, Math.min(dispH, py)) - s.anchorY;
+            let lim = Math.min(s.anchorX, dispH - s.anchorY);
+            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, Math.max(sideX, sideY))));
+            newCx = s.anchorX - newSide / 2;
+            newCy = s.anchorY + newSide / 2;
+            break;
+          }
+          case "n": {
+            const sy = Math.max(0, Math.min(dispH, py));
+            const sideV = s.anchorY - sy;
+            const horiz = 2 * Math.min(s.anchorX, dispW - s.anchorX);
+            let lim = Math.min(s.anchorY, horiz);
+            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, sideV)));
+            newCx = s.anchorX;
+            newCy = s.anchorY - newSide / 2;
+            break;
+          }
+          case "s": {
+            const sy = Math.max(0, Math.min(dispH, py));
+            const sideV = sy - s.anchorY;
+            const horiz = 2 * Math.min(s.anchorX, dispW - s.anchorX);
+            let lim = Math.min(dispH - s.anchorY, horiz);
+            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, sideV)));
+            newCx = s.anchorX;
+            newCy = s.anchorY + newSide / 2;
+            break;
+          }
+          case "e": {
+            const sx = Math.max(0, Math.min(dispW, px));
+            const sideH = sx - s.anchorX;
+            const vert = 2 * Math.min(s.anchorY, dispH - s.anchorY);
+            let lim = Math.min(dispW - s.anchorX, vert);
+            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, sideH)));
+            newCx = s.anchorX + newSide / 2;
+            newCy = s.anchorY;
+            break;
+          }
+          case "w": {
+            const sx = Math.max(0, Math.min(dispW, px));
+            const sideH = s.anchorX - sx;
+            const vert = 2 * Math.min(s.anchorY, dispH - s.anchorY);
+            let lim = Math.min(s.anchorX, vert);
+            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, sideH)));
+            newCx = s.anchorX - newSide / 2;
+            newCy = s.anchorY;
+            break;
+          }
+        }
+
+        let l = newCx - newSide / 2;
+        let t = newCy - newSide / 2;
+        l = Math.max(0, Math.min(dispW - newSide, Math.floor(l)));
+        t = Math.max(0, Math.min(dispH - newSide, Math.floor(t)));
+        newCx = Math.floor(l + newSide / 2);
+        newCy = Math.floor(t + newSide / 2);
+
+        setFocusBoxFrac(newSide / Math.max(1, minDisp));
+        setFocusBoxCX(newCx / Math.max(1, dispW));
+        setFocusBoxCY(newCy / Math.max(1, dispH));
+        try {
+          ev.preventDefault();
+        } catch {}
+      };
+      const onUp = () => {
+        try {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+        } catch {}
+        dragStateRef.current = null;
+      };
+      window.addEventListener("pointermove", onMove, { passive: false });
+      window.addEventListener("pointerup", onUp, { passive: true });
+    } catch {}
+  }
+
   // Manual per-lot ZIP download
   async function downloadLotZip(idx: number) {
     try {
@@ -828,14 +1052,17 @@ export default function MixedSection({
         const dispW = cameraViewSize.w;
         const dispH = cameraViewSize.h;
         if (dispW > 0 && dispH > 0 && vw > 0 && vh > 0) {
-          // object-cover scale factor (before CSS zoom); zoom cancels out in output mapping
           const s = Math.max(dispW / vw, dispH / vh);
+          const scaledW = vw * s;
+          const scaledH = vh * s;
+          const offsetX = Math.max(0, (scaledW - dispW) / 2);
+          const offsetY = Math.max(0, (scaledH - dispH) / 2);
           const boxSideDisp = (focusBoxFrac || FOCUS_BOX_FRACTION) * Math.min(dispW, dispH);
           side = Math.max(1, Math.floor(boxSideDisp / s));
           const cxDisp = (typeof focusBoxCX === 'number' ? focusBoxCX : 0.5) * dispW;
           const cyDisp = (typeof focusBoxCY === 'number' ? focusBoxCY : 0.5) * dispH;
-          const cxVid = cxDisp / s;
-          const cyVid = cyDisp / s;
+          const cxVid = (cxDisp + offsetX) / s;
+          const cyVid = (cyDisp + offsetY) / s;
           fx = Math.max(0, Math.min(outW - side, Math.floor(cxVid - side / 2)));
           fy = Math.max(0, Math.min(outH - side, Math.floor(cyVid - side / 2)));
         }
@@ -1254,7 +1481,7 @@ export default function MixedSection({
 
                 {focusOn && (
                   <div
-                    className="pointer-events-auto absolute inset-0 z-10 flex items-center justify-center"
+                    className="pointer-events-auto absolute inset-0 z-10"
                     style={{ touchAction: "none" }}
                     onTouchStart={(e) => {
                       if (e.touches.length >= 2) {
@@ -1284,17 +1511,185 @@ export default function MixedSection({
                     }}
                   >
                     <div
-                      className="border-4 border-red-500 rounded-sm aspect-square"
+                      onPointerDown={(e) => startDrag("move", e)}
+                      className="absolute border-4 border-red-500 rounded-sm"
                       style={{
                         width:
                           cameraViewSize.w > 0 && cameraViewSize.h > 0
                             ? `${Math.round(
-                                focusBoxFrac *
+                                (focusBoxFrac || FOCUS_BOX_FRACTION) *
                                   Math.min(cameraViewSize.w, cameraViewSize.h)
                               )}px`
-                            : `${Math.round(focusBoxFrac * 100)}vmin`,
+                            : `${Math.round(
+                                (focusBoxFrac || FOCUS_BOX_FRACTION) * 100
+                              )}vmin`,
+                        height:
+                          cameraViewSize.w > 0 && cameraViewSize.h > 0
+                            ? `${Math.round(
+                                (focusBoxFrac || FOCUS_BOX_FRACTION) *
+                                  Math.min(cameraViewSize.w, cameraViewSize.h)
+                              )}px`
+                            : `${Math.round(
+                                (focusBoxFrac || FOCUS_BOX_FRACTION) * 100
+                              )}vmin`,
+                        left:
+                          cameraViewSize.w > 0 && cameraViewSize.h > 0
+                            ? `calc(${Math.round(
+                                (typeof focusBoxCX === "number"
+                                  ? focusBoxCX
+                                  : 0.5) * 100
+                              )}% - ${Math.round(
+                                ((focusBoxFrac || FOCUS_BOX_FRACTION) *
+                                  Math.min(
+                                    cameraViewSize.w,
+                                    cameraViewSize.h
+                                  )) /
+                                  2
+                              )}px)`
+                            : `50%`,
+                        top:
+                          cameraViewSize.w > 0 && cameraViewSize.h > 0
+                            ? `calc(${Math.round(
+                                (typeof focusBoxCY === "number"
+                                  ? focusBoxCY
+                                  : 0.5) * 100
+                              )}% - ${Math.round(
+                                ((focusBoxFrac || FOCUS_BOX_FRACTION) *
+                                  Math.min(
+                                    cameraViewSize.w,
+                                    cameraViewSize.h
+                                  )) /
+                                  2
+                              )}px)`
+                            : `50%`,
+                        cursor: "move",
                       }}
-                    />
+                    >
+                      <div
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("nw", e); }}
+                        style={{
+                          position: "absolute",
+                          left: -8,
+                          top: -8,
+                          width: 16,
+                          height: 16,
+                          background: "#fff",
+                          border: "2px solid #ef4444",
+                          borderRadius: 4,
+                          cursor: "nwse-resize",
+                          touchAction: "none",
+                        }}
+                      />
+                      <div
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("ne", e); }}
+                        style={{
+                          position: "absolute",
+                          right: -8,
+                          top: -8,
+                          width: 16,
+                          height: 16,
+                          background: "#fff",
+                          border: "2px solid #ef4444",
+                          borderRadius: 4,
+                          cursor: "nesw-resize",
+                          touchAction: "none",
+                        }}
+                      />
+                      <div
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("se", e); }}
+                        style={{
+                          position: "absolute",
+                          right: -8,
+                          bottom: -8,
+                          width: 16,
+                          height: 16,
+                          background: "#fff",
+                          border: "2px solid #ef4444",
+                          borderRadius: 4,
+                          cursor: "nwse-resize",
+                          touchAction: "none",
+                        }}
+                      />
+                      <div
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("sw", e); }}
+                        style={{
+                          position: "absolute",
+                          left: -8,
+                          bottom: -8,
+                          width: 16,
+                          height: 16,
+                          background: "#fff",
+                          border: "2px solid #ef4444",
+                          borderRadius: 4,
+                          cursor: "nesw-resize",
+                          touchAction: "none",
+                        }}
+                      />
+                      <div
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("n", e); }}
+                        style={{
+                          position: "absolute",
+                          left: "50%",
+                          top: -8,
+                          transform: "translateX(-50%)",
+                          width: 24,
+                          height: 12,
+                          background: "#fff",
+                          border: "2px solid #ef4444",
+                          borderRadius: 4,
+                          cursor: "ns-resize",
+                          touchAction: "none",
+                        }}
+                      />
+                      <div
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("s", e); }}
+                        style={{
+                          position: "absolute",
+                          left: "50%",
+                          bottom: -8,
+                          transform: "translateX(-50%)",
+                          width: 24,
+                          height: 12,
+                          background: "#fff",
+                          border: "2px solid #ef4444",
+                          borderRadius: 4,
+                          cursor: "ns-resize",
+                          touchAction: "none",
+                        }}
+                      />
+                      <div
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("e", e); }}
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          right: -8,
+                          transform: "translateY(-50%)",
+                          width: 12,
+                          height: 24,
+                          background: "#fff",
+                          border: "2px solid #ef4444",
+                          borderRadius: 4,
+                          cursor: "ew-resize",
+                          touchAction: "none",
+                        }}
+                      />
+                      <div
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("w", e); }}
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: -8,
+                          transform: "translateY(-50%)",
+                          width: 12,
+                          height: 24,
+                          background: "#fff",
+                          border: "2px solid #ef4444",
+                          borderRadius: 4,
+                          cursor: "ew-resize",
+                          touchAction: "none",
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
 
