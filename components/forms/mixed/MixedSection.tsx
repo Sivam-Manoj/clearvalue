@@ -17,6 +17,8 @@ import {
   Check,
   X,
   Download,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import JSZip from "jszip";
 import ImageAnnotator, { AnnBox } from "./ImageAnnotator";
@@ -72,16 +74,21 @@ export default function MixedSection({
   const [focusOn, setFocusOn] = useState<boolean>(false);
   const FOCUS_BOX_FRACTION = 0.62; // fraction of min(image width/height)
   const [focusBoxFrac, setFocusBoxFrac] = useState<number>(0.62);
+  const [focusBoxFW, setFocusBoxFW] = useState<number>(0.62);
+  const [focusBoxFH, setFocusBoxFH] = useState<number>(0.62);
   const [focusBoxCX, setFocusBoxCX] = useState<number>(0.5);
   const [focusBoxCY, setFocusBoxCY] = useState<number>(0.5);
-  const pinchStateRef = useRef<{ active: boolean; startDist: number; startFrac: number } | null>(null);
+  const pinchStateRef = useRef<{ active: boolean; startDist: number; startFW: number; startFH: number } | null>(null);
+  const [focusLockAR, setFocusLockAR] = useState<boolean>(false);
+  const focusARRef = useRef<number>(1);
   const dragStateRef = useRef<{
     type: "move" | "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
     startX: number;
     startY: number;
     startCx: number;
     startCy: number;
-    startSide: number;
+    startW: number;
+    startH: number;
     anchorX: number;
     anchorY: number;
     startCornerX: number;
@@ -653,8 +660,11 @@ export default function MixedSection({
       const dispH = cameraViewSize.h;
       if (!(dispW > 0 && dispH > 0)) return;
       const minDisp = Math.min(dispW, dispH);
-      const side = Math.round(
-        (focusBoxFrac || FOCUS_BOX_FRACTION) * Math.max(1, minDisp)
+      const startW = Math.round(
+        (typeof focusBoxFW === "number" ? focusBoxFW : focusBoxFrac || FOCUS_BOX_FRACTION) * Math.max(1, dispW)
+      );
+      const startH = Math.round(
+        (typeof focusBoxFH === "number" ? focusBoxFH : focusBoxFrac || FOCUS_BOX_FRACTION) * Math.max(1, dispH)
       );
       const cx = Math.round(
         (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * dispW
@@ -666,54 +676,55 @@ export default function MixedSection({
       let anchorY = cy;
       let startCornerX = cx;
       let startCornerY = cy;
-      const half = side / 2;
+      const halfW = startW / 2;
+      const halfH = startH / 2;
       switch (type) {
         case "ne":
-          anchorX = cx - half; // SW corner x
-          anchorY = cy + half; // SW corner y
-          startCornerX = cx + half; // NE start x
-          startCornerY = cy - half; // NE start y
+          anchorX = cx - halfW;
+          anchorY = cy + halfH;
+          startCornerX = cx + halfW;
+          startCornerY = cy - halfH;
           break;
         case "nw":
-          anchorX = cx + half; // SE
-          anchorY = cy + half;
-          startCornerX = cx - half; // NW
-          startCornerY = cy - half;
+          anchorX = cx + halfW;
+          anchorY = cy + halfH;
+          startCornerX = cx - halfW;
+          startCornerY = cy - halfH;
           break;
         case "se":
-          anchorX = cx - half; // NW
-          anchorY = cy - half;
-          startCornerX = cx + half; // SE
-          startCornerY = cy + half;
+          anchorX = cx - halfW;
+          anchorY = cy - halfH;
+          startCornerX = cx + halfW;
+          startCornerY = cy + halfH;
           break;
         case "sw":
-          anchorX = cx + half; // NE
-          anchorY = cy - half;
-          startCornerX = cx - half; // SW
-          startCornerY = cy + half;
+          anchorX = cx + halfW;
+          anchorY = cy - halfH;
+          startCornerX = cx - halfW;
+          startCornerY = cy + halfH;
           break;
         case "n":
-          anchorX = cx; // south edge center
-          anchorY = cy + half;
+          anchorX = cx;
+          anchorY = cy + halfH;
           startCornerX = cx;
-          startCornerY = cy - half; // top edge center
+          startCornerY = cy - halfH;
           break;
         case "s":
           anchorX = cx;
-          anchorY = cy - half; // top edge center
+          anchorY = cy - halfH;
           startCornerX = cx;
-          startCornerY = cy + half; // bottom edge center
+          startCornerY = cy + halfH;
           break;
         case "e":
-          anchorX = cx - half; // left edge center
+          anchorX = cx - halfW;
           anchorY = cy;
-          startCornerX = cx + half; // right edge center
+          startCornerX = cx + halfW;
           startCornerY = cy;
           break;
         case "w":
-          anchorX = cx + half; // right edge center
+          anchorX = cx + halfW;
           anchorY = cy;
-          startCornerX = cx - half; // left edge center
+          startCornerX = cx - halfW;
           startCornerY = cy;
           break;
         default:
@@ -728,7 +739,8 @@ export default function MixedSection({
         startY: (e as PointerEvent).clientY,
         startCx: cx,
         startCy: cy,
-        startSide: side,
+        startW,
+        startH,
         anchorX,
         anchorY,
         startCornerX,
@@ -741,10 +753,12 @@ export default function MixedSection({
         const dy = ev.clientY - s.startY;
         let newCx = s.startCx;
         let newCy = s.startCy;
-        let newSide = s.startSide;
+        let newW = s.startW;
+        let newH = s.startH;
 
-        const minSide = Math.max(40, Math.floor(0.1 * minDisp));
-        const globalMax = Math.max(minSide, Math.floor(0.98 * minDisp));
+        const minDim = Math.max(40, Math.floor(0.08 * minDisp));
+        const maxW = Math.max(minDim, Math.floor(0.98 * dispW));
+        const maxH = Math.max(minDim, Math.floor(0.98 * dispH));
 
         const px = s.startCornerX + dx;
         const py = s.startCornerY + dy;
@@ -753,101 +767,191 @@ export default function MixedSection({
           case "move": {
             newCx = s.startCx + dx;
             newCy = s.startCy + dy;
-            // keep within bounds with current side
-            let l = newCx - newSide / 2;
-            let t = newCy - newSide / 2;
-            l = Math.max(0, Math.min(dispW - newSide, Math.floor(l)));
-            t = Math.max(0, Math.min(dispH - newSide, Math.floor(t)));
-            newCx = Math.floor(l + newSide / 2);
-            newCy = Math.floor(t + newSide / 2);
+            newW = s.startW;
+            newH = s.startH;
+            let l = newCx - newW / 2;
+            let t = newCy - newH / 2;
+            l = Math.max(0, Math.min(dispW - newW, Math.floor(l)));
+            t = Math.max(0, Math.min(dispH - newH, Math.floor(t)));
+            newCx = Math.floor(l + newW / 2);
+            newCy = Math.floor(t + newH / 2);
             break;
           }
           case "ne": {
-            const sideX = Math.max(0, Math.min(dispW, px)) - s.anchorX;
-            const sideY = s.anchorY - Math.max(0, Math.min(dispH, py));
-            let lim = Math.min(dispW - s.anchorX, s.anchorY);
-            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, Math.max(sideX, sideY))));
-            newCx = s.anchorX + newSide / 2;
-            newCy = s.anchorY - newSide / 2;
+            const clampedX = Math.max(0, Math.min(dispW, px));
+            const clampedY = Math.max(0, Math.min(dispH, py));
+            const w = Math.max(minDim, Math.min(maxW, clampedX - s.anchorX));
+            const h = Math.max(minDim, Math.min(maxH, s.anchorY - clampedY));
+            newW = Math.min(w, dispW - s.anchorX);
+            newH = Math.min(h, s.anchorY);
+            if (focusLockAR) {
+              const ar = Math.max(0.0001, focusARRef.current || 1);
+              const maxWLimit = Math.min(dispW - s.anchorX, maxW);
+              const maxHLimit = Math.min(s.anchorY, maxH);
+              const wCand = Math.min(w, maxWLimit);
+              const hCand = Math.min(h, maxHLimit);
+              let wFinal = Math.max(minDim, Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar));
+              let hFinal = Math.max(minDim, Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar));
+              wFinal = Math.min(wFinal, hFinal * ar);
+              hFinal = Math.min(hFinal, wFinal / ar);
+              newW = wFinal;
+              newH = hFinal;
+            }
+            newCx = s.anchorX + newW / 2;
+            newCy = s.anchorY - newH / 2;
             break;
           }
           case "nw": {
-            const sideX = s.anchorX - Math.max(0, Math.min(dispW, px));
-            const sideY = s.anchorY - Math.max(0, Math.min(dispH, py));
-            let lim = Math.min(s.anchorX, s.anchorY);
-            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, Math.max(sideX, sideY))));
-            newCx = s.anchorX - newSide / 2;
-            newCy = s.anchorY - newSide / 2;
+            const clampedX = Math.max(0, Math.min(dispW, px));
+            const clampedY = Math.max(0, Math.min(dispH, py));
+            const w = Math.max(minDim, Math.min(maxW, s.anchorX - clampedX));
+            const h = Math.max(minDim, Math.min(maxH, s.anchorY - clampedY));
+            newW = Math.min(w, s.anchorX);
+            newH = Math.min(h, s.anchorY);
+            if (focusLockAR) {
+              const ar = Math.max(0.0001, focusARRef.current || 1);
+              const maxWLimit = Math.min(s.anchorX, maxW);
+              const maxHLimit = Math.min(s.anchorY, maxH);
+              const wCand = Math.min(w, maxWLimit);
+              const hCand = Math.min(h, maxHLimit);
+              let wFinal = Math.max(minDim, Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar));
+              let hFinal = Math.max(minDim, Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar));
+              wFinal = Math.min(wFinal, hFinal * ar);
+              hFinal = Math.min(hFinal, wFinal / ar);
+              newW = wFinal;
+              newH = hFinal;
+            }
+            newCx = s.anchorX - newW / 2;
+            newCy = s.anchorY - newH / 2;
             break;
           }
           case "se": {
-            const sideX = Math.max(0, Math.min(dispW, px)) - s.anchorX;
-            const sideY = Math.max(0, Math.min(dispH, py)) - s.anchorY;
-            let lim = Math.min(dispW - s.anchorX, dispH - s.anchorY);
-            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, Math.max(sideX, sideY))));
-            newCx = s.anchorX + newSide / 2;
-            newCy = s.anchorY + newSide / 2;
+            const clampedX = Math.max(0, Math.min(dispW, px));
+            const clampedY = Math.max(0, Math.min(dispH, py));
+            const w = Math.max(minDim, Math.min(maxW, clampedX - s.anchorX));
+            const h = Math.max(minDim, Math.min(maxH, clampedY - s.anchorY));
+            newW = Math.min(w, dispW - s.anchorX);
+            newH = Math.min(h, dispH - s.anchorY);
+            if (focusLockAR) {
+              const ar = Math.max(0.0001, focusARRef.current || 1);
+              const maxWLimit = Math.min(dispW - s.anchorX, maxW);
+              const maxHLimit = Math.min(dispH - s.anchorY, maxH);
+              const wCand = Math.min(w, maxWLimit);
+              const hCand = Math.min(h, maxHLimit);
+              let wFinal = Math.max(minDim, Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar));
+              let hFinal = Math.max(minDim, Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar));
+              wFinal = Math.min(wFinal, hFinal * ar);
+              hFinal = Math.min(hFinal, wFinal / ar);
+              newW = wFinal;
+              newH = hFinal;
+            }
+            newCx = s.anchorX + newW / 2;
+            newCy = s.anchorY + newH / 2;
             break;
           }
           case "sw": {
-            const sideX = s.anchorX - Math.max(0, Math.min(dispW, px));
-            const sideY = Math.max(0, Math.min(dispH, py)) - s.anchorY;
-            let lim = Math.min(s.anchorX, dispH - s.anchorY);
-            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, Math.max(sideX, sideY))));
-            newCx = s.anchorX - newSide / 2;
-            newCy = s.anchorY + newSide / 2;
+            const clampedX = Math.max(0, Math.min(dispW, px));
+            const clampedY = Math.max(0, Math.min(dispH, py));
+            const w = Math.max(minDim, Math.min(maxW, s.anchorX - clampedX));
+            const h = Math.max(minDim, Math.min(maxH, clampedY - s.anchorY));
+            newW = Math.min(w, s.anchorX);
+            newH = Math.min(h, dispH - s.anchorY);
+            if (focusLockAR) {
+              const ar = Math.max(0.0001, focusARRef.current || 1);
+              const maxWLimit = Math.min(s.anchorX, maxW);
+              const maxHLimit = Math.min(dispH - s.anchorY, maxH);
+              const wCand = Math.min(w, maxWLimit);
+              const hCand = Math.min(h, maxHLimit);
+              let wFinal = Math.max(minDim, Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar));
+              let hFinal = Math.max(minDim, Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar));
+              wFinal = Math.min(wFinal, hFinal * ar);
+              hFinal = Math.min(hFinal, wFinal / ar);
+              newW = wFinal;
+              newH = hFinal;
+            }
+            newCx = s.anchorX - newW / 2;
+            newCy = s.anchorY + newH / 2;
             break;
           }
           case "n": {
-            const sy = Math.max(0, Math.min(dispH, py));
-            const sideV = s.anchorY - sy;
-            const horiz = 2 * Math.min(s.anchorX, dispW - s.anchorX);
-            let lim = Math.min(s.anchorY, horiz);
-            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, sideV)));
+            const clampedY = Math.max(0, Math.min(dispH, py));
+            const h = Math.max(minDim, Math.min(maxH, s.anchorY - clampedY));
+            newH = Math.min(h, s.anchorY);
+            newW = s.startW;
+            if (focusLockAR) {
+              const ar = Math.max(0.0001, focusARRef.current || 1);
+              const horiz = Math.min(2 * Math.min(s.anchorX, dispW - s.anchorX), maxW);
+              let wFromH = Math.max(minDim, Math.min(horiz, newH * ar));
+              let hFromW = Math.max(minDim, Math.min(newH, wFromH / ar));
+              newW = wFromH;
+              newH = hFromW;
+            }
             newCx = s.anchorX;
-            newCy = s.anchorY - newSide / 2;
+            newCy = s.anchorY - newH / 2;
             break;
           }
           case "s": {
-            const sy = Math.max(0, Math.min(dispH, py));
-            const sideV = sy - s.anchorY;
-            const horiz = 2 * Math.min(s.anchorX, dispW - s.anchorX);
-            let lim = Math.min(dispH - s.anchorY, horiz);
-            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, sideV)));
+            const clampedY = Math.max(0, Math.min(dispH, py));
+            const h = Math.max(minDim, Math.min(maxH, clampedY - s.anchorY));
+            newH = Math.min(h, dispH - s.anchorY);
+            newW = s.startW;
+            if (focusLockAR) {
+              const ar = Math.max(0.0001, focusARRef.current || 1);
+              const horiz = Math.min(2 * Math.min(s.anchorX, dispW - s.anchorX), maxW);
+              let wFromH = Math.max(minDim, Math.min(horiz, newH * ar));
+              let hFromW = Math.max(minDim, Math.min(newH, wFromH / ar));
+              newW = wFromH;
+              newH = hFromW;
+            }
             newCx = s.anchorX;
-            newCy = s.anchorY + newSide / 2;
+            newCy = s.anchorY + newH / 2;
             break;
           }
           case "e": {
-            const sx = Math.max(0, Math.min(dispW, px));
-            const sideH = sx - s.anchorX;
-            const vert = 2 * Math.min(s.anchorY, dispH - s.anchorY);
-            let lim = Math.min(dispW - s.anchorX, vert);
-            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, sideH)));
-            newCx = s.anchorX + newSide / 2;
+            const clampedX = Math.max(0, Math.min(dispW, px));
+            const w = Math.max(minDim, Math.min(maxW, clampedX - s.anchorX));
+            newW = Math.min(w, dispW - s.anchorX);
+            newH = s.startH;
+            if (focusLockAR) {
+              const ar = Math.max(0.0001, focusARRef.current || 1);
+              const vert = Math.min(2 * Math.min(s.anchorY, dispH - s.anchorY), maxH);
+              let hFromW = Math.max(minDim, Math.min(vert, newW / ar));
+              let wFromH = Math.max(minDim, Math.min(newW, hFromW * ar));
+              newW = wFromH;
+              newH = hFromW;
+            }
+            newCx = s.anchorX + newW / 2;
             newCy = s.anchorY;
             break;
           }
           case "w": {
-            const sx = Math.max(0, Math.min(dispW, px));
-            const sideH = s.anchorX - sx;
-            const vert = 2 * Math.min(s.anchorY, dispH - s.anchorY);
-            let lim = Math.min(s.anchorX, vert);
-            newSide = Math.max(minSide, Math.min(globalMax, Math.min(lim, sideH)));
-            newCx = s.anchorX - newSide / 2;
+            const clampedX = Math.max(0, Math.min(dispW, px));
+            const w = Math.max(minDim, Math.min(maxW, s.anchorX - clampedX));
+            newW = Math.min(w, s.anchorX);
+            newH = s.startH;
+            if (focusLockAR) {
+              const ar = Math.max(0.0001, focusARRef.current || 1);
+              const vert = Math.min(2 * Math.min(s.anchorY, dispH - s.anchorY), maxH);
+              let hFromW = Math.max(minDim, Math.min(vert, newW / ar));
+              let wFromH = Math.max(minDim, Math.min(newW, hFromW * ar));
+              newW = wFromH;
+              newH = hFromW;
+            }
+            newCx = s.anchorX - newW / 2;
             newCy = s.anchorY;
             break;
           }
         }
 
-        let l = newCx - newSide / 2;
-        let t = newCy - newSide / 2;
-        l = Math.max(0, Math.min(dispW - newSide, Math.floor(l)));
-        t = Math.max(0, Math.min(dispH - newSide, Math.floor(t)));
-        newCx = Math.floor(l + newSide / 2);
-        newCy = Math.floor(t + newSide / 2);
+        let l = newCx - newW / 2;
+        let t = newCy - newH / 2;
+        l = Math.max(0, Math.min(dispW - newW, Math.floor(l)));
+        t = Math.max(0, Math.min(dispH - newH, Math.floor(t)));
+        newCx = Math.floor(l + newW / 2);
+        newCy = Math.floor(t + newH / 2);
 
-        setFocusBoxFrac(newSide / Math.max(1, minDisp));
+        setFocusBoxFW(newW / Math.max(1, dispW));
+        setFocusBoxFH(newH / Math.max(1, dispH));
         setFocusBoxCX(newCx / Math.max(1, dispW));
         setFocusBoxCY(newCy / Math.max(1, dispH));
         try {
@@ -1045,9 +1149,10 @@ export default function MixedSection({
     }
     ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, outW, outH);
     if (focusOn) {
-      let side = Math.floor((focusBoxFrac || FOCUS_BOX_FRACTION) * Math.min(outW, outH));
-      let fx = Math.floor((outW - side) / 2);
-      let fy = Math.floor((outH - side) / 2);
+      let fw = Math.floor((focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * outW);
+      let fh = Math.floor((focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * outH);
+      let fx = Math.floor((outW - fw) / 2);
+      let fy = Math.floor((outH - fh) / 2);
       try {
         const dispW = cameraViewSize.w;
         const dispH = cameraViewSize.h;
@@ -1057,20 +1162,22 @@ export default function MixedSection({
           const scaledH = vh * s;
           const offsetX = Math.max(0, (scaledW - dispW) / 2);
           const offsetY = Math.max(0, (scaledH - dispH) / 2);
-          const boxSideDisp = (focusBoxFrac || FOCUS_BOX_FRACTION) * Math.min(dispW, dispH);
-          side = Math.max(1, Math.floor(boxSideDisp / s));
+          const boxWDisp = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * dispW;
+          const boxHDisp = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * dispH;
+          fw = Math.max(1, Math.floor(boxWDisp / s));
+          fh = Math.max(1, Math.floor(boxHDisp / s));
           const cxDisp = (typeof focusBoxCX === 'number' ? focusBoxCX : 0.5) * dispW;
           const cyDisp = (typeof focusBoxCY === 'number' ? focusBoxCY : 0.5) * dispH;
           const cxVid = (cxDisp + offsetX) / s;
           const cyVid = (cyDisp + offsetY) / s;
-          fx = Math.max(0, Math.min(outW - side, Math.floor(cxVid - side / 2)));
-          fy = Math.max(0, Math.min(outH - side, Math.floor(cyVid - side / 2)));
+          fx = Math.max(0, Math.min(outW - fw, Math.floor(cxVid - fw / 2)));
+          fy = Math.max(0, Math.min(outH - fh, Math.floor(cyVid - fh / 2)));
         }
       } catch {}
       ctx.save();
       ctx.lineWidth = Math.max(3, Math.floor(outW * 0.01));
-      ctx.strokeStyle = "#ef4444"; // tailwind red-500
-      ctx.strokeRect(fx, fy, side, side);
+      ctx.strokeStyle = "#ef4444";
+      ctx.strokeRect(fx, fy, fw, fh);
       ctx.restore();
     }
     const blob: Blob | null = await new Promise((resolve) =>
@@ -1491,7 +1598,8 @@ export default function MixedSection({
                         pinchStateRef.current = {
                           active: true,
                           startDist: dist,
-                          startFrac: focusBoxFrac,
+                          startFW: focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION,
+                          startFH: focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION,
                         };
                       }
                     }}
@@ -1502,9 +1610,40 @@ export default function MixedSection({
                       const dy = e.touches[0].clientY - e.touches[1].clientY;
                       const dist = Math.hypot(dx, dy) || 1;
                       const ratio = dist / (s.startDist || 1);
-                      let next = s.startFrac * ratio;
-                      next = Math.max(0.2, Math.min(0.95, next));
-                      setFocusBoxFrac(next);
+                      const dispW = cameraViewSize.w || 1;
+                      const dispH = cameraViewSize.h || 1;
+                      const cx = (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * dispW;
+                      const cy = (typeof focusBoxCY === "number" ? focusBoxCY : 0.5) * dispH;
+                      const startFW = s.startFW || 0.62;
+                      const startFH = s.startFH || 0.62;
+                      if (focusLockAR) {
+                        const maxHalfW = Math.min(cx, dispW - cx);
+                        const maxHalfH = Math.min(cy, dispH - cy);
+                        const maxFW = Math.max(0, (2 * maxHalfW) / Math.max(1, dispW));
+                        const maxFH = Math.max(0, (2 * maxHalfH) / Math.max(1, dispH));
+                        const minScaleByW = 40 / Math.max(1, startFW * dispW);
+                        const minScaleByH = 40 / Math.max(1, startFH * dispH);
+                        const sMin = Math.max(minScaleByW, minScaleByH);
+                        const sMaxW = (maxFW > 0 ? maxFW : 0.98) / Math.max(0.0001, startFW);
+                        const sMaxH = (maxFH > 0 ? maxFH : 0.98) / Math.max(0.0001, startFH);
+                        const sMax = Math.max(0.0001, Math.min(sMaxW, sMaxH));
+                        const sClamped = Math.max(sMin, Math.min(sMax, ratio));
+                        const nextFW = Math.max(40 / dispW, Math.min(0.98, startFW * sClamped));
+                        const nextFH = Math.max(40 / dispH, Math.min(0.98, startFH * sClamped));
+                        setFocusBoxFW(nextFW);
+                        setFocusBoxFH(nextFH);
+                      } else {
+                        let nextFW = startFW * ratio;
+                        let nextFH = startFH * ratio;
+                        const minW = 40 / Math.max(1, dispW);
+                        const minH = 40 / Math.max(1, dispH);
+                        const maxWByCenter = (2 * Math.min(cx, dispW - cx)) / Math.max(1, dispW);
+                        const maxHByCenter = (2 * Math.min(cy, dispH - cy)) / Math.max(1, dispH);
+                        nextFW = Math.max(minW, Math.min(0.98, Math.min(nextFW, maxWByCenter || 0.98)));
+                        nextFH = Math.max(minH, Math.min(0.98, Math.min(nextFH, maxHByCenter || 0.98)));
+                        setFocusBoxFW(nextFW);
+                        setFocusBoxFH(nextFH);
+                      }
                     }}
                     onTouchEnd={(e) => {
                       if (e.touches.length < 2) pinchStateRef.current = null;
@@ -1514,55 +1653,32 @@ export default function MixedSection({
                       onPointerDown={(e) => startDrag("move", e)}
                       className="absolute border-4 border-red-500 rounded-sm"
                       style={{
-                        width:
-                          cameraViewSize.w > 0 && cameraViewSize.h > 0
-                            ? `${Math.round(
-                                (focusBoxFrac || FOCUS_BOX_FRACTION) *
-                                  Math.min(cameraViewSize.w, cameraViewSize.h)
-                              )}px`
-                            : `${Math.round(
-                                (focusBoxFrac || FOCUS_BOX_FRACTION) * 100
-                              )}vmin`,
-                        height:
-                          cameraViewSize.w > 0 && cameraViewSize.h > 0
-                            ? `${Math.round(
-                                (focusBoxFrac || FOCUS_BOX_FRACTION) *
-                                  Math.min(cameraViewSize.w, cameraViewSize.h)
-                              )}px`
-                            : `${Math.round(
-                                (focusBoxFrac || FOCUS_BOX_FRACTION) * 100
-                              )}vmin`,
-                        left:
-                          cameraViewSize.w > 0 && cameraViewSize.h > 0
-                            ? `calc(${Math.round(
-                                (typeof focusBoxCX === "number"
-                                  ? focusBoxCX
-                                  : 0.5) * 100
-                              )}% - ${Math.round(
-                                ((focusBoxFrac || FOCUS_BOX_FRACTION) *
-                                  Math.min(
-                                    cameraViewSize.w,
-                                    cameraViewSize.h
-                                  )) /
-                                  2
-                              )}px)`
-                            : `50%`,
-                        top:
-                          cameraViewSize.w > 0 && cameraViewSize.h > 0
-                            ? `calc(${Math.round(
-                                (typeof focusBoxCY === "number"
-                                  ? focusBoxCY
-                                  : 0.5) * 100
-                              )}% - ${Math.round(
-                                ((focusBoxFrac || FOCUS_BOX_FRACTION) *
-                                  Math.min(
-                                    cameraViewSize.w,
-                                    cameraViewSize.h
-                                  )) /
-                                  2
-                              )}px)`
-                            : `50%`,
+                        width: cameraViewSize.w > 0 ? Math.round((focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * cameraViewSize.w) : undefined,
+                        height: cameraViewSize.h > 0 ? Math.round((focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * cameraViewSize.h) : undefined,
+                        left: cameraViewSize.w > 0 ? Math.round(((typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * cameraViewSize.w) - (((focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * cameraViewSize.w) / 2)) : undefined,
+                        top: cameraViewSize.h > 0 ? Math.round(((typeof focusBoxCY === "number" ? focusBoxCY : 0.5) * cameraViewSize.h) - (((focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * cameraViewSize.h) / 2)) : undefined,
                         cursor: "move",
+                      }}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        const dispW = cameraViewSize.w;
+                        const dispH = cameraViewSize.h;
+                        if (!(dispW > 0 && dispH > 0)) return;
+                        const step = e.shiftKey ? 5 : 1;
+                        const w = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * dispW;
+                        const h = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * dispH;
+                        let cx = (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * dispW;
+                        let cy = (typeof focusBoxCY === "number" ? focusBoxCY : 0.5) * dispH;
+                        if (e.key === "ArrowLeft") cx -= step;
+                        else if (e.key === "ArrowRight") cx += step;
+                        else if (e.key === "ArrowUp") cy -= step;
+                        else if (e.key === "ArrowDown") cy += step;
+                        else return;
+                        cx = Math.max(w / 2, Math.min(dispW - w / 2, Math.round(cx)));
+                        cy = Math.max(h / 2, Math.min(dispH - h / 2, Math.round(cy)));
+                        setFocusBoxCX(cx / Math.max(1, dispW));
+                        setFocusBoxCY(cy / Math.max(1, dispH));
+                        try { e.preventDefault(); e.stopPropagation(); } catch {}
                       }}
                     >
                       <div
@@ -1761,6 +1877,29 @@ export default function MixedSection({
                                   {focusOn ? "On" : "Off"}
                                 </span>
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const dispW = cameraViewSize.w;
+                                  const dispH = cameraViewSize.h;
+                                  setFocusLockAR((prev) => {
+                                    const next = !prev;
+                                    if (next) {
+                                      const fw = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispW || 1);
+                                      const fh = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispH || 1);
+                                      const ar = Math.max(0.0001, fw / Math.max(1, fh));
+                                      focusARRef.current = ar;
+                                    }
+                                    return next;
+                                  });
+                                }}
+                                className={`inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 ring-1 ring-white/20 hover:bg-white/15 ${focusLockAR ? "bg-red-600/80 text-white" : "bg-white/10 text-white"}`}
+                                title="Aspect Lock"
+                                aria-label="Aspect Lock"
+                              >
+                                {focusLockAR ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                                <span className="text-[12px] ml-1">{focusLockAR ? "Lock On" : "Lock Off"}</span>
+                              </button>
                             </div>
                           </div>
                           <div className="mt-0.5 text-center text-[12px] font-medium truncate">
@@ -1868,6 +2007,29 @@ export default function MixedSection({
                                 {focusOn ? "On" : "Off"}
                               </span>
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const dispW = cameraViewSize.w;
+                                const dispH = cameraViewSize.h;
+                                setFocusLockAR((prev) => {
+                                  const next = !prev;
+                                  if (next) {
+                                    const fw = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispW || 1);
+                                    const fh = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispH || 1);
+                                    const ar = Math.max(0.0001, fw / Math.max(1, fh));
+                                    focusARRef.current = ar;
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className={`inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg px-2 ring-1 ring-white/20 hover:bg-white/15 whitespace-nowrap ${focusLockAR ? "bg-red-600/80 text-white" : "bg-white/10 text-white"}`}
+                              title="Aspect Lock"
+                              aria-label="Aspect Lock"
+                            >
+                              {focusLockAR ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                              <span className="text-[12px] ml-1 whitespace-nowrap">{focusLockAR ? "Lock On" : "Lock Off"}</span>
+                            </button>
                           </div>
                         </div>
                       )}
@@ -1973,6 +2135,28 @@ export default function MixedSection({
                           <span className="text-[12px] ml-1 opacity-90">
                             {focusOn ? "On" : "Off"}
                           </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const dispW = cameraViewSize.w;
+                            const dispH = cameraViewSize.h;
+                            setFocusLockAR((prev) => {
+                              const next = !prev;
+                              if (next) {
+                                const fw = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispW || 1);
+                                const fh = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispH || 1);
+                                const ar = Math.max(0.0001, fw / Math.max(1, fh));
+                                focusARRef.current = ar;
+                              }
+                              return next;
+                            });
+                          }}
+                          className={`inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-2 py-0 ring-1 ring-white/20 hover:bg-white/15 ${focusLockAR ? "bg-red-600/80 text-white" : "bg-white/10 text-white"}`}
+                          title="Aspect Lock"
+                        >
+                          {focusLockAR ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                          <span className="text-[12px] ml-1">{focusLockAR ? "Lock On" : "Lock Off"}</span>
                         </button>
                       </div>
                     </div>
