@@ -192,7 +192,13 @@ export default function DashboardPage() {
   const greetingText = mounted ? greeting : "Welcome";
 
   return (
-    <div className="space-y-8">
+    <div className="relative isolate">
+      <div
+        className="pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 bg-gradient-to-b from-sky-100/60 via-violet-100/40 to-transparent"
+        aria-hidden
+      />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="space-y-8">
       <div className="relative overflow-hidden rounded-3xl border border-rose-200 bg-white/80 p-5 sm:p-6 md:p-8 shadow ring-1 ring-black/5 backdrop-blur">
         <div className="pointer-events-none absolute -top-24 -left-16 h-48 w-48 rounded-full bg-gradient-to-br from-rose-500/10 to-red-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -right-16 h-56 w-56 rounded-full bg-gradient-to-tl from-rose-500/10 to-red-500/10 blur-3xl" />
@@ -253,7 +259,7 @@ export default function DashboardPage() {
             <p className="text-xl font-bold text-white">Real Estate</p>
             <p className="text-xs text-white">Create a new property record</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 ring-1 ring-emerald-800 transition duration-300 group-hover:bg-emerald-500/15 group-hover:scale-110">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-700 text-white ring-2 ring-emerald-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(16,185,129,0.45)] transition duration-300 group-hover:translate-y-[-1px] group-active:translate-y-[1px]">
             <Building2 className="h-5 w-5" />
           </div>
         </button>
@@ -272,7 +278,7 @@ export default function DashboardPage() {
             <p className="text-xl font-bold text-white">Salvage</p>
             <p className="text-xs text-white">Start a new salvage entry</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-600 ring-1 ring-amber-800 transition duration-300 group-hover:bg-amber-500/15 group-hover:scale-110">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-amber-400 to-amber-700 text-white ring-2 ring-amber-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(245,158,11,0.45)] transition duration-300 group-hover:translate-y-[-1px] group-active:translate-y-[1px]">
             <Car className="h-5 w-5" />
           </div>
         </button>
@@ -291,7 +297,7 @@ export default function DashboardPage() {
             <p className="text-xl font-bold text-white">Asset</p>
             <p className="text-xs text-white">Add a general asset</p>
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-600 ring-1 ring-sky-800 transition duration-300 group-hover:bg-sky-500/15 group-hover:scale-110">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-sky-400 to-sky-700 text-white ring-2 ring-sky-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(14,165,233,0.45)] transition duration-300 group-hover:translate-y-[-1px] group-active:translate-y-[1px]">
             <Package className="h-5 w-5" />
           </div>
         </button>
@@ -318,7 +324,7 @@ export default function DashboardPage() {
                     {stats?.totalReports ?? 0}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 ring-1 ring-rose-800">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-rose-400 to-rose-700 text-white ring-2 ring-rose-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(244,63,94,0.35)]">
                   <FileBarChart2 className="h-5 w-5" />
                 </div>
               </div>
@@ -335,7 +341,7 @@ export default function DashboardPage() {
                     }).format(stats?.totalFairMarketValue ?? 0)}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 ring-1 ring-rose-800">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-rose-400 to-rose-700 text-white ring-2 ring-rose-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(244,63,94,0.35)]">
                   <DollarSign className="h-5 w-5" />
                 </div>
               </div>
@@ -449,6 +455,8 @@ export default function DashboardPage() {
           />
         ) : null}
       </BottomDrawer>
+        </div>
+      </div>
     </div>
   );
 }
