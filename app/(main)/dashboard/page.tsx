@@ -193,10 +193,6 @@ export default function DashboardPage() {
 
   return (
     <div className="relative isolate">
-      <div
-        className="pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 bg-gradient-to-b from-sky-100/60 via-violet-100/40 to-transparent"
-        aria-hidden
-      />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div className="space-y-8">
       <div className="relative overflow-hidden rounded-3xl border border-rose-200 bg-white/80 p-5 sm:p-6 md:p-8 shadow ring-1 ring-black/5 backdrop-blur">
@@ -253,13 +249,13 @@ export default function DashboardPage() {
             setDrawerOpen(true);
           }}
           aria-label="Create Real Estate report"
-          className="group flex items-center justify-between rounded-2xl border border-emerald-800 bg-emerald-600 px-4 py-3 text-left shadow-[0_10px_30px_rgba(16,185,129,0.12)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(16,185,129,0.25)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(16,185,129,0.35)] cursor-pointer"
+          className="group flex items-center justify-between rounded-2xl border border-emerald-800 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
         >
           <div>
             <p className="text-xl font-bold text-white">Real Estate</p>
-            <p className="text-xs text-white">Create a new property record</p>
+            <p className="text-xs text-white/90">Create a new property record</p>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-700 text-white ring-2 ring-emerald-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(16,185,129,0.45)] transition duration-300 group-hover:translate-y-[-1px] group-active:translate-y-[1px]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-700 text-white ring-2 ring-emerald-700 shadow">
             <Building2 className="h-5 w-5" />
           </div>
         </button>
@@ -272,13 +268,13 @@ export default function DashboardPage() {
             setDrawerOpen(true);
           }}
           aria-label="Create Salvage report"
-          className="group flex items-center justify-between rounded-2xl border border-amber-800 bg-amber-600 px-4 py-3 text-left shadow-[0_10px_30px_rgba(245,158,11,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(245,158,11,0.28)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(245,158,11,0.4)] cursor-pointer"
+          className="group flex items-center justify-between rounded-2xl border border-amber-800 bg-gradient-to-b from-amber-500 to-amber-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
         >
           <div>
             <p className="text-xl font-bold text-white">Salvage</p>
-            <p className="text-xs text-white">Start a new salvage entry</p>
+            <p className="text-xs text-white/90">Start a new salvage entry</p>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-amber-400 to-amber-700 text-white ring-2 ring-amber-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(245,158,11,0.45)] transition duration-300 group-hover:translate-y-[-1px] group-active:translate-y-[1px]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-amber-400 to-amber-700 text-white ring-2 ring-amber-700 shadow">
             <Car className="h-5 w-5" />
           </div>
         </button>
@@ -291,13 +287,13 @@ export default function DashboardPage() {
             setDrawerOpen(true);
           }}
           aria-label="Create Asset report"
-          className="group flex items-center justify-between rounded-2xl border border-sky-800 bg-sky-600 px-4 py-3 text-left shadow-[0_10px_30px_rgba(14,165,233,0.14)] ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(14,165,233,0.3)] active:translate-y-0.5 active:shadow-[0_6px_0_0_rgba(14,165,233,0.4)] cursor-pointer"
+          className="group flex items-center justify-between rounded-2xl border border-sky-800 bg-gradient-to-b from-sky-500 to-sky-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
         >
           <div>
             <p className="text-xl font-bold text-white">Asset</p>
-            <p className="text-xs text-white">Add a general asset</p>
+            <p className="text-xs text-white/90">Add a general asset</p>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-sky-400 to-sky-700 text-white ring-2 ring-sky-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(14,165,233,0.45)] transition duration-300 group-hover:translate-y-[-1px] group-active:translate-y-[1px]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-sky-400 to-sky-700 text-white ring-2 ring-sky-700 shadow">
             <Package className="h-5 w-5" />
           </div>
         </button>
