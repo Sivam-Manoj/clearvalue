@@ -85,7 +85,20 @@ export default function DashboardPage() {
     setRecentError(null);
     try {
       const data = await ReportsService.getMyReports();
-      const sorted = [...data].sort(
+      
+      // Group by report ID to avoid showing duplicate reports (same report with multiple file types)
+      const groupMap = new Map<string, PdfReport>();
+      for (const r of data) {
+        const key = String(((r as any).report as string | undefined) || r._id);
+        const existing = groupMap.get(key);
+        if (!existing || new Date(r.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
+          groupMap.set(key, r);
+        }
+      }
+      
+      // Convert to array and sort by date
+      const grouped = Array.from(groupMap.values());
+      const sorted = grouped.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
