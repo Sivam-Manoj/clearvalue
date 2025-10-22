@@ -90,6 +90,13 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   const [currencyLoading, setCurrencyLoading] = useState<boolean>(false);
   const currencyPromptedRef = useRef(false);
 
+  // Valuation methods selection
+  const [includeValuationTable, setIncludeValuationTable] =
+    useState<boolean>(false);
+  const [selectedValuationMethods, setSelectedValuationMethods] = useState<
+    Array<"FML" | "TKV" | "OLV" | "FLV">
+  >(["FML", "OLV"]);
+
   // Progress UI state
   const PROG_WEIGHTS = {
     client_upload: 0.25,
@@ -195,7 +202,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setCurrencyTouched(false);
       setCurrencyLoading(false);
       currencyPromptedRef.current = false;
-      onCancel?.();
+      setIncludeValuationTable(false);
+      setSelectedValuationMethods(["FML", "OLV"]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.info("Form cleared.");
     } catch {}
@@ -224,6 +232,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setCurrencyTouched(false);
       setCurrencyLoading(false);
       currencyPromptedRef.current = false;
+      setIncludeValuationTable(false);
+      setSelectedValuationMethods(["FML", "OLV"]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       // Reset progress UI state
       setProgressPhase("idle");
@@ -255,6 +265,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         contractNo,
         language,
         currency,
+        includeValuationTable,
+        selectedValuationMethods,
         // Store catalogue meta (counts and covers) but not binary images
         catalogueLots: catalogueLots.map((l) => ({
           coverIndex: l.coverIndex,
@@ -299,6 +311,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         setLanguage(draft.language);
       if (typeof draft.currency === "string" && draft.currency.trim())
         setCurrency(draft.currency.trim());
+      if (typeof draft.includeValuationTable === "boolean")
+        setIncludeValuationTable(draft.includeValuationTable);
+      if (Array.isArray(draft.selectedValuationMethods))
+        setSelectedValuationMethods(draft.selectedValuationMethods);
       toast.success("Draft restored.");
     } catch {}
   }
@@ -624,6 +640,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         ...(contractNo.trim() && { contract_no: contractNo.trim() }),
         language,
         ...(currency && { currency }),
+        include_valuation_table: includeValuationTable,
+        valuation_methods: includeValuationTable
+          ? selectedValuationMethods
+          : [],
         progress_id: jobId,
         ...(grouping === "catalogue" ||
         grouping === "combined" ||
@@ -927,6 +947,174 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                 </div>
               </div>
             </section>
+
+            {/* Valuation Comparison Table */}
+            <section className="space-y-3 rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50/50 to-blue-50/30 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Quick Comparison Table
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Include multiple valuation methods in the report
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIncludeValuationTable(!includeValuationTable)
+                  }
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    includeValuationTable ? "bg-sky-600" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      includeValuationTable ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {includeValuationTable && (
+                <div className="space-y-3 pt-2">
+                  <p className="text-xs text-gray-700 font-medium">
+                    Select valuation methods to include:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {/* FML */}
+                    <label className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-white/80 p-3 cursor-pointer hover:bg-emerald-50/50 transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedValuationMethods.includes("FML")}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedValuationMethods([
+                              ...selectedValuationMethods,
+                              "FML",
+                            ]);
+                          } else {
+                            setSelectedValuationMethods(
+                              selectedValuationMethods.filter(
+                                (m) => m !== "FML"
+                              )
+                            );
+                          }
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold text-gray-900">
+                          FML (Fair Market Value)
+                        </div>
+                        <div className="text-[11px] text-gray-600 mt-0.5">
+                          100% • Appraised retail value
+                        </div>
+                      </div>
+                    </label>
+
+                    {/* TKV */}
+                    <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-white/80 p-3 cursor-pointer hover:bg-amber-50/50 transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedValuationMethods.includes("TKV")}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedValuationMethods([
+                              ...selectedValuationMethods,
+                              "TKV",
+                            ]);
+                          } else {
+                            setSelectedValuationMethods(
+                              selectedValuationMethods.filter(
+                                (m) => m !== "TKV"
+                              )
+                            );
+                          }
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                      />
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold text-gray-900">
+                          TKV (Trade Value)
+                        </div>
+                        <div className="text-[11px] text-gray-600 mt-0.5">
+                          60-80% • Dealer trade-in
+                        </div>
+                      </div>
+                    </label>
+
+                    {/* OLV */}
+                    <label className="flex items-start gap-2 rounded-lg border border-blue-200 bg-white/80 p-3 cursor-pointer hover:bg-blue-50/50 transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedValuationMethods.includes("OLV")}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedValuationMethods([
+                              ...selectedValuationMethods,
+                              "OLV",
+                            ]);
+                          } else {
+                            setSelectedValuationMethods(
+                              selectedValuationMethods.filter(
+                                (m) => m !== "OLV"
+                              )
+                            );
+                          }
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold text-gray-900">
+                          OLV (Orderly Liquidation)
+                        </div>
+                        <div className="text-[11px] text-gray-600 mt-0.5">
+                          70-85% • Auction reserve
+                        </div>
+                      </div>
+                    </label>
+
+                    {/* FLV */}
+                    <label className="flex items-start gap-2 rounded-lg border border-rose-200 bg-white/80 p-3 cursor-pointer hover:bg-rose-50/50 transition">
+                      <input
+                        type="checkbox"
+                        checked={selectedValuationMethods.includes("FLV")}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedValuationMethods([
+                              ...selectedValuationMethods,
+                              "FLV",
+                            ]);
+                          } else {
+                            setSelectedValuationMethods(
+                              selectedValuationMethods.filter(
+                                (m) => m !== "FLV"
+                              )
+                            );
+                          }
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
+                      />
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold text-gray-900">
+                          FLV (Forced Liquidation)
+                        </div>
+                        <div className="text-[11px] text-gray-600 mt-0.5">
+                          40-65% • Quick sale
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                  {selectedValuationMethods.length === 0 && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      ⚠️ Select at least one valuation method
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
+
             {/* Mixed mode only (contained) */}
             <section className="space-y-3">
               <h3 className="text-sm font-medium text-gray-900">Mixed Lots</h3>
