@@ -274,8 +274,8 @@ export default function DashboardPage() {
                   Create a new property record
                 </p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-700 text-white ring-2 ring-emerald-700 shadow">
-                <Building2 className="h-5 w-5" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 text-white ring-2 ring-white/30 shadow-lg shadow-emerald-500/50 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl group-hover:shadow-emerald-500/60">
+                <Building2 className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
               </div>
             </button>
 
@@ -295,8 +295,8 @@ export default function DashboardPage() {
                   Start a new salvage entry
                 </p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-amber-400 to-amber-700 text-white ring-2 ring-amber-700 shadow">
-                <Car className="h-5 w-5" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-600 text-white ring-2 ring-white/30 shadow-lg shadow-amber-500/50 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-xl group-hover:shadow-amber-500/60">
+                <Car className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
               </div>
             </button>
 
@@ -314,8 +314,8 @@ export default function DashboardPage() {
                 <p className="text-xl font-bold text-white">Asset</p>
                 <p className="text-xs text-white/90">Add a general asset</p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-sky-400 to-sky-700 text-white ring-2 ring-sky-700 shadow">
-                <Package className="h-5 w-5" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 text-white ring-2 ring-white/30 shadow-lg shadow-sky-500/50 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl group-hover:shadow-sky-500/60">
+                <Package className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
               </div>
             </button>
           </div>
@@ -341,8 +341,8 @@ export default function DashboardPage() {
                         {stats?.totalReports ?? 0}
                       </p>
                     </div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-rose-400 to-rose-700 text-white ring-2 ring-rose-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(244,63,94,0.35)]">
-                      <FileBarChart2 className="h-5 w-5" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 via-pink-500 to-rose-600 text-white ring-2 ring-white/30 shadow-lg shadow-rose-500/50 transition-transform duration-300 hover:scale-110">
+                      <FileBarChart2 className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
                     </div>
                   </div>
                 </div>
@@ -358,8 +358,8 @@ export default function DashboardPage() {
                         }).format(stats?.totalFairMarketValue ?? 0)}
                       </p>
                     </div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-rose-400 to-rose-700 text-white ring-2 ring-rose-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(244,63,94,0.35)]">
-                      <DollarSign className="h-5 w-5" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 text-white ring-2 ring-white/30 shadow-lg shadow-green-500/50 transition-transform duration-300 hover:scale-110">
+                      <DollarSign className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
                     </div>
                   </div>
                 </div>

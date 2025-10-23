@@ -95,10 +95,16 @@ export default function Navbar() {
                   : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
               )}
             >
-              {item.icon({
-                className:
-                  "h-4 w-4 transition-transform duration-200 group-hover:scale-110",
-              })}
+              <div className={classNames(
+                "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
+                isActive(item.href)
+                  ? "bg-gradient-to-br from-rose-400 to-rose-600 text-white shadow-md shadow-rose-500/30"
+                  : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 group-hover:from-rose-400 group-hover:to-rose-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-rose-500/30"
+              )}>
+                {item.icon({
+                  className: "h-4 w-4",
+                })}
+              </div>
               <span>{item.label}</span>
             </Link>
           ))}
@@ -108,7 +114,7 @@ export default function Navbar() {
         <button
           type="button"
           aria-label="Toggle menu"
-          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg border border-rose-200 bg-white/80 text-rose-700 hover:bg-rose-50 transition-all duration-200"
+          className="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 to-rose-600 text-white shadow-lg shadow-rose-500/40 hover:shadow-xl hover:scale-105 transition-all duration-200"
           onClick={() => setOpen((v) => !v)}
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -156,7 +162,7 @@ export default function Navbar() {
               type="button"
               aria-label="Close menu"
               onClick={() => setOpen(false)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 bg-white/80 text-rose-700 hover:bg-rose-50 transition"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 to-rose-600 text-white shadow-lg shadow-rose-500/40 hover:shadow-xl hover:scale-105 transition-all duration-200"
             >
               <X className="h-5 w-5" />
             </button>
@@ -175,10 +181,16 @@ export default function Navbar() {
                     : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
                 )}
               >
-                {item.icon({
-                  className:
-                    "h-5 w-5 transition-transform duration-200 group-hover:scale-110",
-                })}
+                <div className={classNames(
+                  "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200",
+                  isActive(item.href)
+                    ? "bg-gradient-to-br from-rose-400 to-rose-600 text-white shadow-lg shadow-rose-500/40"
+                    : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 group-hover:from-rose-400 group-hover:to-rose-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-rose-500/40"
+                )}>
+                  {item.icon({
+                    className: "h-5 w-5",
+                  })}
+                </div>
                 <span>{item.label}</span>
               </Link>
             ))}
