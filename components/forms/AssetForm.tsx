@@ -90,12 +90,12 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   const [currencyLoading, setCurrencyLoading] = useState<boolean>(false);
   const currencyPromptedRef = useRef(false);
 
-  // Valuation methods selection (single method only)
+  // Valuation methods selection (multiple methods)
   const [includeValuationTable, setIncludeValuationTable] =
     useState<boolean>(false);
-  const [selectedValuationMethod, setSelectedValuationMethod] = useState<
-    "FML" | "TKV" | "OLV" | "FLV"
-  >("FML");
+  const [selectedValuationMethods, setSelectedValuationMethods] = useState<
+    Array<"FML" | "TKV" | "OLV" | "FLV">
+  >(["FML", "OLV"]);
 
   // Progress UI state
   const PROG_WEIGHTS = {
@@ -203,7 +203,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setCurrencyLoading(false);
       currencyPromptedRef.current = false;
       setIncludeValuationTable(false);
-      setSelectedValuationMethod("FML");
+      setSelectedValuationMethods(["FML", "OLV"]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.info("Form cleared.");
     } catch {}
@@ -233,7 +233,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       setCurrencyLoading(false);
       currencyPromptedRef.current = false;
       setIncludeValuationTable(false);
-      setSelectedValuationMethod("FML");
+      setSelectedValuationMethods(["FML", "OLV"]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       // Reset progress UI state
       setProgressPhase("idle");
@@ -266,7 +266,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         language,
         currency,
         includeValuationTable,
-        selectedValuationMethod,
+        selectedValuationMethods,
         // Store catalogue meta (counts and covers) but not binary images
         catalogueLots: catalogueLots.map((l) => ({
           coverIndex: l.coverIndex,
@@ -313,9 +313,8 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         setCurrency(draft.currency.trim());
       if (typeof draft.includeValuationTable === "boolean")
         setIncludeValuationTable(draft.includeValuationTable);
-      if (typeof draft.selectedValuationMethod === "string" && 
-          ["FML", "TKV", "OLV", "FLV"].includes(draft.selectedValuationMethod))
-        setSelectedValuationMethod(draft.selectedValuationMethod as "FML" | "TKV" | "OLV" | "FLV");
+      if (Array.isArray(draft.selectedValuationMethods))
+        setSelectedValuationMethods(draft.selectedValuationMethods);
       toast.success("Draft restored.");
     } catch {}
   }
@@ -642,9 +641,9 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         language,
         ...(currency && { currency }),
         include_valuation_table: includeValuationTable,
-        valuation_method: includeValuationTable
-          ? selectedValuationMethod
-          : null,
+        valuation_methods: includeValuationTable
+          ? selectedValuationMethods
+          : [],
         progress_id: jobId,
         ...(grouping === "catalogue" ||
         grouping === "combined" ||
@@ -957,7 +956,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     Quick Comparison Table
                   </h3>
                   <p className="text-xs text-gray-600 mt-0.5">
-                    Include valuation method with AI explanation in the report
+                    Compare multiple valuation methods with AI explanations
                   </p>
                 </div>
                 <button
@@ -980,21 +979,22 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
               {includeValuationTable && (
                 <div className="space-y-3 pt-2">
                   <p className="text-xs text-gray-700 font-medium">
-                    Select valuation method (only one allowed):
+                    Select valuation methods to compare:
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {/* FML */}
-                    <label className={`flex items-start gap-2 rounded-lg border p-3 cursor-pointer transition ${
-                      selectedValuationMethod === "FML"
-                        ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200"
-                        : "border-emerald-200 bg-white/80 hover:bg-emerald-50/50"
-                    }`}>
+                    <label className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-white/80 p-3 cursor-pointer hover:bg-emerald-50/50 transition">
                       <input
-                        type="radio"
-                        name="valuationMethod"
-                        checked={selectedValuationMethod === "FML"}
-                        onChange={() => setSelectedValuationMethod("FML")}
-                        className="mt-0.5 h-4 w-4 border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                        type="checkbox"
+                        checked={selectedValuationMethods.includes("FML")}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedValuationMethods([...selectedValuationMethods, "FML"]);
+                          } else {
+                            setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "FML"));
+                          }
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <div className="flex-1">
                         <div className="text-xs font-semibold text-gray-900">
@@ -1007,17 +1007,18 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     </label>
 
                     {/* TKV */}
-                    <label className={`flex items-start gap-2 rounded-lg border p-3 cursor-pointer transition ${
-                      selectedValuationMethod === "TKV"
-                        ? "border-amber-500 bg-amber-50 ring-2 ring-amber-200"
-                        : "border-amber-200 bg-white/80 hover:bg-amber-50/50"
-                    }`}>
+                    <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-white/80 p-3 cursor-pointer hover:bg-amber-50/50 transition">
                       <input
-                        type="radio"
-                        name="valuationMethod"
-                        checked={selectedValuationMethod === "TKV"}
-                        onChange={() => setSelectedValuationMethod("TKV")}
-                        className="mt-0.5 h-4 w-4 border-gray-300 text-amber-600 focus:ring-amber-500"
+                        type="checkbox"
+                        checked={selectedValuationMethods.includes("TKV")}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedValuationMethods([...selectedValuationMethods, "TKV"]);
+                          } else {
+                            setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "TKV"));
+                          }
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
                       />
                       <div className="flex-1">
                         <div className="text-xs font-semibold text-gray-900">
@@ -1030,17 +1031,18 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     </label>
 
                     {/* OLV */}
-                    <label className={`flex items-start gap-2 rounded-lg border p-3 cursor-pointer transition ${
-                      selectedValuationMethod === "OLV"
-                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                        : "border-blue-200 bg-white/80 hover:bg-blue-50/50"
-                    }`}>
+                    <label className="flex items-start gap-2 rounded-lg border border-blue-200 bg-white/80 p-3 cursor-pointer hover:bg-blue-50/50 transition">
                       <input
-                        type="radio"
-                        name="valuationMethod"
-                        checked={selectedValuationMethod === "OLV"}
-                        onChange={() => setSelectedValuationMethod("OLV")}
-                        className="mt-0.5 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                        type="checkbox"
+                        checked={selectedValuationMethods.includes("OLV")}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedValuationMethods([...selectedValuationMethods, "OLV"]);
+                          } else {
+                            setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "OLV"));
+                          }
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <div className="flex-1">
                         <div className="text-xs font-semibold text-gray-900">
@@ -1053,17 +1055,18 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     </label>
 
                     {/* FLV */}
-                    <label className={`flex items-start gap-2 rounded-lg border p-3 cursor-pointer transition ${
-                      selectedValuationMethod === "FLV"
-                        ? "border-rose-500 bg-rose-50 ring-2 ring-rose-200"
-                        : "border-rose-200 bg-white/80 hover:bg-rose-50/50"
-                    }`}>
+                    <label className="flex items-start gap-2 rounded-lg border border-rose-200 bg-white/80 p-3 cursor-pointer hover:bg-rose-50/50 transition">
                       <input
-                        type="radio"
-                        name="valuationMethod"
-                        checked={selectedValuationMethod === "FLV"}
-                        onChange={() => setSelectedValuationMethod("FLV")}
-                        className="mt-0.5 h-4 w-4 border-gray-300 text-rose-600 focus:ring-rose-500"
+                        type="checkbox"
+                        checked={selectedValuationMethods.includes("FLV")}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedValuationMethods([...selectedValuationMethods, "FLV"]);
+                          } else {
+                            setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "FLV"));
+                          }
+                        }}
+                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                       />
                       <div className="flex-1">
                         <div className="text-xs font-semibold text-gray-900">
@@ -1075,6 +1078,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                       </div>
                     </label>
                   </div>
+                  {selectedValuationMethods.length === 0 && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      ⚠️ Select at least one valuation method
+                    </p>
+                  )}
                 </div>
               )}
             </section>
