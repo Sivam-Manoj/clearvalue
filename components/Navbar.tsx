@@ -9,6 +9,7 @@ import {
   Settings as SettingsIcon,
   Menu,
   X,
+  Eye,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -23,6 +24,11 @@ const navItems: NavItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: (p) => <Home className={p.className} />,
+  },
+  {
+    label: "Previews",
+    href: "/previews",
+    icon: (p) => <Eye className={p.className} />,
   },
   {
     label: "Reports",

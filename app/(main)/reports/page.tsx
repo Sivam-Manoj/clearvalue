@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileText, Download, Trash2 } from "lucide-react";
 import { ReportsService, type PdfReport } from "@/services/reports";
+import { getAssetReports, type AssetReport } from "@/services/assets";
 import { toast } from "react-toastify";
+import StatusBadge from "@/components/reports/StatusBadge";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<PdfReport[]>([]);
@@ -18,6 +20,35 @@ export default function ReportsPage() {
     "date-desc" | "date-asc" | "value-desc" | "value-asc"
   >("date-desc");
   const [typeFilter, setTypeFilter] = useState<string>("");
+  
+  // Asset reports state (approved and pending approval)
+  const [assetReports, setAssetReports] = useState<AssetReport[]>([]);
+  const [assetReportsLoading, setAssetReportsLoading] = useState(true);
+
+  // Load asset reports (approved and pending)
+  useEffect(() => {
+    let cancelled = false;
+    setAssetReportsLoading(true);
+    getAssetReports()
+      .then((response) => {
+        if (!cancelled) {
+          // Show approved and pending_approval reports
+          const visibleReports = response.data.filter(
+            (report) => report.status === "approved" || report.status === "pending_approval"
+          );
+          setAssetReports(visibleReports);
+        }
+      })
+      .catch((err: any) => {
+        console.error("Failed to load asset reports:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setAssetReportsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,8 +117,25 @@ export default function ReportsPage() {
       else if (ft === 'xlsx') g.variants.xlsx = r;
       else if (ft === 'images' || ft === 'zip') g.variants.images = r;
     }
+    
+    // Add asset reports to the list
+    for (const ar of assetReports) {
+      const statusText = ar.status === 'pending_approval' ? 'Pending Approval' : ar.status === 'approved' ? 'Approved' : '';
+      map.set(ar._id, {
+        key: ar._id,
+        address: `${ar.client_name || ar.preview_data?.client_name || 'Asset Report'} ${statusText ? `(${statusText})` : ''}`,
+        filename: `${ar.client_name || ar.preview_data?.client_name || 'Asset Report'}.docx`,
+        fairMarketValue: 'Asset Report',
+        createdAt: ar.createdAt,
+        contract_no: ar.contract_no || ar.preview_data?.contract_no,
+        approvalStatus: ar.status === 'approved' ? 'approved' : 'pending',
+        type: 'Asset',
+        variants: {},
+      });
+    }
+    
     return Array.from(map.values());
-  }, [reports]);
+  }, [reports, assetReports]);
 
   const filteredGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -332,6 +380,7 @@ export default function ReportsPage() {
             />
           </div>
         </div>
+
         {/* Top filters row */}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-700">
           <div className="flex items-center gap-2">
