@@ -28,6 +28,8 @@ export default function PreviewModal({
   const [declineReason, setDeclineReason] = useState<string>("");
   const [previewData, setPreviewData] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [groupingMode, setGroupingMode] = useState<string | undefined>(undefined);
+  const [imageCount, setImageCount] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (isOpen && reportId) {
@@ -42,6 +44,8 @@ export default function PreviewModal({
       setStatus(response.data.status);
       setDeclineReason(response.data.decline_reason || "");
       setPreviewData(response.data.preview_data);
+      setGroupingMode(response.data.grouping_mode);
+      setImageCount(response.data.image_count);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to load preview data");
       onClose();
@@ -96,6 +100,24 @@ export default function PreviewModal({
     setPreviewData((prev: any) => {
       const newLots = [...(prev.lots || [])];
       newLots[index] = { ...newLots[index], [field]: value };
+      return { ...prev, lots: newLots };
+    });
+    setHasChanges(true);
+  };
+
+  const updateLotItem = (
+    lotIndex: number,
+    itemIndex: number,
+    field: string,
+    value: any
+  ) => {
+    setPreviewData((prev: any) => {
+      const newLots = [...(prev.lots || [])];
+      const lot = { ...(newLots[lotIndex] || {}) } as any;
+      const items = Array.isArray(lot.items) ? [...lot.items] : [];
+      items[itemIndex] = { ...(items[itemIndex] || {}), [field]: value };
+      lot.items = items;
+      newLots[lotIndex] = lot;
       return { ...prev, lots: newLots };
     });
     setHasChanges(true);
@@ -434,7 +456,7 @@ export default function PreviewModal({
                     {/* Quick Stats */}
                     <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4">
                       <h4 className="text-sm font-bold text-gray-900 mb-3">📊 Report Statistics</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
                         <div className="text-center">
                           <div className="text-2xl font-bold text-blue-600">{previewData?.lots?.length || 0}</div>
                           <div className="text-xs text-gray-600">Total Lots</div>
@@ -450,6 +472,14 @@ export default function PreviewModal({
                         <div className="text-center">
                           <div className="text-2xl font-bold text-rose-600">{previewData?.total_appraised_value ? "✓" : "-"}</div>
                           <div className="text-xs text-gray-600">Value Set</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-sm font-semibold text-blue-700">{(groupingMode || previewData?.grouping_mode || "mixed").toString()}</div>
+                          <div className="text-xs text-gray-600">Grouping</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-cyan-600">{imageCount ?? "-"}</div>
+                          <div className="text-xs text-gray-600">Images</div>
                         </div>
                       </div>
                     </div>
@@ -546,6 +576,67 @@ export default function PreviewModal({
                               />
                             </div>
                           </div>
+                          {Array.isArray(lot.items) && lot.items.length > 0 && (
+                            <div className="mt-4 border-t border-gray-200 pt-4">
+                              <div className="text-sm font-semibold text-gray-900 mb-2">Items ({lot.items.length})</div>
+                              <div className="space-y-3">
+                                {lot.items.map((item: any, itemIdx: number) => (
+                                  <div key={itemIdx} className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                                    <div>
+                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Title</label>
+                                      <input
+                                        type="text"
+                                        value={item.title || ""}
+                                        onChange={(e) => updateLotItem(index, itemIdx, "title", e.target.value)}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                                        placeholder="Item title"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Serial/VIN</label>
+                                      <input
+                                        type="text"
+                                        value={item.sn_vin || item.serial_number || ""}
+                                        onChange={(e) => updateLotItem(index, itemIdx, item.sn_vin !== undefined ? "sn_vin" : "serial_number", e.target.value)}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                                        placeholder="SN / VIN"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Qty</label>
+                                      <input
+                                        type="number"
+                                        value={item.quantity ?? ""}
+                                        onChange={(e) => updateLotItem(index, itemIdx, "quantity", Number(e.target.value))}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                                        placeholder="1"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Condition</label>
+                                      <input
+                                        type="text"
+                                        value={item.item_condition || item.condition || ""}
+                                        onChange={(e) => updateLotItem(index, itemIdx, item.item_condition !== undefined ? "item_condition" : "condition", e.target.value)}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                                        placeholder="Good"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Est. Value</label>
+                                      <input
+                                        type="text"
+                                        value={item.estimated_value || ""}
+                                        onChange={(e) => updateLotItem(index, itemIdx, "estimated_value", e.target.value)}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                                        placeholder="e.g., $1,000"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -587,6 +678,44 @@ export default function PreviewModal({
                             <p className="text-2xl font-bold text-rose-600">
                               ${previewData.valuation_data.baseFMV?.toLocaleString()}
                             </p>
+                          </div>
+                        )}
+                        {Array.isArray(previewData?.valuation_data?.methods) && previewData.valuation_data.methods.length > 0 && (
+                          <div className="p-4 border border-gray-200 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-3">Comparison Table</h4>
+                            <div className="overflow-x-auto">
+                              <table className="min-w-full text-sm border border-gray-200 rounded-md overflow-hidden">
+                                <thead className="bg-gray-50 text-gray-700">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left font-medium">Method</th>
+                                    <th className="px-3 py-2 text-left font-medium">%</th>
+                                    <th className="px-3 py-2 text-left font-medium">Value</th>
+                                    <th className="px-3 py-2 text-left font-medium">Conditions</th>
+                                    <th className="px-3 py-2 text-left font-medium">Timeline</th>
+                                    <th className="px-3 py-2 text-left font-medium">Use Case</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {previewData.valuation_data.methods.map((m: any, i: number) => (
+                                    <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                                      <td className="px-3 py-2">
+                                        <div className="font-semibold text-gray-900">{m.fullName || m.method}</div>
+                                        {m.description ? (
+                                          <div className="text-xs text-gray-600 mt-0.5">{m.description}</div>
+                                        ) : null}
+                                      </td>
+                                      <td className="px-3 py-2 tabular-nums">{typeof m.percentage === 'number' ? `${m.percentage}%` : m.percentage}</td>
+                                      <td className="px-3 py-2 font-semibold text-gray-900 tabular-nums">
+                                        {previewData?.currency || 'CAD'} {typeof m.value === 'number' ? m.value.toLocaleString() : m.value}
+                                      </td>
+                                      <td className="px-3 py-2 text-gray-700 text-xs sm:text-sm">{m.saleConditions || '-'}</td>
+                                      <td className="px-3 py-2 text-gray-700 text-xs sm:text-sm">{m.timeline || '-'}</td>
+                                      <td className="px-3 py-2 text-gray-700 text-xs sm:text-sm">{m.useCase || '-'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         )}
                       </>

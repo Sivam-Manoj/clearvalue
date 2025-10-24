@@ -26,6 +26,8 @@ export interface PreviewDataResponse {
   data: {
     status: ReportStatus;
     preview_data: any;
+    grouping_mode?: string;
+    image_count?: number;
     decline_reason?: string;
     reportId: string;
   };
