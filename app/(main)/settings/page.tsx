@@ -19,6 +19,8 @@ export default function SettingsPage() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingCv, setUploadingCv] = useState(false);
+  const [cvFile, setCvFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     username: (user as any)?.username || "",
     companyName: (user as any)?.companyName || "",
@@ -60,6 +62,39 @@ export default function SettingsPage() {
     setConfirmText("");
     setDeletePassword("");
     setError(null);
+  };
+
+  const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    setCvFile(f);
+  };
+
+  const handleUploadCv = async () => {
+    if (!cvFile) return;
+    try {
+      setUploadingCv(true);
+      await UserService.uploadCv(cvFile);
+      setCvFile(null);
+      toast.success("CV uploaded");
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || "Failed to upload CV");
+    } finally {
+      setUploadingCv(false);
+    }
+  };
+
+  const handleDeleteCv = async () => {
+    try {
+      setUploadingCv(true);
+      await UserService.deleteCv();
+      toast.success("CV removed");
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || "Failed to delete CV");
+    } finally {
+      setUploadingCv(false);
+    }
   };
 
   const closeDelete = () => {
@@ -340,6 +375,76 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+        </section>
+
+        {/* Appraiser CV */}
+        <section className="rounded-2xl bg-white ring-1 ring-rose-100 p-5 shadow-[0_8px_24px_rgba(244,63,94,0.06)]">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-rose-900">Appraiser CV</h2>
+              <p className="mt-1 text-sm text-rose-700/80">
+                Upload your CV. The link will appear on the last page of your reports.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
+              <p className="text-[10px] uppercase tracking-wide text-rose-600">Current</p>
+              {((user as any)?.cvUrl) ? (
+                <div className="mt-1 text-sm text-rose-900 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate" title={(user as any)?.cvFilename || (user as any)?.cvUrl}>{(user as any)?.cvFilename || (user as any)?.cvUrl}</p>
+                    <a
+                      href={(user as any)?.cvUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-blue-700 hover:underline"
+                    >
+                      View CV
+                    </a>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDeleteCv}
+                    disabled={uploadingCv}
+                    className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-rose-900">No CV uploaded</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-rose-700">Upload CV</label>
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleCvChange}
+                  className="block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-rose-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-rose-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleUploadCv}
+                  disabled={!cvFile || uploadingCv}
+                  className="rounded-xl bg-green-600 px-3 py-2 text-sm font-medium text-white ring-1 ring-green-800 shadow-sm transition-all hover:bg-green-500 hover:shadow-md active:translate-y-[1px] disabled:opacity-50"
+                >
+                  {uploadingCv ? (
+                    <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Uploading...</span>
+                  ) : (
+                    <>Upload</>
+                  )}
+                </button>
+              </div>
+              {cvFile && (
+                <p className="mt-1 text-xs text-gray-600">Selected: {cvFile.name}</p>
+              )}
+            </div>
+          </div>
         </section>
 
         {/* Session */}

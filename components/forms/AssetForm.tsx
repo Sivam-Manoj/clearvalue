@@ -90,6 +90,29 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   const [currencyLoading, setCurrencyLoading] = useState<boolean>(false);
   const currencyPromptedRef = useRef(false);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const clearError = (k: string) =>
+    setErrors((prev) => {
+      const { [k]: _, ...rest } = prev;
+      return rest;
+    });
+  function validateForm(): boolean {
+    const e: Record<string, string> = {};
+    if (!clientName.trim()) e.clientName = "Required";
+    if (!effectiveDate) e.effectiveDate = "Required";
+    if (!appraisalPurpose.trim()) e.appraisalPurpose = "Required";
+    if (!appraiser.trim()) e.appraiser = "Required";
+    if (!currency || !/^[A-Z]{3}$/.test(currency)) e.currency = "Use 3-letter code (e.g., CAD)";
+    if (includeValuationTable && selectedValuationMethods.length === 0)
+      e.valuation_methods = "Select at least one method";
+    setErrors(e);
+    if (Object.keys(e).length > 0) {
+      try { toast.error("Please fix required fields"); } catch {}
+      return false;
+    }
+    return true;
+  }
+
   // Valuation methods selection (multiple methods)
   const [includeValuationTable, setIncludeValuationTable] =
     useState<boolean>(false);
@@ -494,6 +517,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (!validateForm()) {
+      setError("Please fix required fields.");
+      return;
+    }
+
     // Prepare files + details depending on grouping
     let filesToSend: File[] = images;
     let videosToSend: File[] | undefined = undefined;
@@ -821,10 +849,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   <input
                     type="text"
                     value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
+                    onChange={(e) => { setClientName(e.target.value); if (errors.clientName) clearError('clientName'); }}
                     placeholder="e.g., Acme Corp"
-                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.clientName ? 'border-red-300 focus:ring-red-300' : ''}`}
                   />
+                  {errors.clientName && (<p className="text-xs text-red-600 mt-1">{errors.clientName}</p>)}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">
@@ -833,9 +862,10 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   <input
                     type="date"
                     value={effectiveDate}
-                    onChange={(e) => setEffectiveDate(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    onChange={(e) => { setEffectiveDate(e.target.value); if (errors.effectiveDate) clearError('effectiveDate'); }}
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.effectiveDate ? 'border-red-300 focus:ring-red-300' : ''}`}
                   />
+                  {errors.effectiveDate && (<p className="text-xs text-red-600 mt-1">{errors.effectiveDate}</p>)}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">
@@ -844,10 +874,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   <input
                     type="text"
                     value={appraisalPurpose}
-                    onChange={(e) => setAppraisalPurpose(e.target.value)}
+                    onChange={(e) => { setAppraisalPurpose(e.target.value); if (errors.appraisalPurpose) clearError('appraisalPurpose'); }}
                     placeholder="e.g., Insurance"
-                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.appraisalPurpose ? 'border-red-300 focus:ring-red-300' : ''}`}
                   />
+                  {errors.appraisalPurpose && (<p className="text-xs text-red-600 mt-1">{errors.appraisalPurpose}</p>)}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">Owner Name</label>
@@ -864,10 +895,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   <input
                     type="text"
                     value={appraiser}
-                    onChange={(e) => setAppraiser(e.target.value)}
+                    onChange={(e) => { setAppraiser(e.target.value); if (errors.appraiser) clearError('appraiser'); }}
                     placeholder="e.g., Jane Smith"
-                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.appraiser ? 'border-red-300 focus:ring-red-300' : ''}`}
                   />
+                  {errors.appraiser && (<p className="text-xs text-red-600 mt-1">{errors.appraiser}</p>)}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">
@@ -938,12 +970,15 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                     onChange={(e) => {
                       setCurrencyTouched(true);
                       setCurrency(e.target.value.toUpperCase().slice(0, 3));
+                      if (errors.currency) clearError('currency');
                     }}
                     disabled={currencyLoading && !currencyTouched}
                     placeholder={
                       currencyLoading ? "Detecting…" : "e.g., CAD, USD, EUR"
                     }
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.currency ? 'border-red-300 focus:ring-red-300' : ''}`}
                   />
+                  {errors.currency && (<p className="text-xs text-red-600 mt-1">{errors.currency}</p>)}
                 </div>
               </div>
             </section>
@@ -981,6 +1016,9 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                   <p className="text-xs text-gray-700 font-medium">
                     Select valuation methods to compare:
                   </p>
+                  {errors.valuation_methods && (
+                    <p className="text-xs text-red-600">{errors.valuation_methods}</p>
+                  )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {/* FML */}
                     <label className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-white/80 p-3 cursor-pointer hover:bg-emerald-50/50 transition">
@@ -993,6 +1031,7 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
                           } else {
                             setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "FML"));
                           }
+                          if (errors.valuation_methods) clearError('valuation_methods');
                         }}
                         className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                       />

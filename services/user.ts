@@ -31,4 +31,16 @@ export const UserService = {
     const { data } = await API.delete<{ message: string }>("/user");
     return data;
   },
+
+  async uploadCv(file: File): Promise<AuthUser> {
+    const fd = new FormData();
+    fd.append("cv", file);
+    const { data } = await API.post<AuthUser>("/user/cv", fd);
+    return data;
+  },
+
+  async deleteCv(): Promise<AuthUser> {
+    const { data } = await API.delete<AuthUser>("/user/cv");
+    return data;
+  },
 };

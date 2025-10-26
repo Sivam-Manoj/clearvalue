@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Save, Send, AlertCircle } from "lucide-react";
+import { Save, Send, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { getPreviewData, updatePreviewData, submitForApproval } from "@/services/assets";
+import BottomDrawer from "@/components/BottomDrawer";
 
 interface PreviewModalProps {
   reportId: string;
@@ -12,7 +13,6 @@ interface PreviewModalProps {
   onSuccess?: () => void;
 }
 
-type TabType = "metadata" | "lots" | "valuation" | "summary";
 
 export default function PreviewModal({
   reportId,
@@ -20,7 +20,7 @@ export default function PreviewModal({
   onClose,
   onSuccess,
 }: PreviewModalProps) {
-  const [activeTab, setActiveTab] = useState<TabType>("metadata");
+  // Single-page layout (tabs removed)
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -96,11 +96,54 @@ export default function PreviewModal({
     setHasChanges(true);
   };
 
+  // Valuation editors (nested)
+  const updateValuationBase = (base: number) => {
+    setPreviewData((prev: any) => {
+      const vd = { ...(prev?.valuation_data || {}) };
+      vd.baseFMV = isNaN(base as any) ? vd.baseFMV : base;
+      // Optionally sync percentages when base changes (keep values as-is)
+      return { ...prev, valuation_data: vd };
+    });
+    setHasChanges(true);
+  };
+
+  const updateValuationMethod = (
+    index: number,
+    field: "fullName" | "description" | "value" | "saleConditions" | "timeline" | "useCase",
+    value: any
+  ) => {
+    setPreviewData((prev: any) => {
+      const vd = { ...(prev?.valuation_data || {}) } as any;
+      const methods = Array.isArray(vd.methods) ? [...vd.methods] : [];
+      const m = { ...(methods[index] || {}) } as any;
+      m[field] = value;
+      if (field === "value") {
+        const base = Number(vd.baseFMV) || 0;
+        const numVal = Number(value);
+        if (base > 0 && isFinite(numVal)) {
+          m.percentage = Math.round((numVal / base) * 100);
+        }
+      }
+      methods[index] = m;
+      return { ...prev, valuation_data: { ...vd, methods } };
+    });
+    setHasChanges(true);
+  };
+
   const updateLot = (index: number, field: string, value: any) => {
     setPreviewData((prev: any) => {
       const newLots = [...(prev.lots || [])];
       newLots[index] = { ...newLots[index], [field]: value };
       return { ...prev, lots: newLots };
+    });
+    setHasChanges(true);
+  };
+
+  const deleteLot = (index: number) => {
+    setPreviewData((prev: any) => {
+      const lots = Array.isArray(prev?.lots) ? [...prev.lots] : [];
+      lots.splice(index, 1);
+      return { ...prev, lots };
     });
     setHasChanges(true);
   };
@@ -123,674 +166,554 @@ export default function PreviewModal({
     setHasChanges(true);
   };
 
-  if (!isOpen) return null;
-
-  const tabs = [
-    { id: "metadata" as TabType, label: "Report Details", icon: "📄" },
-    { id: "lots" as TabType, label: "Assets/Lots", icon: "📦" },
-    { id: "valuation" as TabType, label: "Valuation", icon: "💰" },
-    { id: "summary" as TabType, label: "Summary", icon: "📋" },
-  ];
-
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-sm">
-      <div className="flex min-h-screen items-center justify-center p-2 sm:p-4">
-        <div className="relative w-full max-w-7xl max-h-[95vh] bg-white rounded-xl sm:rounded-2xl shadow-2xl flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gradient-to-r from-rose-50 to-pink-50">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Preview & Edit Report</h2>
-              <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
-                Review AI-extracted data • Make edits • Submit for approval
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 sm:p-2 hover:bg-white rounded-lg transition-colors flex-shrink-0 ml-2"
-            >
-              <X className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />
-            </button>
+    <BottomDrawer open={isOpen} onClose={onClose} title="Preview & Edit Report">
+      {status === "declined" && declineReason && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-red-900">Report Declined</p>
+            <p className="text-sm text-red-700 mt-1">{declineReason}</p>
           </div>
+        </div>
+      )}
 
-          {/* Decline Reason Alert */}
-          {status === "declined" && declineReason && (
-            <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-red-900">Report Declined</p>
-                <p className="text-sm text-red-700 mt-1">{declineReason}</p>
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin h-8 w-8 border-4 border-rose-600 border-t-transparent rounded-full"></div>
+        </div>
+      ) : (
+        <>
+          {/* Report Details */}
+          <div className="space-y-6 max-w-5xl mx-auto">
+            {/* Basic Information Section */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-blue-600">👤</span>
+                Basic Information
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Client Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={previewData?.client_name || ""}
+                    onChange={(e) => updateField("client_name", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="e.g., ABC Corporation"
+                  />
+                  {!previewData?.client_name && (
+                    <p className="text-xs text-amber-600 mt-1">⚠️ Required field</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Owner Name
+                  </label>
+                  <input
+                    type="text"
+                    value={previewData?.owner_name || ""}
+                    onChange={(e) => updateField("owner_name", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="e.g., John Smith"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Contract Number
+                  </label>
+                  <input
+                    type="text"
+                    value={previewData?.contract_no || ""}
+                    onChange={(e) => updateField("contract_no", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="e.g., C-2024-001"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Industry
+                  </label>
+                  <input
+                    type="text"
+                    value={previewData?.industry || ""}
+                    onChange={(e) => updateField("industry", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="e.g., Construction, Manufacturing"
+                  />
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Tabs */}
-          <div className="flex gap-1 px-2 sm:px-6 pt-2 sm:pt-4 border-b border-gray-200 overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
-                  activeTab === tab.id
-                    ? "text-rose-600 border-b-2 border-rose-600 bg-rose-50/50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                } rounded-t-lg`}
-              >
-                <span className="text-base sm:text-lg">{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-6">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin h-8 w-8 border-4 border-rose-600 border-t-transparent rounded-full"></div>
+            {/* Dates & Financial Section */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-green-600">📅</span>
+                Dates & Financial
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Effective Date
+                  </label>
+                  <input
+                    type="date"
+                    value={previewData?.effective_date?.split("T")[0] || ""}
+                    onChange={(e) => updateField("effective_date", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Inspection Date
+                  </label>
+                  <input
+                    type="date"
+                    value={previewData?.inspection_date?.split("T")[0] || ""}
+                    onChange={(e) => updateField("inspection_date", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Currency
+                  </label>
+                  <select
+                    value={previewData?.currency || "CAD"}
+                    onChange={(e) => updateField("currency", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                  >
+                    <option value="CAD">CAD - Canadian Dollar</option>
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - British Pound</option>
+                    <option value="INR">INR - Indian Rupee</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Total Appraised Value
+                  </label>
+                  <input
+                    type="text"
+                    value={previewData?.total_appraised_value || previewData?.total_value || ""}
+                    onChange={(e) => updateField("total_appraised_value", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="e.g., $100,000 or CAD 100,000"
+                  />
+                </div>
               </div>
-            ) : (
-              <>
-                {/* Metadata Tab */}
-                {activeTab === "metadata" && (
-                  <div className="space-y-6 max-w-5xl mx-auto">
-                    {/* Basic Information Section */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <span className="text-blue-600">👤</span>
-                        Basic Information
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                            Client Name *
-                          </label>
-                          <input
-                            type="text"
-                            value={previewData?.client_name || ""}
-                            onChange={(e) => updateField("client_name", e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                            placeholder="e.g., ABC Corporation"
-                          />
-                          {!previewData?.client_name && (
-                            <p className="text-xs text-amber-600 mt-1">⚠️ Required field</p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                            Owner Name
-                          </label>
-                          <input
-                            type="text"
-                            value={previewData?.owner_name || ""}
-                            onChange={(e) => updateField("owner_name", e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                            placeholder="e.g., John Smith"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                            Contract Number
-                          </label>
-                          <input
-                            type="text"
-                            value={previewData?.contract_no || ""}
-                            onChange={(e) => updateField("contract_no", e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                            placeholder="e.g., C-2024-001"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                            Industry
-                          </label>
-                          <input
-                            type="text"
-                            value={previewData?.industry || ""}
-                            onChange={(e) => updateField("industry", e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                            placeholder="e.g., Construction, Manufacturing"
-                          />
-                        </div>
-                      </div>
-                    </div>
+            </div>
 
-                    {/* Dates & Financial Section */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <span className="text-green-600">📅</span>
-                        Dates & Financial
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                            Effective Date
-                          </label>
-                          <input
-                            type="date"
-                            value={previewData?.effective_date?.split("T")[0] || ""}
-                            onChange={(e) => updateField("effective_date", e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                            Inspection Date
-                          </label>
-                          <input
-                            type="date"
-                            value={previewData?.inspection_date?.split("T")[0] || ""}
-                            onChange={(e) => updateField("inspection_date", e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                            Currency
-                          </label>
-                          <select
-                            value={previewData?.currency || "CAD"}
-                            onChange={(e) => updateField("currency", e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                          >
-                            <option value="CAD">CAD - Canadian Dollar</option>
-                            <option value="USD">USD - US Dollar</option>
-                            <option value="EUR">EUR - Euro</option>
-                            <option value="GBP">GBP - British Pound</option>
-                            <option value="INR">INR - Indian Rupee</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                            Total Appraised Value
-                          </label>
-                          <input
-                            type="text"
-                            value={previewData?.total_appraised_value || previewData?.total_value || ""}
-                            onChange={(e) => updateField("total_appraised_value", e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                            placeholder="e.g., $100,000 or CAD 100,000"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Appraisal Details Section */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <span className="text-purple-600">📋</span>
-                        Appraisal Details
-                      </h3>
-                      <div className="grid grid-cols-1 gap-4">
-                        <div>
-                          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                            Appraisal Purpose
-                          </label>
-                          <input
-                            type="text"
-                            value={previewData?.appraisal_purpose || ""}
-                            onChange={(e) => updateField("appraisal_purpose", e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                            placeholder="e.g., Insurance, Sale, Financing, Internal Review"
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                              Appraiser Name
-                            </label>
-                            <input
-                              type="text"
-                              value={previewData?.appraiser || ""}
-                              onChange={(e) => updateField("appraiser", e.target.value)}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                              placeholder="e.g., John Appraiser, CPA"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                              Appraisal Company
-                            </label>
-                            <input
-                              type="text"
-                              value={previewData?.appraisal_company || ""}
-                              onChange={(e) => updateField("appraisal_company", e.target.value)}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                              placeholder="e.g., ClearValue Appraisals"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* AI-Generated Analysis Section */}
-                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 sm:p-6">
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                        <span className="text-purple-600">🤖</span>
-                        AI-Generated Analysis
-                        <span className="text-xs font-normal text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Editable</span>
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 mb-4">
-                        AI has analyzed the images and generated the following insights. You can review and edit all content below.
-                      </p>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                            <span className="text-amber-500">📊</span>
-                            Market Overview
-                          </label>
-                          <textarea
-                            value={previewData?.market_overview || ""}
-                            onChange={(e) => updateField("market_overview", e.target.value)}
-                            rows={4}
-                            className="w-full px-3 py-2.5 text-sm border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white"
-                            placeholder="Example: The market for [asset type] has shown steady growth... Current demand is driven by... Regional factors include..."
-                          />
-                          <p className="text-xs text-gray-500 mt-1">📝 {previewData?.market_overview?.length || 0} characters</p>
-                        </div>
-
-                        <div>
-                          <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                            <span className="text-blue-500">💎</span>
-                            Valuation Explanation
-                          </label>
-                          <textarea
-                            value={previewData?.valuation_explanation || ""}
-                            onChange={(e) => updateField("valuation_explanation", e.target.value)}
-                            rows={4}
-                            className="w-full px-3 py-2.5 text-sm border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white"
-                            placeholder="Example: Valuation methodology applied... Factors considered include age, condition, market comparables... Adjustments made for..."
-                          />
-                          <p className="text-xs text-gray-500 mt-1">📝 {previewData?.valuation_explanation?.length || 0} characters</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                              <span className="text-green-500">✓</span>
-                              Condition Notes
-                            </label>
-                            <textarea
-                              value={previewData?.condition_notes || ""}
-                              onChange={(e) => updateField("condition_notes", e.target.value)}
-                              rows={3}
-                              className="w-full px-3 py-2.5 text-sm border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white"
-                              placeholder="Example: Overall condition is good/fair/excellent... Notable wear and tear... Maintenance history..."
-                            />
-                            <p className="text-xs text-gray-500 mt-1">📝 {previewData?.condition_notes?.length || 0} characters</p>
-                          </div>
-
-                          <div>
-                            <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                              <span className="text-orange-500">💡</span>
-                              Recommendations
-                            </label>
-                            <textarea
-                              value={previewData?.recommendations || ""}
-                              onChange={(e) => updateField("recommendations", e.target.value)}
-                              rows={3}
-                              className="w-full px-3 py-2.5 text-sm border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white"
-                              placeholder="Example: Recommended actions... Maintenance suggestions... Future considerations..."
-                            />
-                            <p className="text-xs text-gray-500 mt-1">📝 {previewData?.recommendations?.length || 0} characters</p>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                            <span className="text-red-500">📈</span>
-                            Comparable Sales
-                          </label>
-                          <textarea
-                            value={previewData?.comparable_sales || ""}
-                            onChange={(e) => updateField("comparable_sales", e.target.value)}
-                            rows={4}
-                            className="w-full px-3 py-2.5 text-sm border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white"
-                            placeholder="Example: Similar asset sold for... Recent market transactions... Comparable item features..."
-                          />
-                          <p className="text-xs text-gray-500 mt-1">📝 {previewData?.comparable_sales?.length || 0} characters</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Quick Stats */}
-                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4">
-                      <h4 className="text-sm font-bold text-gray-900 mb-3">📊 Report Statistics</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">{previewData?.lots?.length || 0}</div>
-                          <div className="text-xs text-gray-600">Total Lots</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-green-600">{previewData?.currency || "CAD"}</div>
-                          <div className="text-xs text-gray-600">Currency</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-purple-600">{previewData?.language?.toUpperCase() || "EN"}</div>
-                          <div className="text-xs text-gray-600">Language</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-rose-600">{previewData?.total_appraised_value ? "✓" : "-"}</div>
-                          <div className="text-xs text-gray-600">Value Set</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm font-semibold text-blue-700">{(groupingMode || previewData?.grouping_mode || "mixed").toString()}</div>
-                          <div className="text-xs text-gray-600">Grouping</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-cyan-600">{imageCount ?? "-"}</div>
-                          <div className="text-xs text-gray-600">Images</div>
-                        </div>
-                      </div>
-                    </div>
+            {/* Appraisal Details Section */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-purple-600">📋</span>
+                Appraisal Details
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Appraisal Purpose
+                  </label>
+                  <input
+                    type="text"
+                    value={previewData?.appraisal_purpose || ""}
+                    onChange={(e) => updateField("appraisal_purpose", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="e.g., Insurance, Sale, Financing, Internal Review"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                      Appraiser Name
+                    </label>
+                    <input
+                      type="text"
+                      value={previewData?.appraiser || ""}
+                      onChange={(e) => updateField("appraiser", e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                      placeholder="e.g., John Appraiser, CPA"
+                    />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                      Appraisal Company
+                    </label>
+                    <input
+                      type="text"
+                      value={previewData?.appraisal_company || ""}
+                      onChange={(e) => updateField("appraisal_company", e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                      placeholder="e.g., ClearValue Appraisals"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                {/* Lots Tab */}
-                {activeTab === "lots" && (
-                  <div className="space-y-4 max-w-5xl mx-auto">
-                    {previewData?.lots?.length > 0 && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4 mb-4">
-                        <p className="text-sm text-blue-900 font-medium">
-                          📦 {previewData.lots.length} Lot{previewData.lots.length !== 1 ? 's' : ''} Found • Review and edit each lot below
-                        </p>
+            {/* AI narrative fields removed to match DOCX inputs */}
+
+            {/* Quick Stats */}
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4">
+              <h4 className="text-sm font-bold text-gray-900 mb-3">📊 Report Statistics</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{previewData?.lots?.length || 0}</div>
+                  <div className="text-xs text-gray-600">Total Lots</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{previewData?.currency || "CAD"}</div>
+                  <div className="text-xs text-gray-600">Currency</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">{previewData?.language?.toUpperCase() || "EN"}</div>
+                  <div className="text-xs text-gray-600">Language</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-rose-600">{previewData?.total_appraised_value ? "✓" : "-"}</div>
+                  <div className="text-xs text-gray-600">Value Set</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm font-semibold text-blue-700">{(groupingMode || previewData?.grouping_mode || "mixed").toString()}</div>
+                  <div className="text-xs text-gray-600">Grouping</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-cyan-600">{imageCount ?? "-"}</div>
+                  <div className="text-xs text-gray-600">Images</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Assets/Lots */}
+          <div className="mt-6 space-y-4 max-w-5xl mx-auto">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">Assets / Lots</h3>
+            {previewData?.lots?.length ? (
+              <>
+                <div className="md:hidden space-y-3">
+                  {previewData.lots.map((lot: any, index: number) => (
+                    <div key={index} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-semibold text-gray-900">Lot {String(lot.lot_id || index + 1)}</div>
+                        <button
+                          onClick={() => deleteLot(index)}
+                          aria-label={`Delete lot ${index + 1}`}
+                          className="px-2 py-1 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 text-xs"
+                        >
+                          Delete
+                        </button>
                       </div>
-                    )}
-                    
-                    {previewData?.lots?.map((lot: any, index: number) => (
-                      <div
-                        key={index}
-                        className="bg-white border-2 border-gray-200 rounded-xl p-4 sm:p-6 hover:border-rose-300 hover:shadow-md transition-all"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
-                            <span className="bg-rose-100 text-rose-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
-                              {index + 1}
-                            </span>
-                            Lot {index + 1}
-                          </h4>
-                          {lot.estimated_value && (
-                            <span className="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                              {lot.estimated_value}
-                            </span>
-                          )}
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Title</label>
+                          <input
+                            type="text"
+                            value={lot.title || ""}
+                            onChange={(e) => updateLot(index, "title", e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                            placeholder="Title"
+                          />
                         </div>
-                        
-                        <div className="grid grid-cols-1 gap-4">
-                          <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                              Title / Name
-                            </label>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Description</label>
+                          <textarea
+                            value={lot.description || ""}
+                            onChange={(e) => updateLot(index, "description", e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[72px]"
+                            placeholder="Short description"
+                            rows={3}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Value</label>
+                          <input
+                            type="text"
+                            value={lot.estimated_value || ""}
+                            onChange={(e) => updateLot(index, "estimated_value", e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                            placeholder="e.g., $25,000"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                    <thead className="bg-gray-50 text-gray-700">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Lot #</th>
+                        <th className="px-3 py-2 text-left">Title</th>
+                        <th className="px-3 py-2 text-left">Description</th>
+                        <th className="px-3 py-2 text-left">Value</th>
+                        <th className="px-3 py-2 text-left">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewData.lots.map((lot: any, index: number) => (
+                        <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                          <td className="px-3 py-2 text-gray-800 font-medium">{String(lot.lot_id || index + 1)}</td>
+                          <td className="px-3 py-2">
                             <input
                               type="text"
                               value={lot.title || ""}
                               onChange={(e) => updateLot(index, "title", e.target.value)}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                              placeholder="e.g., 2020 Caterpillar 320 Excavator"
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                              placeholder="Title"
                             />
-                          </div>
-                          <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                              Description
-                            </label>
+                          </td>
+                          <td className="px-3 py-2">
                             <textarea
                               value={lot.description || ""}
-                              onChange={(e) =>
-                                updateLot(index, "description", e.target.value)
-                              }
-                              rows={3}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                              placeholder="e.g., Heavy-duty excavator with hydraulic arm, good working condition..."
+                              onChange={(e) => updateLot(index, "description", e.target.value)}
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[56px]"
+                              placeholder="Short description"
+                              rows={2}
                             />
-                            <p className="text-xs text-gray-500 mt-1">📝 {lot.description?.length || 0} characters</p>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                                Condition
-                              </label>
-                              <select
-                                value={lot.condition || "Good"}
-                                onChange={(e) => updateLot(index, "condition", e.target.value)}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                              >
-                                <option value="Excellent">Excellent</option>
-                                <option value="Very Good">Very Good</option>
-                                <option value="Good">Good</option>
-                                <option value="Fair">Fair</option>
-                                <option value="Poor">Poor</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                                Estimated Value
-                              </label>
-                              <input
-                                type="text"
-                                value={lot.estimated_value || ""}
-                                onChange={(e) =>
-                                  updateLot(index, "estimated_value", e.target.value)
-                                }
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                                placeholder="e.g., $25,000 or CAD 35,000"
-                              />
-                            </div>
-                          </div>
-                          {Array.isArray(lot.items) && lot.items.length > 0 && (
-                            <div className="mt-4 border-t border-gray-200 pt-4">
-                              <div className="text-sm font-semibold text-gray-900 mb-2">Items ({lot.items.length})</div>
-                              <div className="space-y-3">
-                                {lot.items.map((item: any, itemIdx: number) => (
-                                  <div key={itemIdx} className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                                    <div>
-                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Title</label>
-                                      <input
-                                        type="text"
-                                        value={item.title || ""}
-                                        onChange={(e) => updateLotItem(index, itemIdx, "title", e.target.value)}
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                                        placeholder="Item title"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Serial/VIN</label>
-                                      <input
-                                        type="text"
-                                        value={item.sn_vin || item.serial_number || ""}
-                                        onChange={(e) => updateLotItem(index, itemIdx, item.sn_vin !== undefined ? "sn_vin" : "serial_number", e.target.value)}
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                                        placeholder="SN / VIN"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Qty</label>
-                                      <input
-                                        type="number"
-                                        value={item.quantity ?? ""}
-                                        onChange={(e) => updateLotItem(index, itemIdx, "quantity", Number(e.target.value))}
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                                        placeholder="1"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Condition</label>
-                                      <input
-                                        type="text"
-                                        value={item.item_condition || item.condition || ""}
-                                        onChange={(e) => updateLotItem(index, itemIdx, item.item_condition !== undefined ? "item_condition" : "condition", e.target.value)}
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                                        placeholder="Good"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Est. Value</label>
-                                      <input
-                                        type="text"
-                                        value={item.estimated_value || ""}
-                                        onChange={(e) => updateLotItem(index, itemIdx, "estimated_value", e.target.value)}
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                                        placeholder="e.g., $1,000"
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="text"
+                              value={lot.estimated_value || ""}
+                              onChange={(e) => updateLot(index, "estimated_value", e.target.value)}
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                              placeholder="e.g., $25,000"
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <button
+                              onClick={() => deleteLot(index)}
+                              aria-label={`Delete lot ${index + 1}`}
+                              className="px-2.5 py-1.5 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 text-xs"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                <div className="text-6xl mb-4">📦</div>
+                <p className="text-gray-600 font-medium">No lots data available</p>
+                <p className="text-sm text-gray-500 mt-1">AI analysis didn't extract any lot information</p>
+              </div>
+            )}
+          </div>
+
+          {/* Valuation */}
+          <div className="mt-6 space-y-4 max-w-5xl mx-auto">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">Valuation</h3>
+            <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+              <input
+                id="include-valuation"
+                type="checkbox"
+                checked={!!previewData?.include_valuation_table}
+                onChange={(e) => updateField("include_valuation_table", e.target.checked)}
+                className="h-4 w-4"
+              />
+              <label htmlFor="include-valuation" className="text-sm text-gray-800">Include Valuation Comparison Table</label>
+            </div>
+            {previewData?.include_valuation_table ? (
+              <>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">
+                    Valuation Methods Selected
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {previewData?.valuation_methods?.map((method: string) => (
+                      <span
+                        key={method}
+                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
+                      >
+                        {method}
+                      </span>
                     ))}
-                    {(!previewData?.lots || previewData.lots.length === 0) && (
-                      <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                        <div className="text-6xl mb-4">📦</div>
-                        <p className="text-gray-600 font-medium">No lots data available</p>
-                        <p className="text-sm text-gray-500 mt-1">AI analysis didn't extract any lot information</p>
-                      </div>
-                    )}
                   </div>
-                )}
-
-                {/* Valuation Tab */}
-                {activeTab === "valuation" && (
-                  <div className="space-y-4 max-w-3xl">
-                    {previewData?.include_valuation_table ? (
-                      <>
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <h4 className="font-semibold text-blue-900 mb-2">
-                            Valuation Methods Selected
-                          </h4>
-                          <div className="flex flex-wrap gap-2">
-                            {previewData?.valuation_methods?.map((method: string) => (
-                              <span
-                                key={method}
-                                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
-                              >
-                                {method}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        {previewData?.valuation_data && (
-                          <div className="p-4 border border-gray-200 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 mb-3">
-                              Base Fair Market Value
-                            </h4>
-                            <p className="text-2xl font-bold text-rose-600">
-                              ${previewData.valuation_data.baseFMV?.toLocaleString()}
-                            </p>
-                          </div>
-                        )}
-                        {Array.isArray(previewData?.valuation_data?.methods) && previewData.valuation_data.methods.length > 0 && (
-                          <div className="p-4 border border-gray-200 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 mb-3">Comparison Table</h4>
-                            <div className="overflow-x-auto">
-                              <table className="min-w-full text-sm border border-gray-200 rounded-md overflow-hidden">
-                                <thead className="bg-gray-50 text-gray-700">
-                                  <tr>
-                                    <th className="px-3 py-2 text-left font-medium">Method</th>
-                                    <th className="px-3 py-2 text-left font-medium">%</th>
-                                    <th className="px-3 py-2 text-left font-medium">Value</th>
-                                    <th className="px-3 py-2 text-left font-medium">Conditions</th>
-                                    <th className="px-3 py-2 text-left font-medium">Timeline</th>
-                                    <th className="px-3 py-2 text-left font-medium">Use Case</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {previewData.valuation_data.methods.map((m: any, i: number) => (
-                                    <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                                      <td className="px-3 py-2">
-                                        <div className="font-semibold text-gray-900">{m.fullName || m.method}</div>
-                                        {m.description ? (
-                                          <div className="text-xs text-gray-600 mt-0.5">{m.description}</div>
-                                        ) : null}
-                                      </td>
-                                      <td className="px-3 py-2 tabular-nums">{typeof m.percentage === 'number' ? `${m.percentage}%` : m.percentage}</td>
-                                      <td className="px-3 py-2 font-semibold text-gray-900 tabular-nums">
-                                        {previewData?.currency || 'CAD'} {typeof m.value === 'number' ? m.value.toLocaleString() : m.value}
-                                      </td>
-                                      <td className="px-3 py-2 text-gray-700 text-xs sm:text-sm">{m.saleConditions || '-'}</td>
-                                      <td className="px-3 py-2 text-gray-700 text-xs sm:text-sm">{m.timeline || '-'}</td>
-                                      <td className="px-3 py-2 text-gray-700 text-xs sm:text-sm">{m.useCase || '-'}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-center py-12 text-gray-500">
-                        No valuation data selected for this report
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Summary Tab */}
-                {activeTab === "summary" && (
-                  <div className="space-y-6 max-w-3xl">
-                    <div className="p-6 bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-xl">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4">
-                        Report Summary
-                      </h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-600">Client</p>
-                          <p className="font-semibold text-gray-900">
-                            {previewData?.client_name || "Not specified"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Industry</p>
-                          <p className="font-semibold text-gray-900">
-                            {previewData?.industry || "Not specified"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Total Lots</p>
-                          <p className="font-semibold text-gray-900">
-                            {previewData?.lots?.length || 0}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Currency</p>
-                          <p className="font-semibold text-gray-900">
-                            {previewData?.currency || "CAD"}
-                          </p>
-                        </div>
-                      </div>
+                </div>
+                {previewData?.valuation_data && (
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      Base Fair Market Value
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">{previewData?.currency || "CAD"}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={Number(previewData.valuation_data.baseFMV || 0)}
+                        onChange={(e) => updateValuationBase(Number(e.target.value))}
+                        className="w-56 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all tabular-nums"
+                      />
                     </div>
-
-                    {hasChanges && (
-                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-yellow-900">Unsaved Changes</p>
-                          <p className="text-sm text-yellow-700 mt-1">
-                            You have unsaved changes. Please save before submitting.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-2">Next Steps</h4>
-                      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
-                        <li>Review all data in the tabs above</li>
-                        <li>Make any necessary edits</li>
-                        <li>Save your changes</li>
-                        <li>Submit for admin approval</li>
-                      </ol>
+                  </div>
+                )}
+                {Array.isArray(previewData?.valuation_data?.methods) && previewData.valuation_data.methods.length > 0 && (
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 mb-3">Comparison Table</h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full table-fixed text-sm border border-gray-200 rounded-md overflow-hidden">
+                        <thead className="bg-gray-50 text-gray-700">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-medium w-[26%]">Method</th>
+                            <th className="px-3 py-2 text-left font-medium w-[16%]">Value</th>
+                            <th className="px-3 py-2 text-left font-medium w-[24%]">Conditions</th>
+                            <th className="px-3 py-2 text-left font-medium w-[18%]">Timeline</th>
+                            <th className="px-3 py-2 text-left font-medium w-[16%]">Use Case</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previewData.valuation_data.methods.map((m: any, i: number) => (
+                            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                              <td className="px-3 py-2 align-top">
+                                <div className="mb-1">
+                                  <input
+                                    type="text"
+                                    value={m.fullName || ""}
+                                    onChange={(e) => updateValuationMethod(i, "fullName", e.target.value)}
+                                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                                    placeholder="Full method name"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="inline-flex items-center rounded-md bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 text-[11px] font-semibold">{m.method || "—"}</span>
+                                  <span className="text-[11px] text-gray-500">Code</span>
+                                </div>
+                                <textarea
+                                  value={m.description || ""}
+                                  onChange={(e) => updateValuationMethod(i, "description", e.target.value)}
+                                  className="mt-1 w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-xs leading-5 resize-none min-h-[56px]"
+                                  placeholder="Short description"
+                                  rows={2}
+                                />
+                              </td>
+                              <td className="px-3 py-2 align-top">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-600">{previewData?.currency || 'CAD'}</span>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={Number(m.value || 0)}
+                                    onChange={(e) => updateValuationMethod(i, "value", Number(e.target.value))}
+                                    className="w-44 px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm tabular-nums"
+                                  />
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 align-top">
+                                <textarea
+                                  value={m.saleConditions || ""}
+                                  onChange={(e) => updateValuationMethod(i, "saleConditions", e.target.value)}
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-xs leading-5 resize-none min-h-[56px]"
+                                  placeholder="Conditions"
+                                  rows={2}
+                                />
+                              </td>
+                              <td className="px-3 py-2 align-top">
+                                <input
+                                  type="text"
+                                  value={m.timeline || ""}
+                                  onChange={(e) => updateValuationMethod(i, "timeline", e.target.value)}
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                                  placeholder="Timeline"
+                                />
+                              </td>
+                              <td className="px-3 py-2 align-top">
+                                <input
+                                  type="text"
+                                  value={m.useCase || ""}
+                                  onChange={(e) => updateValuationMethod(i, "useCase", e.target.value)}
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                                  placeholder="Use Case"
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
               </>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                No valuation data selected for this report
+              </div>
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+          {/* Summary */}
+          <div className="mt-6 space-y-6 max-w-5xl mx-auto">
+            <div className="p-6 bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-xl">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Report Summary
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Client</p>
+                  <p className="font-semibold text-gray-900">
+                    {previewData?.client_name || "Not specified"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Owner</p>
+                  <p className="font-semibold text-gray-900">
+                    {previewData?.owner_name || "Not specified"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Effective Date</p>
+                  <p className="font-semibold text-gray-900">
+                    {previewData?.effective_date?.split("T")[0] || "Not set"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Inspection Date</p>
+                  <p className="font-semibold text-gray-900">
+                    {previewData?.inspection_date?.split("T")[0] || "Not set"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Industry</p>
+                  <p className="font-semibold text-gray-900">
+                    {previewData?.industry || "Not specified"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total Lots</p>
+                  <p className="font-semibold text-gray-900">
+                    {previewData?.lots?.length || 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Currency</p>
+                  <p className="font-semibold text-gray-900">
+                    {previewData?.currency || "CAD"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <h4 className="font-semibold text-gray-900 mb-2">Next Steps</h4>
+              <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+                <li>Review the data</li>
+                <li>Make any necessary edits</li>
+                <li>Save your changes</li>
+                <li>Submit for admin approval</li>
+              </ol>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-gray-200 pt-4">
             <button
               onClick={onClose}
               className="order-2 sm:order-1 px-4 py-2.5 text-gray-700 hover:text-gray-900 font-medium transition-colors hover:bg-white rounded-lg"
@@ -807,6 +730,7 @@ export default function PreviewModal({
               <button
                 onClick={handleSaveChanges}
                 disabled={!hasChanges || saving}
+                aria-label="Save changes"
                 className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all shadow-md hover:shadow-lg text-sm sm:text-base"
               >
                 <Save className="h-4 w-4" />
@@ -816,6 +740,7 @@ export default function PreviewModal({
               <button
                 onClick={handleSubmitForApproval}
                 disabled={hasChanges || submitting || loading}
+                aria-label="Submit for approval"
                 className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg hover:from-rose-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg shadow-rose-500/30 transition-all hover:shadow-xl text-sm sm:text-base"
               >
                 <Send className="h-4 w-4" />
@@ -824,8 +749,8 @@ export default function PreviewModal({
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </BottomDrawer>
   );
 }

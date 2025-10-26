@@ -1363,6 +1363,17 @@ export default function MixedSection({
                 </div>
               </div>
 
+              {(!lots[activeIdx]?.mode) && (
+                <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700">
+                  <span className="font-medium">Required:</span> Select a mode for this lot
+                </div>
+              )}
+              {((lots[activeIdx]?.files?.length ?? 0) === 0) && (
+                <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700">
+                  <span className="font-medium">Required:</span> Add 1–30 images
+                </div>
+              )}
+
               {/* Mode selection */}
               <div className="mt-3 flex flex-wrap gap-2">
                 {(["single_lot", "per_item", "per_photo"] as MixedMode[]).map(
