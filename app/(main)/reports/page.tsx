@@ -168,27 +168,38 @@ export default function ReportsPage() {
         : "";
 
       const addressBase = (ar as any).client_name || (ar as any).preview_data?.client_name || "Asset Report";
-      const merged: ReportGroup = existing
-        ? {
-            ...existing,
-            address: `${addressBase} ${statusText ? `(${statusText})` : ""}`,
-            filename: existing.filename || `${addressBase}.docx`,
-            contract_no: existing.contract_no || (ar as any).contract_no || (ar as any).preview_data?.contract_no,
-            approvalStatus: (ar as any).status === "approved" ? "approved" : existing.approvalStatus || "pending",
-            type: existing.type || "Asset",
-            fairMarketValue: existing.fairMarketValue || fmvStr || currency,
-          }
-        : {
-            key,
-            address: `${addressBase} ${statusText ? `(${statusText})` : ""}`,
-            filename: `${addressBase}.docx`,
-            fairMarketValue: fmvStr || currency,
-            createdAt: ar.createdAt,
-            contract_no: (ar as any).contract_no || (ar as any).preview_data?.contract_no,
-            approvalStatus: (ar as any).status === "approved" ? "approved" : "pending",
-            type: "Asset",
-            variants: {} as ReportGroup["variants"],
-          } as ReportGroup;
+      let merged: ReportGroup;
+      if (existing) {
+        merged = {
+          ...existing,
+          address: `${addressBase} ${statusText ? `(${statusText})` : ""}`,
+          filename: existing.filename || `${addressBase}.docx`,
+          contract_no:
+            existing.contract_no ||
+            (ar as any).contract_no ||
+            (ar as any).preview_data?.contract_no,
+          approvalStatus:
+            (ar as any).status === "approved"
+              ? "approved"
+              : existing.approvalStatus || "pending",
+          type: existing.type || "Asset",
+          fairMarketValue: existing.fairMarketValue || fmvStr || currency,
+        };
+      } else {
+        merged = {
+          key,
+          address: `${addressBase} ${statusText ? `(${statusText})` : ""}`,
+          filename: `${addressBase}.docx`,
+          fairMarketValue: fmvStr || currency,
+          createdAt: ar.createdAt,
+          contract_no:
+            (ar as any).contract_no || (ar as any).preview_data?.contract_no,
+          approvalStatus:
+            (ar as any).status === "approved" ? "approved" : "pending",
+          type: "Asset",
+          variants: {} as ReportGroup["variants"],
+        };
+      }
       map.set(key, merged);
     }
 
