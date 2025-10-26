@@ -187,7 +187,7 @@ export default function ReportsPage() {
             contract_no: (ar as any).contract_no || (ar as any).preview_data?.contract_no,
             approvalStatus: (ar as any).status === "approved" ? "approved" : "pending",
             type: "Asset",
-            variants: existing?.variants || {},
+            variants: {} as ReportGroup["variants"],
           } as ReportGroup;
       map.set(key, merged);
     }
