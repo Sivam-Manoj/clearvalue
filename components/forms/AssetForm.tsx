@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, Fragment } from "react";
+import { useEffect, useRef, useState, Fragment, useImperativeHandle, forwardRef } from "react";
 import dynamic from "next/dynamic";
 import {
   AssetService,
   type AssetCreateDetails,
   type AssetGroupingMode,
 } from "@/services/asset";
-import { Check } from "lucide-react";
+import { SavedInputService, type SavedInput } from "@/services/savedInputs";
+import { Check, Save } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuthContext } from "@/context/AuthContext";
 
@@ -27,6 +28,10 @@ type Props = {
   onCancel?: () => void;
 };
 
+export type AssetFormHandle = {
+  loadSavedInput: (savedInput: SavedInput) => void;
+};
+
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
 const DRAFT_KEY = "cv_asset_draft";
@@ -44,7 +49,7 @@ const MAX_NON_CAT_IMAGES = 10;
 //   },
 // ];
 
-export default function AssetForm({ onSuccess, onCancel }: Props) {
+const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSuccess, onCancel }, ref) {
   const { user } = useAuthContext();
   const [grouping, setGrouping] = useState<AssetGroupingMode>("mixed" as any);
   const [images, setImages] = useState<File[]>([]);
@@ -273,10 +278,15 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
     } catch {}
   }
 
-  function saveDraft() {
+  async function saveInputs() {
+    const name = prompt("Enter a name for this saved input:");
+    if (!name || !name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+
     try {
-      const draft = {
-        grouping,
+      const formData = {
         clientName,
         effectiveDate,
         appraisalPurpose,
@@ -290,99 +300,72 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
         currency,
         includeValuationTable,
         selectedValuationMethods,
-        // Store catalogue meta (counts and covers) but not binary images
-        catalogueLots: catalogueLots.map((l) => ({
-          coverIndex: l.coverIndex,
-          count: l.files.length,
-        })),
-        imagesCount: images.length,
-        savedAt: new Date().toISOString(),
+        groupingMode: grouping,
+        combinedModes,
       };
-      if (typeof localStorage !== "undefined") {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-        toast.success("Draft saved for later.");
-      }
-    } catch (e) {
-      toast.error("Failed to save draft.");
+
+      await SavedInputService.create({
+        name: name.trim(),
+        formData,
+      });
+
+      toast.success("Inputs saved successfully!");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to save inputs");
     }
   }
 
-  // Restore a saved draft: only metadata (images are not persisted)
-  function restoreDraft(draft: any) {
+  // Load saved input from history
+  function loadSavedInput(savedInput: SavedInput) {
     try {
-      if (!draft) return;
+      const fd = savedInput.formData;
+      if (!fd) return;
+
       // For Mixed-only mode, ignore any saved grouping and force 'mixed'
       setGrouping("mixed" as any);
-      if (typeof draft.clientName === "string") setClientName(draft.clientName);
-      if (typeof draft.effectiveDate === "string")
-        setEffectiveDate(draft.effectiveDate);
-      if (typeof draft.appraisalPurpose === "string")
-        setAppraisalPurpose(draft.appraisalPurpose);
-      if (typeof draft.ownerName === "string") setOwnerName(draft.ownerName);
-      if (typeof draft.appraiser === "string") setAppraiser(draft.appraiser);
-      if (typeof draft.appraisalCompany === "string")
-        setAppraisalCompany(draft.appraisalCompany);
-      if (typeof draft.industry === "string") setIndustry(draft.industry);
-      if (typeof draft.inspectionDate === "string")
-        setInspectionDate(draft.inspectionDate);
-      if (typeof draft.contractNo === "string") setContractNo(draft.contractNo);
-      if (
-        draft.language === "en" ||
-        draft.language === "fr" ||
-        draft.language === "es"
-      )
-        setLanguage(draft.language);
-      if (typeof draft.currency === "string" && draft.currency.trim())
-        setCurrency(draft.currency.trim());
-      if (typeof draft.includeValuationTable === "boolean")
-        setIncludeValuationTable(draft.includeValuationTable);
-      if (Array.isArray(draft.selectedValuationMethods))
-        setSelectedValuationMethods(draft.selectedValuationMethods);
-      toast.success("Draft restored.");
-    } catch {}
+      if (typeof fd.clientName === "string") setClientName(fd.clientName);
+      if (typeof fd.effectiveDate === "string") setEffectiveDate(fd.effectiveDate);
+      if (typeof fd.appraisalPurpose === "string") setAppraisalPurpose(fd.appraisalPurpose);
+      if (typeof fd.ownerName === "string") setOwnerName(fd.ownerName);
+      if (typeof fd.appraiser === "string") setAppraiser(fd.appraiser);
+      if (typeof fd.appraisalCompany === "string") setAppraisalCompany(fd.appraisalCompany);
+      if (typeof fd.industry === "string") setIndustry(fd.industry);
+      if (typeof fd.inspectionDate === "string") setInspectionDate(fd.inspectionDate);
+      if (typeof fd.contractNo === "string") setContractNo(fd.contractNo);
+      if (fd.language === "en" || fd.language === "fr" || fd.language === "es")
+        setLanguage(fd.language);
+      if (typeof fd.currency === "string" && fd.currency.trim())
+        setCurrency(fd.currency.trim());
+      if (typeof fd.includeValuationTable === "boolean")
+        setIncludeValuationTable(fd.includeValuationTable);
+      if (Array.isArray(fd.selectedValuationMethods))
+        setSelectedValuationMethods(fd.selectedValuationMethods as any);
+      if (Array.isArray(fd.combinedModes))
+        setCombinedModes(fd.combinedModes as any);
+
+      toast.success(`Loaded: ${savedInput.name}`);
+    } catch (error) {
+      toast.error("Failed to load saved input");
+    }
   }
-  const restorePromptedRef = useRef(false);
+
+  // Expose loadSavedInput method to parent via ref
+  useImperativeHandle(ref, () => ({
+    loadSavedInput,
+  }));
+
+  // Listen for global event to load saved input (from Navbar)
   useEffect(() => {
-    if (restorePromptedRef.current) return;
-    try {
-      if (typeof localStorage === "undefined") return;
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (!raw) return;
-      restorePromptedRef.current = true;
-      const draft = JSON.parse(raw);
-      const savedAt = draft?.savedAt ? new Date(draft.savedAt) : null;
-      const timeStr = savedAt ? savedAt.toLocaleString() : "";
-      const tid = toast.info(
-        <div className="space-y-2">
-          <div className="text-sm">
-            Found a saved draft {timeStr && `from ${timeStr}`}. Restore it?
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="rounded-md border border-gray-200 bg-white/90 px-2 py-1 text-xs text-gray-700 shadow"
-              onClick={() => {
-                restoreDraft(draft);
-                toast.dismiss(tid);
-              }}
-            >
-              Restore
-            </button>
-            <button
-              type="button"
-              className="rounded-md border border-gray-200 bg-white/90 px-2 py-1 text-xs text-gray-700 shadow"
-              onClick={() => {
-                localStorage.removeItem(DRAFT_KEY);
-                toast.dismiss(tid);
-              }}
-            >
-              Discard
-            </button>
-          </div>
-        </div>,
-        { autoClose: false }
-      ) as any;
-    } catch {}
+    const handler = (e: CustomEvent) => {
+      const savedInput = e.detail;
+      if (savedInput) {
+        loadSavedInput(savedInput);
+      }
+    };
+    window.addEventListener("load-saved-input" as any, handler as any);
+    return () => {
+      window.removeEventListener("load-saved-input" as any, handler as any);
+    };
   }, []);
   // Fallback helper: detect currency from browser locale
   const applyLocaleFallbackCurrency = () => {
@@ -1143,10 +1126,11 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
             </section>
             <button
               type="button"
-              className="rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
-              onClick={saveDraft}
+              className="inline-flex items-center gap-2 rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+              onClick={saveInputs}
             >
-              Save for later
+              <Save className="h-4 w-4" />
+              Save Inputs
             </button>
             <button
               type="button"
@@ -1168,4 +1152,6 @@ export default function AssetForm({ onSuccess, onCancel }: Props) {
       </div>
     </form>
   );
-}
+});
+
+export default AssetForm;

@@ -66,6 +66,19 @@ export default function SettingsPage() {
 
   const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null;
+    if (!f) {
+      setCvFile(null);
+      return;
+    }
+    const nameOk = f.name?.toLowerCase().endsWith(".docx");
+    const typeOk =
+      f.type ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    if (!nameOk || !typeOk) {
+      setCvFile(null);
+      toast.error("Only .docx files are allowed.");
+      return;
+    }
     setCvFile(f);
   };
 
@@ -383,7 +396,7 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-base font-semibold text-rose-900">Appraiser CV</h2>
               <p className="mt-1 text-sm text-rose-700/80">
-                Upload your CV. The link will appear on the last page of your reports.
+                Upload your CV (.docx). It will be appended to the last pages of your reports.
               </p>
             </div>
           </div>
@@ -423,7 +436,7 @@ export default function SettingsPage() {
               <div className="mt-1 flex items-center gap-2">
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   onChange={handleCvChange}
                   className="block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-rose-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-rose-500"
                 />

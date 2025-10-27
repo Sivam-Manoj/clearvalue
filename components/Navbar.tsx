@@ -10,8 +10,14 @@ import {
   Menu,
   X,
   Eye,
+  Clock,
 } from "lucide-react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
+
+const InputsHistoryModal = dynamic(() => import("@/components/modals/InputsHistoryModal"), {
+  ssr: false,
+});
 
 type NavItem = {
   label: string;
@@ -49,6 +55,7 @@ function classNames(...classes: Array<string | false | undefined>) {
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [showInputsHistory, setShowInputsHistory] = useState(false);
 
   const isActive = (href: string) =>
     pathname === href || pathname?.startsWith(href + "/");
@@ -89,6 +96,15 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
+          <button
+            onClick={() => setShowInputsHistory(true)}
+            className="group inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all duration-200 text-gray-700 hover:bg-rose-50 hover:text-rose-700"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 group-hover:from-rose-400 group-hover:to-rose-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-rose-500/30">
+              <Clock className="h-4 w-4" />
+            </div>
+            <span>Inputs History</span>
+          </button>
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -174,6 +190,18 @@ export default function Navbar() {
             </button>
           </div>
           <nav className="px-4 py-3 flex flex-col gap-1">
+            <button
+              onClick={() => {
+                setShowInputsHistory(true);
+                setOpen(false);
+              }}
+              className="group inline-flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 text-gray-700 hover:bg-rose-50 hover:text-rose-700"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 group-hover:from-rose-400 group-hover:to-rose-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-rose-500/40">
+                <Clock className="h-5 w-5" />
+              </div>
+              <span>Inputs History</span>
+            </button>
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -203,6 +231,15 @@ export default function Navbar() {
           </nav>
         </aside>
       </div>
+
+      {/* Inputs History Modal */}
+      <InputsHistoryModal
+        isOpen={showInputsHistory}
+        onClose={() => setShowInputsHistory(false)}
+        onLoadInput={() => {
+          // This will be handled in AssetForm
+        }}
+      />
     </header>
   );
 }
