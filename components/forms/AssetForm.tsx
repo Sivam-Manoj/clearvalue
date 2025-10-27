@@ -123,7 +123,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
     useState<boolean>(false);
   const [selectedValuationMethods, setSelectedValuationMethods] = useState<
     Array<"FML" | "TKV" | "OLV" | "FLV">
-  >(["FML", "OLV"]);
+  >(["FML"]);
 
   // Progress UI state
   const PROG_WEIGHTS = {
@@ -231,7 +231,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
       setCurrencyLoading(false);
       currencyPromptedRef.current = false;
       setIncludeValuationTable(false);
-      setSelectedValuationMethods(["FML", "OLV"]);
+      setSelectedValuationMethods(["FML"]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.info("Form cleared.");
     } catch {}
@@ -261,7 +261,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
       setCurrencyLoading(false);
       currencyPromptedRef.current = false;
       setIncludeValuationTable(false);
-      setSelectedValuationMethods(["FML", "OLV"]);
+      setSelectedValuationMethods(["FML"]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       // Reset progress UI state
       setProgressPhase("idle");
@@ -279,13 +279,17 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
   }
 
   async function saveInputs() {
-    const name = prompt("Enter a name for this saved input:");
-    if (!name || !name.trim()) {
-      toast.error("Name is required");
-      return;
-    }
-
     try {
+      // Auto-generate name based on client name and date
+      const baseName = clientName.trim() || "Unnamed";
+      const dateStr = new Date().toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const autoName = `${baseName} - ${dateStr}`;
+
       const formData = {
         clientName,
         effectiveDate,
@@ -305,7 +309,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
       };
 
       await SavedInputService.create({
-        name: name.trim(),
+        name: autoName,
         formData,
       });
 
@@ -1012,7 +1016,12 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                           if (e.target.checked) {
                             setSelectedValuationMethods([...selectedValuationMethods, "FML"]);
                           } else {
-                            setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "FML"));
+                            // Prevent unchecking if it's the only selected method
+                            if (selectedValuationMethods.length > 1) {
+                              setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "FML"));
+                            } else {
+                              toast.warning("At least one valuation method must be selected");
+                            }
                           }
                           if (errors.valuation_methods) clearError('valuation_methods');
                         }}
@@ -1037,7 +1046,12 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                           if (e.target.checked) {
                             setSelectedValuationMethods([...selectedValuationMethods, "TKV"]);
                           } else {
-                            setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "TKV"));
+                            // Prevent unchecking if it's the only selected method
+                            if (selectedValuationMethods.length > 1) {
+                              setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "TKV"));
+                            } else {
+                              toast.warning("At least one valuation method must be selected");
+                            }
                           }
                         }}
                         className="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
@@ -1061,7 +1075,12 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                           if (e.target.checked) {
                             setSelectedValuationMethods([...selectedValuationMethods, "OLV"]);
                           } else {
-                            setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "OLV"));
+                            // Prevent unchecking if it's the only selected method
+                            if (selectedValuationMethods.length > 1) {
+                              setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "OLV"));
+                            } else {
+                              toast.warning("At least one valuation method must be selected");
+                            }
                           }
                         }}
                         className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -1085,7 +1104,12 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                           if (e.target.checked) {
                             setSelectedValuationMethods([...selectedValuationMethods, "FLV"]);
                           } else {
-                            setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "FLV"));
+                            // Prevent unchecking if it's the only selected method
+                            if (selectedValuationMethods.length > 1) {
+                              setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "FLV"));
+                            } else {
+                              toast.warning("At least one valuation method must be selected");
+                            }
                           }
                         }}
                         className="mt-0.5 h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500"

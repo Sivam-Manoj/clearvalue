@@ -80,6 +80,21 @@ export default function DashboardPage() {
   const [now, setNow] = useState<Date>(new Date());
   const [mounted, setMounted] = useState(false);
 
+  // Listen for load-saved-input event to open asset drawer
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const savedInput = e.detail;
+      if (savedInput) {
+        setDrawerType("asset");
+        setDrawerOpen(true);
+      }
+    };
+    window.addEventListener("load-saved-input" as any, handler as any);
+    return () => {
+      window.removeEventListener("load-saved-input" as any, handler as any);
+    };
+  }, []);
+
   const fetchRecent = useCallback(async () => {
     setRecentLoading(true);
     setRecentError(null);

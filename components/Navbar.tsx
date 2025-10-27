@@ -37,14 +37,14 @@ const navItems: NavItem[] = [
     icon: (p) => <Eye className={p.className} />,
   },
   {
-    label: "Reports",
-    href: "/reports",
-    icon: (p) => <FileText className={p.className} />,
-  },
-  {
     label: "Settings",
     href: "/settings",
     icon: (p) => <SettingsIcon className={p.className} />,
+  },
+  {
+    label: "Reports",
+    href: "/reports",
+    icon: (p) => <FileText className={p.className} />,
   },
 ];
 
@@ -96,6 +96,32 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
+          {navItems.slice(0, 3).map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isActive(item.href) ? "page" : undefined}
+              className={classNames(
+                "group inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all duration-200",
+                isActive(item.href)
+                  ? "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
+                  : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
+              )}
+            >
+              <div className={classNames(
+                "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
+                isActive(item.href)
+                  ? "bg-gradient-to-br from-rose-400 to-rose-600 text-white shadow-md shadow-rose-500/30"
+                  : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 group-hover:from-rose-400 group-hover:to-rose-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-rose-500/30"
+              )}>
+                {item.icon({
+                  className: "h-4 w-4",
+                })}
+              </div>
+              <span>{item.label}</span>
+            </Link>
+          ))}
+          
           <button
             onClick={() => setShowInputsHistory(true)}
             className="group inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all duration-200 text-gray-700 hover:bg-rose-50 hover:text-rose-700"
@@ -105,7 +131,8 @@ export default function Navbar() {
             </div>
             <span>Inputs History</span>
           </button>
-          {navItems.map((item) => (
+
+          {navItems.slice(3).map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -190,6 +217,33 @@ export default function Navbar() {
             </button>
           </div>
           <nav className="px-4 py-3 flex flex-col gap-1">
+            {navItems.slice(0, 3).map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={classNames(
+                  "group inline-flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200",
+                  isActive(item.href)
+                    ? "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
+                    : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
+                )}
+              >
+                <div className={classNames(
+                  "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200",
+                  isActive(item.href)
+                    ? "bg-gradient-to-br from-rose-400 to-rose-600 text-white shadow-lg shadow-rose-500/40"
+                    : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 group-hover:from-rose-400 group-hover:to-rose-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-rose-500/40"
+                )}>
+                  {item.icon({
+                    className: "h-5 w-5",
+                  })}
+                </div>
+                <span>{item.label}</span>
+              </Link>
+            ))}
+
             <button
               onClick={() => {
                 setShowInputsHistory(true);
@@ -202,7 +256,8 @@ export default function Navbar() {
               </div>
               <span>Inputs History</span>
             </button>
-            {navItems.map((item) => (
+
+            {navItems.slice(3).map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
