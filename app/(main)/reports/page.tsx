@@ -53,6 +53,33 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
+    const handler = () => {
+      setLoading(true);
+      setAssetReportsLoading(true);
+      Promise.allSettled([
+        ReportsService.getMyReports().then((data) => setReports(data)),
+        getAssetReports().then((response) => {
+          const visible = response.data.filter(
+            (report) => report.status === "approved" || report.status === "pending_approval"
+          );
+          setAssetReports(visible);
+        }),
+      ]).finally(() => {
+        setLoading(false);
+        setAssetReportsLoading(false);
+      });
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("cv:report-created", handler as any);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("cv:report-created", handler as any);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -542,7 +569,7 @@ export default function ReportsPage() {
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm">
               {error}
             </div>
-          ) : reports.length === 0 ? (
+          ) : (filteredGroups.length === 0 && assetReports.length === 0) ? (
             <div className="relative overflow-hidden rounded-2xl border border-dashed border-slate-200 bg-white p-8 sm:p-10 text-center shadow-sm">
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-100 text-sky-600 ring-1 ring-sky-100 shadow-inner">
                 <FileText className="h-7 w-7" />
