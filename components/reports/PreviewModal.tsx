@@ -166,6 +166,37 @@ export default function PreviewModal({
     setHasChanges(true);
   };
 
+  // Group lots by mixed_group_index and determine sub-mode label
+  const lotsArray: any[] = Array.isArray(previewData?.lots) ? previewData.lots : [];
+  const groupMap = new Map<number, { idx: number; lot: any }[]>();
+  for (let i = 0; i < lotsArray.length; i++) {
+    const lot = lotsArray[i];
+    const gi = Number(lot?.mixed_group_index) || 0;
+    if (!groupMap.has(gi)) groupMap.set(gi, []);
+    groupMap.get(gi)!.push({ idx: i, lot });
+  }
+  const groupIds = Array.from(groupMap.keys()).sort((a, b) => a - b);
+  const labelForSubMode = (m?: string) => {
+    const sm = String(m || "").trim();
+    if (sm === "per_item") return "Per Item";
+    if (sm === "per_photo") return "Per Photo";
+    if (sm === "single_lot") return "Bundle";
+    // fallback to groupingMode string
+    const gm = String(groupingMode || previewData?.grouping_mode || "mixed");
+    if (gm === "per_item") return "Per Item";
+    if (gm === "per_photo") return "Per Photo";
+    if (gm === "single_lot") return "Bundle";
+    return "Assets";
+  };
+  const groupedLots = groupIds.map((gid) => {
+    const items = groupMap.get(gid) || [];
+    const first = items[0]?.lot || {};
+    const inferredMode =
+      first?.sub_mode ||
+      ((first?.tags || []).find?.((t: string) => typeof t === "string" && t.startsWith("mode:"))?.split?.(":")?.[1] || undefined);
+    return { gid, subMode: inferredMode, items };
+  });
+
   return (
     <BottomDrawer open={isOpen} onClose={onClose} title="Preview & Edit Report">
       {status === "declined" && declineReason && (
@@ -392,112 +423,130 @@ export default function PreviewModal({
           {/* Assets/Lots */}
           <div className="mt-6 space-y-4 max-w-5xl mx-auto">
             <h3 className="text-base sm:text-lg font-bold text-gray-900">Assets / Lots</h3>
-            {previewData?.lots?.length ? (
+            {groupedLots.length ? (
               <>
-                <div className="md:hidden space-y-3">
-                  {previewData.lots.map((lot: any, index: number) => (
-                    <div key={index} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-sm font-semibold text-gray-900">Lot {String(lot.lot_id || index + 1)}</div>
-                        <button
-                          onClick={() => deleteLot(index)}
-                          aria-label={`Delete lot ${index + 1}`}
-                          className="px-2 py-1 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 text-xs"
-                        >
-                          Delete
-                        </button>
+                {/* Mobile: card list grouped by sub-mode */}
+                <div className="md:hidden space-y-5">
+                  {groupedLots.map((group) => (
+                    <div key={group.gid}>
+                      <div className="mb-2 text-sm font-semibold text-gray-900">
+                        Group {group.gid || 1} — {labelForSubMode(group.subMode)} ({group.items.length})
                       </div>
-                      <div className="space-y-2">
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Title</label>
-                          <input
-                            type="text"
-                            value={lot.title || ""}
-                            onChange={(e) => updateLot(index, "title", e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
-                            placeholder="Title"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Description</label>
-                          <textarea
-                            value={lot.description || ""}
-                            onChange={(e) => updateLot(index, "description", e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[72px]"
-                            placeholder="Short description"
-                            rows={3}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">Value</label>
-                          <input
-                            type="text"
-                            value={lot.estimated_value || ""}
-                            onChange={(e) => updateLot(index, "estimated_value", e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
-                            placeholder="e.g., $25,000"
-                          />
-                        </div>
+                      <div className="space-y-3">
+                        {group.items.map(({ lot, idx }) => (
+                          <div key={idx} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-sm font-semibold text-gray-900">Lot {String(lot.lot_id || idx + 1)}</div>
+                              <button
+                                onClick={() => deleteLot(idx)}
+                                aria-label={`Delete lot ${idx + 1}`}
+                                className="px-2 py-1 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 text-xs"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">Title</label>
+                                <input
+                                  type="text"
+                                  value={lot.title || ""}
+                                  onChange={(e) => updateLot(idx, "title", e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                                  placeholder="Title"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">Description</label>
+                                <textarea
+                                  value={lot.description || ""}
+                                  onChange={(e) => updateLot(idx, "description", e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[72px]"
+                                  placeholder="Short description"
+                                  rows={3}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">Value</label>
+                                <input
+                                  type="text"
+                                  value={lot.estimated_value || ""}
+                                  onChange={(e) => updateLot(idx, "estimated_value", e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                                  placeholder="e.g., $25,000"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
-                    <thead className="bg-gray-50 text-gray-700">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Lot #</th>
-                        <th className="px-3 py-2 text-left">Title</th>
-                        <th className="px-3 py-2 text-left">Description</th>
-                        <th className="px-3 py-2 text-left">Value</th>
-                        <th className="px-3 py-2 text-left">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewData.lots.map((lot: any, index: number) => (
-                        <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                          <td className="px-3 py-2 text-gray-800 font-medium">{String(lot.lot_id || index + 1)}</td>
-                          <td className="px-3 py-2">
-                            <input
-                              type="text"
-                              value={lot.title || ""}
-                              onChange={(e) => updateLot(index, "title", e.target.value)}
-                              className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
-                              placeholder="Title"
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <textarea
-                              value={lot.description || ""}
-                              onChange={(e) => updateLot(index, "description", e.target.value)}
-                              className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[56px]"
-                              placeholder="Short description"
-                              rows={2}
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <input
-                              type="text"
-                              value={lot.estimated_value || ""}
-                              onChange={(e) => updateLot(index, "estimated_value", e.target.value)}
-                              className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
-                              placeholder="e.g., $25,000"
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <button
-                              onClick={() => deleteLot(index)}
-                              aria-label={`Delete lot ${index + 1}`}
-                              className="px-2.5 py-1.5 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 text-xs"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Desktop: table per group */}
+                <div className="hidden md:block space-y-6">
+                  {groupedLots.map((group) => (
+                    <div key={group.gid} className="overflow-x-auto">
+                      <div className="mb-2 text-sm font-semibold text-gray-900">
+                        Group {group.gid || 1} — {labelForSubMode(group.subMode)} ({group.items.length})
+                      </div>
+                      <table className="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                        <thead className="bg-gray-50 text-gray-700">
+                          <tr>
+                            <th className="px-3 py-2 text-left">Lot #</th>
+                            <th className="px-3 py-2 text-left">Title</th>
+                            <th className="px-3 py-2 text-left">Description</th>
+                            <th className="px-3 py-2 text-left">Value</th>
+                            <th className="px-3 py-2 text-left">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.items.map(({ lot, idx }, i) => (
+                            <tr key={idx} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                              <td className="px-3 py-2 text-gray-800 font-medium">{String(lot.lot_id || idx + 1)}</td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="text"
+                                  value={lot.title || ""}
+                                  onChange={(e) => updateLot(idx, "title", e.target.value)}
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                                  placeholder="Title"
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <textarea
+                                  value={lot.description || ""}
+                                  onChange={(e) => updateLot(idx, "description", e.target.value)}
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[56px]"
+                                  placeholder="Short description"
+                                  rows={2}
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="text"
+                                  value={lot.estimated_value || ""}
+                                  onChange={(e) => updateLot(idx, "estimated_value", e.target.value)}
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
+                                  placeholder="e.g., $25,000"
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <button
+                                  onClick={() => deleteLot(idx)}
+                                  aria-label={`Delete lot ${idx + 1}`}
+                                  className="px-2.5 py-1.5 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 text-xs"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
                 </div>
               </>
             ) : (
