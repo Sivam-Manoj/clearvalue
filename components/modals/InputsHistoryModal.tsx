@@ -89,7 +89,7 @@ export default function InputsHistoryModal({ isOpen, onClose, onLoadInput }: Pro
               <FileText className="h-6 w-6 text-rose-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Inputs History</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Drafts Inputs</h2>
               <p className="text-sm text-gray-600 mt-0.5">
                 {savedInputs.length} saved {savedInputs.length === 1 ? "input" : "inputs"}
               </p>

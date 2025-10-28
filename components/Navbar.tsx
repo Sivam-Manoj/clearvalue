@@ -264,7 +264,7 @@ export default function Navbar() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 group-hover:from-rose-400 group-hover:to-rose-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-rose-500/40">
                 <Clock className="h-5 w-5" />
               </div>
-              <span>Inputs History</span>
+              <span>Drafts</span>
             </button>
 
             {navItems.slice(3).map((item) => (
