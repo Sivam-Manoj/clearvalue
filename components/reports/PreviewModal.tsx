@@ -96,6 +96,33 @@ export default function PreviewModal({
     setHasChanges(true);
   };
 
+  // Normalize currency prefixes in display value strings without converting amounts
+  const handleCurrencyChange = (newCurrency: string) => {
+    const normalize = (val: any) => {
+      const s = String(val || "");
+      if (!s) return s;
+      // keep numeric part, dots and commas
+      const num = s.replace(/[^0-9.,-]/g, "").replace(/^,+/, "");
+      return num ? `${newCurrency} ${num}` : s;
+    };
+
+    setPreviewData((prev: any) => {
+      const next: any = { ...prev, currency: newCurrency };
+      if (next.total_appraised_value != null) {
+        next.total_appraised_value = normalize(next.total_appraised_value);
+      }
+      if (Array.isArray(next.lots)) {
+        next.lots = next.lots.map((lot: any) => ({
+          ...lot,
+          estimated_value: normalize(lot.estimated_value),
+        }));
+      }
+      // Leave valuation_data numeric fields untouched; UI shows currency label separately
+      return next;
+    });
+    setHasChanges(true);
+  };
+
   // Valuation editors (nested)
   const updateValuationBase = (base: number) => {
     setPreviewData((prev: any) => {
@@ -313,7 +340,7 @@ export default function PreviewModal({
                   </label>
                   <select
                     value={previewData?.currency || "CAD"}
-                    onChange={(e) => updateField("currency", e.target.value)}
+                    onChange={(e) => handleCurrencyChange(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
                   >
                     <option value="CAD">CAD - Canadian Dollar</option>
@@ -573,7 +600,7 @@ export default function PreviewModal({
               <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
                 <div className="text-6xl mb-4">📦</div>
                 <p className="text-gray-600 font-medium">No lots data available</p>
-                <p className="text-sm text-gray-500 mt-1">AI analysis didn't extract any lot information</p>
+                <p className="text-sm text-gray-500 mt-1">Software analysis didn't extract any lot information</p>
               </div>
             )}
           </div>
