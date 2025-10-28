@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, Fragment, useImperativeHandle, forwardRef } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  Fragment,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import dynamic from "next/dynamic";
 import {
   AssetService,
@@ -49,7 +56,10 @@ const MAX_NON_CAT_IMAGES = 10;
 //   },
 // ];
 
-const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSuccess, onCancel }, ref) {
+const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
+  { onSuccess, onCancel },
+  ref
+) {
   const { user } = useAuthContext();
   const [grouping, setGrouping] = useState<AssetGroupingMode>("mixed" as any);
   const [images, setImages] = useState<File[]>([]);
@@ -107,12 +117,15 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
     if (!effectiveDate) e.effectiveDate = "Required";
     if (!appraisalPurpose.trim()) e.appraisalPurpose = "Required";
     if (!appraiser.trim()) e.appraiser = "Required";
-    if (!currency || !/^[A-Z]{3}$/.test(currency)) e.currency = "Use 3-letter code (e.g., CAD)";
+    if (!currency || !/^[A-Z]{3}$/.test(currency))
+      e.currency = "Use 3-letter code (e.g., CAD)";
     if (includeValuationTable && selectedValuationMethods.length === 0)
       e.valuation_methods = "Select at least one method";
     setErrors(e);
     if (Object.keys(e).length > 0) {
-      try { toast.error("Please fix required fields"); } catch {}
+      try {
+        toast.error("Please fix required fields");
+      } catch {}
       return false;
     }
     return true;
@@ -328,13 +341,17 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
       // For Mixed-only mode, ignore any saved grouping and force 'mixed'
       setGrouping("mixed" as any);
       if (typeof fd.clientName === "string") setClientName(fd.clientName);
-      if (typeof fd.effectiveDate === "string") setEffectiveDate(fd.effectiveDate);
-      if (typeof fd.appraisalPurpose === "string") setAppraisalPurpose(fd.appraisalPurpose);
+      if (typeof fd.effectiveDate === "string")
+        setEffectiveDate(fd.effectiveDate);
+      if (typeof fd.appraisalPurpose === "string")
+        setAppraisalPurpose(fd.appraisalPurpose);
       if (typeof fd.ownerName === "string") setOwnerName(fd.ownerName);
       if (typeof fd.appraiser === "string") setAppraiser(fd.appraiser);
-      if (typeof fd.appraisalCompany === "string") setAppraisalCompany(fd.appraisalCompany);
+      if (typeof fd.appraisalCompany === "string")
+        setAppraisalCompany(fd.appraisalCompany);
       if (typeof fd.industry === "string") setIndustry(fd.industry);
-      if (typeof fd.inspectionDate === "string") setInspectionDate(fd.inspectionDate);
+      if (typeof fd.inspectionDate === "string")
+        setInspectionDate(fd.inspectionDate);
       if (typeof fd.contractNo === "string") setContractNo(fd.contractNo);
       if (fd.language === "en" || fd.language === "fr" || fd.language === "es")
         setLanguage(fd.language);
@@ -836,11 +853,22 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                   <input
                     type="text"
                     value={clientName}
-                    onChange={(e) => { setClientName(e.target.value); if (errors.clientName) clearError('clientName'); }}
+                    onChange={(e) => {
+                      setClientName(e.target.value);
+                      if (errors.clientName) clearError("clientName");
+                    }}
                     placeholder="e.g., Acme Corp"
-                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.clientName ? 'border-red-300 focus:ring-red-300' : ''}`}
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${
+                      errors.clientName
+                        ? "border-red-300 focus:ring-red-300"
+                        : ""
+                    }`}
                   />
-                  {errors.clientName && (<p className="text-xs text-red-600 mt-1">{errors.clientName}</p>)}
+                  {errors.clientName && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.clientName}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">
@@ -849,10 +877,21 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                   <input
                     type="date"
                     value={effectiveDate}
-                    onChange={(e) => { setEffectiveDate(e.target.value); if (errors.effectiveDate) clearError('effectiveDate'); }}
-                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.effectiveDate ? 'border-red-300 focus:ring-red-300' : ''}`}
+                    onChange={(e) => {
+                      setEffectiveDate(e.target.value);
+                      if (errors.effectiveDate) clearError("effectiveDate");
+                    }}
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${
+                      errors.effectiveDate
+                        ? "border-red-300 focus:ring-red-300"
+                        : ""
+                    }`}
                   />
-                  {errors.effectiveDate && (<p className="text-xs text-red-600 mt-1">{errors.effectiveDate}</p>)}
+                  {errors.effectiveDate && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.effectiveDate}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">
@@ -861,11 +900,23 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                   <input
                     type="text"
                     value={appraisalPurpose}
-                    onChange={(e) => { setAppraisalPurpose(e.target.value); if (errors.appraisalPurpose) clearError('appraisalPurpose'); }}
+                    onChange={(e) => {
+                      setAppraisalPurpose(e.target.value);
+                      if (errors.appraisalPurpose)
+                        clearError("appraisalPurpose");
+                    }}
                     placeholder="e.g., Insurance"
-                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.appraisalPurpose ? 'border-red-300 focus:ring-red-300' : ''}`}
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${
+                      errors.appraisalPurpose
+                        ? "border-red-300 focus:ring-red-300"
+                        : ""
+                    }`}
                   />
-                  {errors.appraisalPurpose && (<p className="text-xs text-red-600 mt-1">{errors.appraisalPurpose}</p>)}
+                  {errors.appraisalPurpose && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.appraisalPurpose}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">Owner Name</label>
@@ -882,11 +933,22 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                   <input
                     type="text"
                     value={appraiser}
-                    onChange={(e) => { setAppraiser(e.target.value); if (errors.appraiser) clearError('appraiser'); }}
+                    onChange={(e) => {
+                      setAppraiser(e.target.value);
+                      if (errors.appraiser) clearError("appraiser");
+                    }}
                     placeholder="e.g., Jane Smith"
-                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.appraiser ? 'border-red-300 focus:ring-red-300' : ''}`}
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${
+                      errors.appraiser
+                        ? "border-red-300 focus:ring-red-300"
+                        : ""
+                    }`}
                   />
-                  {errors.appraiser && (<p className="text-xs text-red-600 mt-1">{errors.appraiser}</p>)}
+                  {errors.appraiser && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.appraiser}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">
@@ -957,15 +1019,21 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                     onChange={(e) => {
                       setCurrencyTouched(true);
                       setCurrency(e.target.value.toUpperCase().slice(0, 3));
-                      if (errors.currency) clearError('currency');
+                      if (errors.currency) clearError("currency");
                     }}
                     disabled={currencyLoading && !currencyTouched}
                     placeholder={
                       currencyLoading ? "Detecting…" : "e.g., CAD, USD, EUR"
                     }
-                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.currency ? 'border-red-300 focus:ring-red-300' : ''}`}
+                    className={`w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 ${
+                      errors.currency ? "border-red-300 focus:ring-red-300" : ""
+                    }`}
                   />
-                  {errors.currency && (<p className="text-xs text-red-600 mt-1">{errors.currency}</p>)}
+                  {errors.currency && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.currency}
+                    </p>
+                  )}
                 </div>
               </div>
             </section>
@@ -1004,7 +1072,9 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                     Select valuation methods to compare:
                   </p>
                   {errors.valuation_methods && (
-                    <p className="text-xs text-red-600">{errors.valuation_methods}</p>
+                    <p className="text-xs text-red-600">
+                      {errors.valuation_methods}
+                    </p>
                   )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {/* FML */}
@@ -1014,16 +1084,26 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                         checked={selectedValuationMethods.includes("FML")}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedValuationMethods([...selectedValuationMethods, "FML"]);
+                            setSelectedValuationMethods([
+                              ...selectedValuationMethods,
+                              "FML",
+                            ]);
                           } else {
                             // Prevent unchecking if it's the only selected method
                             if (selectedValuationMethods.length > 1) {
-                              setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "FML"));
+                              setSelectedValuationMethods(
+                                selectedValuationMethods.filter(
+                                  (m) => m !== "FML"
+                                )
+                              );
                             } else {
-                              toast.warning("At least one valuation method must be selected");
+                              toast.warning(
+                                "At least one valuation method must be selected"
+                              );
                             }
                           }
-                          if (errors.valuation_methods) clearError('valuation_methods');
+                          if (errors.valuation_methods)
+                            clearError("valuation_methods");
                         }}
                         className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                       />
@@ -1032,7 +1112,8 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                           FML (Fair Market Value)
                         </div>
                         <div className="text-[11px] text-gray-600 mt-0.5">
-                          Appraised retail value for insurance or estate purposes
+                          Appraised retail value for insurance or estate
+                          purposes
                         </div>
                       </div>
                     </label>
@@ -1044,13 +1125,22 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                         checked={selectedValuationMethods.includes("TKV")}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedValuationMethods([...selectedValuationMethods, "TKV"]);
+                            setSelectedValuationMethods([
+                              ...selectedValuationMethods,
+                              "TKV",
+                            ]);
                           } else {
                             // Prevent unchecking if it's the only selected method
                             if (selectedValuationMethods.length > 1) {
-                              setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "TKV"));
+                              setSelectedValuationMethods(
+                                selectedValuationMethods.filter(
+                                  (m) => m !== "TKV"
+                                )
+                              );
                             } else {
-                              toast.warning("At least one valuation method must be selected");
+                              toast.warning(
+                                "At least one valuation method must be selected"
+                              );
                             }
                           }
                         }}
@@ -1073,13 +1163,22 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                         checked={selectedValuationMethods.includes("OLV")}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedValuationMethods([...selectedValuationMethods, "OLV"]);
+                            setSelectedValuationMethods([
+                              ...selectedValuationMethods,
+                              "OLV",
+                            ]);
                           } else {
                             // Prevent unchecking if it's the only selected method
                             if (selectedValuationMethods.length > 1) {
-                              setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "OLV"));
+                              setSelectedValuationMethods(
+                                selectedValuationMethods.filter(
+                                  (m) => m !== "OLV"
+                                )
+                              );
                             } else {
-                              toast.warning("At least one valuation method must be selected");
+                              toast.warning(
+                                "At least one valuation method must be selected"
+                              );
                             }
                           }
                         }}
@@ -1102,13 +1201,22 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm({ onSucc
                         checked={selectedValuationMethods.includes("FLV")}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedValuationMethods([...selectedValuationMethods, "FLV"]);
+                            setSelectedValuationMethods([
+                              ...selectedValuationMethods,
+                              "FLV",
+                            ]);
                           } else {
                             // Prevent unchecking if it's the only selected method
                             if (selectedValuationMethods.length > 1) {
-                              setSelectedValuationMethods(selectedValuationMethods.filter((m) => m !== "FLV"));
+                              setSelectedValuationMethods(
+                                selectedValuationMethods.filter(
+                                  (m) => m !== "FLV"
+                                )
+                              );
                             } else {
-                              toast.warning("At least one valuation method must be selected");
+                              toast.warning(
+                                "At least one valuation method must be selected"
+                              );
                             }
                           }
                         }}
