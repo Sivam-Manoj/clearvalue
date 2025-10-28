@@ -25,7 +25,9 @@ export default function PreviewsPage() {
       setReports(previewReports);
     } catch (err: any) {
       console.error("Failed to load preview reports:", err);
-      toast.error(err.response?.data?.message || "Failed to load preview reports");
+      toast.error(
+        err.response?.data?.message || "Failed to load preview reports"
+      );
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ export default function PreviewsPage() {
             Report Previews
           </h1>
           <p className="mt-2 text-sm sm:text-base text-slate-600">
-            Review AI-generated data and submit for approval
+            Review data and submit for approval
           </p>
         </div>
 
@@ -119,13 +121,17 @@ export default function PreviewsPage() {
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Total Assets</p>
+                          <p className="text-xs text-gray-500 mb-1">
+                            Total Assets
+                          </p>
                           <p className="text-lg font-semibold text-gray-900">
                             {report.lots?.length || 0}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Grouping Mode</p>
+                          <p className="text-xs text-gray-500 mb-1">
+                            Grouping Mode
+                          </p>
                           <p className="text-sm font-medium text-gray-700 capitalize">
                             {report.grouping_mode?.replace(/_/g, " ")}
                           </p>
@@ -145,19 +151,20 @@ export default function PreviewsPage() {
                       </div>
 
                       {/* Decline Reason */}
-                      {report.status === "declined" && report.decline_reason && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="font-semibold text-red-900 text-sm">
-                              Declined by Admin
-                            </p>
-                            <p className="text-sm text-red-700 mt-1">
-                              {report.decline_reason}
-                            </p>
+                      {report.status === "declined" &&
+                        report.decline_reason && (
+                          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-semibold text-red-900 text-sm">
+                                Declined by Admin
+                              </p>
+                              <p className="text-sm text-red-700 mt-1">
+                                {report.decline_reason}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Preview Data Summary */}
                       {report.preview_data && (
