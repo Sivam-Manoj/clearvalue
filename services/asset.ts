@@ -24,6 +24,14 @@ export type AssetCreateDetails = {
   contract_no?: string; // user-provided contract number
   language?: 'en' | 'fr' | 'es'; // report output language for DOCX (default 'en')
   currency?: string; // ISO currency code (e.g., CAD, USD)
+  // Valuation comparison table
+  include_valuation_table?: boolean;
+  valuation_methods?: Array<'FML' | 'TKV' | 'OLV' | 'FLV'>;
+  // Cover page + Factors
+  prepared_for?: string; // used in templated cover
+  factors_age_condition?: string; // populates Age & Condition under Factors Affecting Value
+  factors_quality?: string; // populates Quality under Factors Affecting Value
+  factors_analysis?: string; // populates Analysis under Factors Affecting Value
   // Real-time progress
   progress_id?: string;
   // Catalogue mode: describe how files map to lots (flattened in order)

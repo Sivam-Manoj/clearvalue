@@ -16,6 +16,11 @@ export type SavedInputFormData = {
   selectedValuationMethods?: Array<"FML" | "TKV" | "OLV" | "FLV">;
   groupingMode?: "single_lot" | "per_item" | "per_photo" | "catalogue" | "combined" | "mixed";
   combinedModes?: Array<"single_lot" | "per_item" | "per_photo">;
+  // New fields for templated cover and factors section
+  preparedFor?: string;
+  factorsAgeCondition?: string;
+  factorsQuality?: string;
+  factorsAnalysis?: string;
 };
 
 export type SavedInput = {

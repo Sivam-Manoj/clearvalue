@@ -104,6 +104,10 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
   const [currencyTouched, setCurrencyTouched] = useState<boolean>(false);
   const [currencyLoading, setCurrencyLoading] = useState<boolean>(false);
   const currencyPromptedRef = useRef(false);
+  const [preparedFor, setPreparedFor] = useState("");
+  const [factorsAgeCondition, setFactorsAgeCondition] = useState("");
+  const [factorsQuality, setFactorsQuality] = useState("");
+  const [factorsAnalysis, setFactorsAnalysis] = useState("");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const clearError = (k: string) =>
@@ -245,6 +249,10 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
       currencyPromptedRef.current = false;
       setIncludeValuationTable(false);
       setSelectedValuationMethods(["FML"]);
+      setPreparedFor("");
+      setFactorsAgeCondition("");
+      setFactorsQuality("");
+      setFactorsAnalysis("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.info("Form cleared.");
     } catch {}
@@ -275,6 +283,10 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
       currencyPromptedRef.current = false;
       setIncludeValuationTable(false);
       setSelectedValuationMethods(["FML"]);
+      setPreparedFor("");
+      setFactorsAgeCondition("");
+      setFactorsQuality("");
+      setFactorsAnalysis("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       // Reset progress UI state
       setProgressPhase("idle");
@@ -319,6 +331,10 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         selectedValuationMethods,
         groupingMode: grouping,
         combinedModes,
+        preparedFor,
+        factorsAgeCondition,
+        factorsQuality,
+        factorsAnalysis,
       };
 
       await SavedInputService.create({
@@ -363,6 +379,14 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         setSelectedValuationMethods(fd.selectedValuationMethods as any);
       if (Array.isArray(fd.combinedModes))
         setCombinedModes(fd.combinedModes as any);
+      if (typeof (fd as any).preparedFor === "string")
+        setPreparedFor((fd as any).preparedFor);
+      if (typeof (fd as any).factorsAgeCondition === "string")
+        setFactorsAgeCondition((fd as any).factorsAgeCondition);
+      if (typeof (fd as any).factorsQuality === "string")
+        setFactorsQuality((fd as any).factorsQuality);
+      if (typeof (fd as any).factorsAnalysis === "string")
+        setFactorsAnalysis((fd as any).factorsAnalysis);
 
       toast.success(`Loaded: ${savedInput.name}`);
     } catch (error) {
@@ -677,6 +701,12 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
           ? selectedValuationMethods
           : [],
         progress_id: jobId,
+        ...(preparedFor.trim() && { prepared_for: preparedFor.trim() }),
+        ...(factorsAgeCondition.trim() && {
+          factors_age_condition: factorsAgeCondition.trim(),
+        }),
+        ...(factorsQuality.trim() && { factors_quality: factorsQuality.trim() }),
+        ...(factorsAnalysis.trim() && { factors_analysis: factorsAnalysis.trim() }),
         ...(grouping === "catalogue" ||
         grouping === "combined" ||
         grouping === "mixed"
@@ -929,6 +959,16 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                   />
                 </div>
                 <div className="space-y-1">
+                  <label className="text-xs text-gray-600">Prepared For</label>
+                  <input
+                    type="text"
+                    value={preparedFor}
+                    onChange={(e) => setPreparedFor(e.target.value)}
+                    placeholder="e.g., Client Contact / Company"
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  />
+                </div>
+                <div className="space-y-1">
                   <label className="text-xs text-gray-600">Appraiser</label>
                   <input
                     type="text"
@@ -1034,6 +1074,43 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                       {errors.currency}
                     </p>
                   )}
+                </div>
+              </div>
+            </section>
+
+            {/* Factors Affecting Value */}
+            <section className="space-y-3 rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50/50 to-indigo-50/30 p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-gray-900">Factors Affecting Value</h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">Age & Condition</label>
+                  <textarea
+                    value={factorsAgeCondition}
+                    onChange={(e) => setFactorsAgeCondition(e.target.value)}
+                    rows={3}
+                    placeholder="Describe age and condition..."
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">Quality</label>
+                  <textarea
+                    value={factorsQuality}
+                    onChange={(e) => setFactorsQuality(e.target.value)}
+                    rows={3}
+                    placeholder="Describe quality..."
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-600">Analysis</label>
+                  <textarea
+                    value={factorsAnalysis}
+                    onChange={(e) => setFactorsAnalysis(e.target.value)}
+                    rows={3}
+                    placeholder="Provide overall analysis..."
+                    className="w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  />
                 </div>
               </div>
             </section>
