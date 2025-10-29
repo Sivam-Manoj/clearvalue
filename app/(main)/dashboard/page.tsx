@@ -15,6 +15,9 @@ import {
   Package,
   DollarSign,
   ChevronRight,
+  TrendingUp,
+  PieChart,
+  BarChart3,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -335,122 +338,182 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* Report stats with valuation breakdown */}
-          <div className="rounded-2xl border border-rose-200 bg-white/90 p-4 shadow ring-1 ring-black/5 backdrop-blur">
+          {/* Report stats with valuation breakdown - Professional Design */}
+          <div className="space-y-4">
             {statsLoading ? (
-              <div className="space-y-3">
-                <div className="h-12 w-full animate-pulse rounded bg-rose-50" />
-                <div className="h-32 w-full animate-pulse rounded bg-rose-50" />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="h-32 w-full animate-pulse rounded-2xl bg-gradient-to-br from-rose-100 to-rose-50" />
+                  <div className="h-32 w-full animate-pulse rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50" />
+                </div>
+                <div className="h-48 w-full animate-pulse rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50" />
               </div>
             ) : statsError ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                {statsError}
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  {statsError}
+                </div>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <tbody>
-                    {/* Row 1: Total Reports and Total Report Value */}
-                    <tr className="border-b border-gray-200">
-                      <td className="py-3 px-4 text-left font-semibold text-gray-700 bg-gray-50">
-                        Total Reports
-                      </td>
-                      <td className="py-3 px-4 text-center text-lg font-bold text-gray-900">
-                        {stats?.totalReports ?? 0}
-                      </td>
-                      <td className="py-3 px-4 text-left font-semibold text-gray-700 bg-gray-50">
-                        Total Report
-                      </td>
-                      <td className="py-3 px-4 text-center text-lg font-bold text-gray-900">
-                        {new Intl.NumberFormat("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }).format(stats?.totalFairMarketValue ?? 0)}
-                      </td>
-                    </tr>
-                    {/* Row 2: Type Breakdown and Value Breakdown Headers */}
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <td colSpan={2} className="py-2 px-4 text-left font-bold text-gray-800">
-                        Reports Type Breakdown
-                      </td>
-                      <td colSpan={2} className="py-2 px-4 text-left font-bold text-gray-800">
-                        Reports Value Breakdown
-                      </td>
-                    </tr>
-                    {/* Row 3: Method labels and values */}
-                    <tr>
-                      <td colSpan={2} className="py-3 px-4">
-                        <div className="flex items-center justify-around text-sm">
-                          <div className="text-center">
-                            <div className="font-medium text-gray-600">FMV</div>
-                            <div className="mt-1 text-lg font-bold text-gray-900">
-                              {stats?.breakdown?.counts?.FMV ?? 0}
-                            </div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-medium text-gray-600">OLV</div>
-                            <div className="mt-1 text-lg font-bold text-gray-900">
-                              {stats?.breakdown?.counts?.OLV ?? 0}
-                            </div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-medium text-gray-600">FLV</div>
-                            <div className="mt-1 text-lg font-bold text-gray-900">
-                              {stats?.breakdown?.counts?.FLV ?? 0}
-                            </div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-medium text-gray-600">TKV</div>
-                            <div className="mt-1 text-lg font-bold text-gray-900">
-                              {stats?.breakdown?.counts?.TKV ?? 0}
-                            </div>
-                          </div>
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Total Reports Card */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-white via-rose-50/30 to-pink-50/50 p-6 shadow-lg ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-rose-500/20">
+                    <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br from-rose-400/20 to-pink-500/20 blur-2xl transition-all duration-500 group-hover:scale-150" />
+                    <div className="relative flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileBarChart2 className="h-5 w-5 text-rose-600" strokeWidth={2.5} />
+                          <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Reports</p>
                         </div>
-                      </td>
-                      <td colSpan={2} className="py-3 px-4">
-                        <div className="flex items-center justify-around text-sm">
-                          <div className="text-center">
-                            <div className="font-medium text-gray-600">FMV</div>
-                            <div className="mt-1 text-base font-bold text-gray-900">
-                              {new Intl.NumberFormat("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              }).format(stats?.breakdown?.values?.FMV ?? 0)}
-                            </div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-medium text-gray-600">OLV</div>
-                            <div className="mt-1 text-base font-bold text-gray-900">
-                              {new Intl.NumberFormat("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              }).format(stats?.breakdown?.values?.OLV ?? 0)}
-                            </div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-medium text-gray-600">FLV</div>
-                            <div className="mt-1 text-base font-bold text-gray-900">
-                              {new Intl.NumberFormat("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              }).format(stats?.breakdown?.values?.FLV ?? 0)}
-                            </div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-medium text-gray-600">TKV</div>
-                            <div className="mt-1 text-base font-bold text-gray-900">
-                              {new Intl.NumberFormat("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              }).format(stats?.breakdown?.values?.TKV ?? 0)}
-                            </div>
-                          </div>
+                        <p className="text-4xl font-black bg-gradient-to-br from-rose-600 via-rose-700 to-pink-600 bg-clip-text text-transparent">
+                          {stats?.totalReports ?? 0}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">All-time generated</p>
+                      </div>
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 via-rose-600 to-pink-600 text-white shadow-lg shadow-rose-500/50 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                        <BarChart3 className="h-9 w-9 drop-shadow-md" strokeWidth={2.5} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Total Value Card */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/50 p-6 shadow-lg ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/20">
+                    <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br from-emerald-400/20 to-teal-500/20 blur-2xl transition-all duration-500 group-hover:scale-150" />
+                    <div className="relative flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <DollarSign className="h-5 w-5 text-emerald-600" strokeWidth={2.5} />
+                          <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Value</p>
                         </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                        <p className="text-4xl font-black bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-600 bg-clip-text text-transparent">
+                          {new Intl.NumberFormat("en-US", {
+                            notation: "compact",
+                            compactDisplay: "short",
+                            maximumFractionDigits: 2,
+                          }).format(stats?.totalFairMarketValue ?? 0)}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                            minimumFractionDigits: 2,
+                          }).format(stats?.totalFairMarketValue ?? 0)}
+                        </p>
+                      </div>
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/50 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6">
+                        <TrendingUp className="h-9 w-9 drop-shadow-md" strokeWidth={2.5} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Valuation Methods Breakdown */}
+                <div className="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-white via-blue-50/20 to-indigo-50/30 p-6 shadow-lg ring-1 ring-black/5 backdrop-blur">
+                  <div className="pointer-events-none absolute -left-12 -top-12 h-48 w-48 rounded-full bg-gradient-to-br from-blue-400/10 to-indigo-500/10 blur-3xl" />
+                  <div className="pointer-events-none absolute -right-12 -bottom-12 h-48 w-48 rounded-full bg-gradient-to-tl from-violet-400/10 to-purple-500/10 blur-3xl" />
+                  
+                  <div className="relative">
+                    <div className="mb-6 flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30">
+                        <PieChart className="h-6 w-6" strokeWidth={2.5} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">Valuation Methods Analysis</h3>
+                        <p className="text-xs text-gray-500">Distribution across all reports</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Reports Type Breakdown */}
+                      <div className="rounded-xl border border-gray-200 bg-white/80 p-5 shadow-sm backdrop-blur">
+                        <div className="mb-4 flex items-center justify-between">
+                          <h4 className="text-sm font-bold uppercase tracking-wide text-gray-700">Reports Type Count</h4>
+                          <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
+                            {(stats?.breakdown?.counts?.FMV ?? 0) + 
+                             (stats?.breakdown?.counts?.OLV ?? 0) + 
+                             (stats?.breakdown?.counts?.FLV ?? 0) + 
+                             (stats?.breakdown?.counts?.TKV ?? 0)} Total
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { label: 'FMV', value: stats?.breakdown?.counts?.FMV ?? 0, gradient: 'from-blue-500 to-blue-600', bg: 'bg-blue-50', ring: 'ring-blue-200', text: 'text-blue-700' },
+                            { label: 'OLV', value: stats?.breakdown?.counts?.OLV ?? 0, gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', ring: 'ring-amber-200', text: 'text-amber-700' },
+                            { label: 'FLV', value: stats?.breakdown?.counts?.FLV ?? 0, gradient: 'from-red-500 to-rose-600', bg: 'bg-red-50', ring: 'ring-red-200', text: 'text-red-700' },
+                            { label: 'TKV', value: stats?.breakdown?.counts?.TKV ?? 0, gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', ring: 'ring-violet-200', text: 'text-violet-700' },
+                          ].map((method) => (
+                            <div
+                              key={method.label}
+                              className={`group relative overflow-hidden rounded-xl ${method.bg} border ${method.ring} p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md`}
+                            >
+                              <div className={`pointer-events-none absolute -right-4 -top-4 h-16 w-16 rounded-full bg-gradient-to-br ${method.gradient} opacity-10 blur-xl transition-all duration-500 group-hover:scale-150`} />
+                              <div className="relative">
+                                <p className={`text-xs font-bold uppercase tracking-wider ${method.text}`}>{method.label}</p>
+                                <p className="mt-2 text-2xl font-black text-gray-900">{method.value}</p>
+                                <div className={`mt-2 h-1.5 w-full rounded-full bg-gradient-to-r ${method.gradient} opacity-60`} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Reports Value Breakdown */}
+                      <div className="rounded-xl border border-gray-200 bg-white/80 p-5 shadow-sm backdrop-blur">
+                        <div className="mb-4 flex items-center justify-between">
+                          <h4 className="text-sm font-bold uppercase tracking-wide text-gray-700">Reports Value Total</h4>
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                            {new Intl.NumberFormat("en-US", {
+                              notation: "compact",
+                              compactDisplay: "short",
+                            }).format(
+                              (stats?.breakdown?.values?.FMV ?? 0) + 
+                              (stats?.breakdown?.values?.OLV ?? 0) + 
+                              (stats?.breakdown?.values?.FLV ?? 0) + 
+                              (stats?.breakdown?.values?.TKV ?? 0)
+                            )}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { label: 'FMV', value: stats?.breakdown?.values?.FMV ?? 0, gradient: 'from-blue-500 to-blue-600', bg: 'bg-blue-50', ring: 'ring-blue-200', text: 'text-blue-700' },
+                            { label: 'OLV', value: stats?.breakdown?.values?.OLV ?? 0, gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', ring: 'ring-amber-200', text: 'text-amber-700' },
+                            { label: 'FLV', value: stats?.breakdown?.values?.FLV ?? 0, gradient: 'from-red-500 to-rose-600', bg: 'bg-red-50', ring: 'ring-red-200', text: 'text-red-700' },
+                            { label: 'TKV', value: stats?.breakdown?.values?.TKV ?? 0, gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', ring: 'ring-violet-200', text: 'text-violet-700' },
+                          ].map((method) => (
+                            <div
+                              key={method.label}
+                              className={`group relative overflow-hidden rounded-xl ${method.bg} border ${method.ring} p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md`}
+                            >
+                              <div className={`pointer-events-none absolute -right-4 -top-4 h-16 w-16 rounded-full bg-gradient-to-br ${method.gradient} opacity-10 blur-xl transition-all duration-500 group-hover:scale-150`} />
+                              <div className="relative">
+                                <p className={`text-xs font-bold uppercase tracking-wider ${method.text}`}>{method.label}</p>
+                                <p className="mt-2 text-xl font-black text-gray-900">
+                                  {new Intl.NumberFormat("en-US", {
+                                    notation: "compact",
+                                    compactDisplay: "short",
+                                    maximumFractionDigits: 1,
+                                  }).format(method.value)}
+                                </p>
+                                <p className="mt-1 text-[10px] text-gray-500">
+                                  {new Intl.NumberFormat("en-US", {
+                                    style: "currency",
+                                    currency: "USD",
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  }).format(method.value)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
 
