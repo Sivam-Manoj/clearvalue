@@ -591,9 +591,41 @@ export default function DashboardPage() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 text-xs font-semibold">
-                          {r.fairMarketValue ?? 0}
-                        </span>
+                        {r.valuationMethods && r.valuationMethods.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {r.valuationMethods.map((vm, idx) => {
+                              const method = String(vm.method || "").toUpperCase();
+                              const colorMap: Record<string, { bg: string; text: string; border: string }> = {
+                                FMV: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+                                FML: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+                                OLV: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+                                FLV: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+                                TKV: { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
+                              };
+                              const colors = colorMap[method] || colorMap.FMV;
+                              return (
+                                <span
+                                  key={idx}
+                                  className={`inline-flex items-center gap-1 rounded-full ${colors.bg} ${colors.text} border ${colors.border} px-2 py-0.5 text-[10px] font-bold uppercase`}
+                                  title={`${method}: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(vm.value)}`}
+                                >
+                                  <span>{method}</span>
+                                  <span className="opacity-75">
+                                    {new Intl.NumberFormat('en-US', {
+                                      notation: 'compact',
+                                      compactDisplay: 'short',
+                                      maximumFractionDigits: 1,
+                                    }).format(vm.value)}
+                                  </span>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 text-xs font-semibold">
+                            {r.fairMarketValue ?? 0}
+                          </span>
+                        )}
                         <ChevronRight className="h-4 w-4 text-rose-400 transition-transform group-hover:translate-x-0.5" />
                       </div>
                     </button>

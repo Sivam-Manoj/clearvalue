@@ -23,6 +23,7 @@ export type PdfReport = {
   reviewedBy?: string | null;
   reviewedAt?: string | null;
   contract_no?: string;
+  valuationMethods?: Array<{ method: string; value: number }>;
 };
 
 export const ReportsService = {
