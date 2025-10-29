@@ -3,6 +3,10 @@ import API from "@/lib/api";
 export type ReportStats = {
   totalReports: number;
   totalFairMarketValue: number;
+  breakdown?: {
+    counts: Record<string, number>;
+    values: Record<string, number>;
+  };
 };
 
 export type PdfReport = {

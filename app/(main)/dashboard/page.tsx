@@ -335,50 +335,122 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* Report stats (horizontal & responsive, even on small screens) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Report stats with valuation breakdown */}
+          <div className="rounded-2xl border border-rose-200 bg-white/90 p-4 shadow ring-1 ring-black/5 backdrop-blur">
             {statsLoading ? (
-              <>
-                <div className="min-h-[6rem] h-full w-full animate-pulse rounded-2xl border border-rose-200 bg-rose-50" />
-                <div className="min-h-[6rem] h-full w-full animate-pulse rounded-2xl border border-rose-200 bg-rose-50" />
-              </>
+              <div className="space-y-3">
+                <div className="h-12 w-full animate-pulse rounded bg-rose-50" />
+                <div className="h-32 w-full animate-pulse rounded bg-rose-50" />
+              </div>
             ) : statsError ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 col-span-2">
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                 {statsError}
               </div>
             ) : (
-              <>
-                <div className="rounded-2xl border border-rose-200 bg-white/85 backdrop-blur p-4 min-h-[6rem] h-full shadow ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <p className="text-sm text-gray-500">Total Reports</p>
-                      <p className="mt-1 text-2xl font-semibold text-gray-900">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <tbody>
+                    {/* Row 1: Total Reports and Total Report Value */}
+                    <tr className="border-b border-gray-200">
+                      <td className="py-3 px-4 text-left font-semibold text-gray-700 bg-gray-50">
+                        Total Reports
+                      </td>
+                      <td className="py-3 px-4 text-center text-lg font-bold text-gray-900">
                         {stats?.totalReports ?? 0}
-                      </p>
-                    </div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 via-pink-500 to-rose-600 text-white ring-2 ring-white/30 shadow-lg shadow-rose-500/50 transition-transform duration-300 hover:scale-110">
-                      <FileBarChart2 className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-rose-200 bg-white/85 backdrop-blur p-4 min-h-[6rem] h-full shadow ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <p className="text-sm text-gray-500">Total FMV</p>
-                      <p className="mt-1 text-2xl font-semibold text-gray-900">
+                      </td>
+                      <td className="py-3 px-4 text-left font-semibold text-gray-700 bg-gray-50">
+                        Total Report
+                      </td>
+                      <td className="py-3 px-4 text-center text-lg font-bold text-gray-900">
                         {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: "USD",
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
                         }).format(stats?.totalFairMarketValue ?? 0)}
-                      </p>
-                    </div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 text-white ring-2 ring-white/30 shadow-lg shadow-green-500/50 transition-transform duration-300 hover:scale-110">
-                      <DollarSign className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
-                    </div>
-                  </div>
-                </div>
-              </>
+                      </td>
+                    </tr>
+                    {/* Row 2: Type Breakdown and Value Breakdown Headers */}
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <td colSpan={2} className="py-2 px-4 text-left font-bold text-gray-800">
+                        Reports Type Breakdown
+                      </td>
+                      <td colSpan={2} className="py-2 px-4 text-left font-bold text-gray-800">
+                        Reports Value Breakdown
+                      </td>
+                    </tr>
+                    {/* Row 3: Method labels and values */}
+                    <tr>
+                      <td colSpan={2} className="py-3 px-4">
+                        <div className="flex items-center justify-around text-sm">
+                          <div className="text-center">
+                            <div className="font-medium text-gray-600">FMV</div>
+                            <div className="mt-1 text-lg font-bold text-gray-900">
+                              {stats?.breakdown?.counts?.FMV ?? 0}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-gray-600">OLV</div>
+                            <div className="mt-1 text-lg font-bold text-gray-900">
+                              {stats?.breakdown?.counts?.OLV ?? 0}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-gray-600">FLV</div>
+                            <div className="mt-1 text-lg font-bold text-gray-900">
+                              {stats?.breakdown?.counts?.FLV ?? 0}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-gray-600">TKV</div>
+                            <div className="mt-1 text-lg font-bold text-gray-900">
+                              {stats?.breakdown?.counts?.TKV ?? 0}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td colSpan={2} className="py-3 px-4">
+                        <div className="flex items-center justify-around text-sm">
+                          <div className="text-center">
+                            <div className="font-medium text-gray-600">FMV</div>
+                            <div className="mt-1 text-base font-bold text-gray-900">
+                              {new Intl.NumberFormat("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }).format(stats?.breakdown?.values?.FMV ?? 0)}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-gray-600">OLV</div>
+                            <div className="mt-1 text-base font-bold text-gray-900">
+                              {new Intl.NumberFormat("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }).format(stats?.breakdown?.values?.OLV ?? 0)}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-gray-600">FLV</div>
+                            <div className="mt-1 text-base font-bold text-gray-900">
+                              {new Intl.NumberFormat("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }).format(stats?.breakdown?.values?.FLV ?? 0)}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-gray-600">TKV</div>
+                            <div className="mt-1 text-base font-bold text-gray-900">
+                              {new Intl.NumberFormat("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }).format(stats?.breakdown?.values?.TKV ?? 0)}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 
