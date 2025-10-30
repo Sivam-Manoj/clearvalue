@@ -413,6 +413,64 @@ export default function PreviewModal({
               </div>
             </div>
 
+            {/* Additional Report Details */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-amber-600">📝</span>
+                Additional Details
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Prepared For
+                  </label>
+                  <input
+                    type="text"
+                    value={previewData?.prepared_for || ""}
+                    onChange={(e) => updateField("prepared_for", e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="e.g., Client Contact / Company"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Factors Affecting Value - Age & Condition
+                  </label>
+                  <textarea
+                    value={previewData?.factors_age_condition || ""}
+                    onChange={(e) => updateField("factors_age_condition", e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="Describe age and condition..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Factors Affecting Value - Quality
+                  </label>
+                  <textarea
+                    value={previewData?.factors_quality || ""}
+                    onChange={(e) => updateField("factors_quality", e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="Describe quality..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Factors Affecting Value - Analysis
+                  </label>
+                  <textarea
+                    value={previewData?.factors_analysis || ""}
+                    onChange={(e) => updateField("factors_analysis", e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="Provide overall analysis..."
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Software narrative fields removed to match DOCX inputs */}
 
             {/* Quick Stats */}
