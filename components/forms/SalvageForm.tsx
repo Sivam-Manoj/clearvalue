@@ -179,7 +179,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
     } catch {}
   };
 
-  // On first open, use browser geolocation to call AI currency route
+  // On first open, use browser geolocation to detect currency
   useEffect(() => {
     if (currencyPromptedRef.current) return;
     currencyPromptedRef.current = true;

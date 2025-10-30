@@ -1919,7 +1919,7 @@ export default function MixedSection({
                             {maxTotalImages}
                             {" | "}Lot {activeIdx + 1}:{" "}
                             {lots[activeIdx]?.files.length ?? 0}/
-                            {maxImagesPerLot} (AI)
+                            {maxImagesPerLot} (Main)
                             {" | "}Extra:{" "}
                             {lots[activeIdx]?.extraFiles.length ?? 0}/
                             {maxExtraImagesPerLot}
@@ -1958,7 +1958,7 @@ export default function MixedSection({
                               Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
                               {maxTotalImages}
                               {" | "}Lot {activeIdx + 1}:{" "}
-                              {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot} (AI)
+                              {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot} (Main)
                               {" | "}Extra: {lots[activeIdx]?.extraFiles.length ?? 0}/
                               {maxExtraImagesPerLot}
                               {" | "}Mode: {lots[activeIdx]?.mode === "single_lot"
@@ -2063,7 +2063,7 @@ export default function MixedSection({
                             0
                           )}/${maxTotalImages} | Lot ${activeIdx + 1}: ${
                             lots[activeIdx]?.files.length ?? 0
-                          }/${maxImagesPerLot} (AI) | Extra: ${
+                          }/${maxImagesPerLot} (Main) | Extra: ${
                             lots[activeIdx]?.extraFiles.length ?? 0
                           }/${maxExtraImagesPerLot} | Mode: ${
                             lots[activeIdx]?.mode === "single_lot"
@@ -2083,7 +2083,7 @@ export default function MixedSection({
                           {maxTotalImages}
                           {" | "}Lot {activeIdx + 1}:{" "}
                           {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}{" "}
-                          (AI)
+                          (Main)
                           {" | "}Extra:{" "}
                           {lots[activeIdx]?.extraFiles.length ?? 0}/
                           {maxExtraImagesPerLot}
@@ -2182,7 +2182,7 @@ export default function MixedSection({
                         type="button"
                         onClick={() => handleCapture("single_lot")}
                         className="h-10 min-w-[88px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                        title="Capture - Bundle (AI)"
+                        title="Capture - Bundle"
                       >
                         <Camera className="h-4 w-4" /> Bundle
                       </button>
@@ -2200,7 +2200,7 @@ export default function MixedSection({
                         type="button"
                         onClick={() => handleCapture("per_item")}
                         className="h-10 min-w-[88px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                        title="Capture - Item (AI)"
+                        title="Capture - Item"
                       >
                         <Camera className="h-4 w-4" /> Item
                       </button>
@@ -2218,7 +2218,7 @@ export default function MixedSection({
                         type="button"
                         onClick={() => handleCapture("per_photo")}
                         className="h-10 min-w-[88px] inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-3 text-xs font-semibold text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                        title="Capture - Photo (AI)"
+                        title="Capture - Photo"
                       >
                         <Camera className="h-4 w-4" /> Photo
                       </button>
@@ -2363,7 +2363,7 @@ export default function MixedSection({
                             type="button"
                             onClick={() => handleCapture("single_lot")}
                             className="h-7 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                            title="Capture - Bundle (AI)"
+                            title="Capture - Bundle"
                           >
                             <Camera className="h-4 w-4" /> Bundle
                           </button>
@@ -2381,7 +2381,7 @@ export default function MixedSection({
                             type="button"
                             onClick={() => handleCapture("per_item")}
                             className="h-7 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                            title="Capture - Item (AI)"
+                            title="Capture - Item"
                           >
                             <Camera className="h-4 w-4" /> Item
                           </button>
@@ -2399,7 +2399,7 @@ export default function MixedSection({
                             type="button"
                             onClick={() => handleCapture("per_photo")}
                             className="h-7 inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 text-[10px] font-semibold text-white shadow-[0_3px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
-                            title="Capture - Photo (AI)"
+                            title="Capture - Photo"
                           >
                             <Camera className="h-4 w-4" /> Photo
                           </button>
