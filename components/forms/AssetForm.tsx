@@ -153,7 +153,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
   const STEPS = [
     { key: "client_upload", label: "Uploading images" },
     { key: "r2_upload", label: "Storing images" },
-    { key: "ai_analysis", label: "Analyzing with AI" },
+    { key: "ai_analysis", label: "Analyzing images" },
     { key: "generate_docx", label: "Generating DOCX" },
     { key: "finalize", label: "Finalizing" },
   ] as const;
@@ -473,7 +473,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
     } catch {}
   };
 
-  // On first open, use browser geolocation to call AI currency route
+  // On first open, use browser geolocation to detect currency
   useEffect(() => {
     if (currencyPromptedRef.current) return;
     currencyPromptedRef.current = true;
@@ -1123,7 +1123,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                     Quick Comparison Table
                   </h3>
                   <p className="text-xs text-gray-600 mt-0.5">
-                    Compare multiple valuation methods with AI explanations
+                    Compare multiple valuation methods with software explanations
                   </p>
                 </div>
                 <button

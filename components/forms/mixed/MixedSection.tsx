@@ -26,7 +26,7 @@ import ImageAnnotator, { AnnBox } from "./ImageAnnotator";
 export type MixedMode = "single_lot" | "per_item" | "per_photo";
 export type MixedLot = {
   id: string;
-  files: File[]; // Main images for AI (max 30)
+  files: File[]; // Main images for processing (max 30)
   extraFiles: File[]; // Extra images for report only (max 100)
   coverIndex: number; // 0-based within files
   mode?: MixedMode;
@@ -37,7 +37,7 @@ export type MixedLot = {
 type Props = {
   value: MixedLot[];
   onChange: (lots: MixedLot[]) => void;
-  maxImagesPerLot?: number; // default 30 (main AI images)
+  maxImagesPerLot?: number; // default 30 (main images for processing)
   maxExtraImagesPerLot?: number; // default 100 (extra report images)
   maxTotalImages?: number; // default 500
   downloadPrefix?: string; // optional: used for saving captured images locally
@@ -1330,7 +1330,7 @@ export default function MixedSection({
                   {lot.mode ? lot.mode.replace("_", " ") : "Select mode"}
                 </div>
                 <div className="text-[11px] text-gray-600">
-                  AI: {lot.files.length} | Extra: {lot.extraFiles?.length || 0}{" "}
+                  Main: {lot.files.length} | Extra: {lot.extraFiles?.length || 0}{" "}
                   | Video: {lot.videoFiles?.length || 0}
                 </div>
               </button>
@@ -1406,7 +1406,7 @@ export default function MixedSection({
                 )}
               </div>
 
-              {/* Images grid (AI processing images) */}
+              {/* Images grid (main images for processing) */}
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {lots[activeIdx].files.map((f, i) => {
                   const url = URL.createObjectURL(f);
