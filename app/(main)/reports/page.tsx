@@ -195,6 +195,25 @@ export default function ReportsPage() {
         : "";
 
       const addressBase = (ar as any).client_name || (ar as any).preview_data?.client_name || "Asset Report";
+      
+      // Extract preview_files URLs and create pseudo-reports for download functionality
+      const previewFiles = (ar as any).preview_files || {};
+      const createPseudoReport = (url: string, fileType: string): PdfReport => ({
+        _id: `${ar._id}-${fileType}`,
+        filename: `${addressBase}.${fileType}`,
+        fileType,
+        url,
+        address: addressBase,
+        fairMarketValue: fmvStr,
+        createdAt: ar.createdAt,
+        approvalStatus: (ar as any).status === "approved" ? "approved" : "pending",
+      } as PdfReport);
+      
+      const variants: ReportGroup["variants"] = {};
+      if (previewFiles.docx) variants.docx = createPseudoReport(previewFiles.docx, "docx");
+      if (previewFiles.excel) variants.xlsx = createPseudoReport(previewFiles.excel, "xlsx");
+      if (previewFiles.images) variants.images = createPseudoReport(previewFiles.images, "zip");
+      
       let merged: ReportGroup;
       if (existing) {
         merged = {
@@ -211,6 +230,10 @@ export default function ReportsPage() {
               : existing.approvalStatus || "pending",
           type: existing.type || "Asset",
           fairMarketValue: existing.fairMarketValue || fmvStr || currency,
+          variants: {
+            ...existing.variants,
+            ...variants, // Merge AssetReport download links
+          },
         };
       } else {
         merged = {
@@ -224,7 +247,7 @@ export default function ReportsPage() {
           approvalStatus:
             (ar as any).status === "approved" ? "approved" : "pending",
           type: "Asset",
-          variants: {} as ReportGroup["variants"],
+          variants,
         };
       }
       map.set(key, merged);
@@ -389,18 +412,55 @@ export default function ReportsPage() {
   async function handleDownload(id: string) {
     try {
       setDownloadingId(id);
-      const { blob, filename } = await ReportsService.downloadReport(id);
-      const r = reports.find((x) => x._id === id);
-      const fileName = filename || r?.filename || `report-${id}.docx`;
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 500);
-      toast.success(`Download started: ${fileName}`);
+      
+      // Find the report - could be in legacy reports or in group variants (AssetReport preview_files)
+      let reportWithUrl: PdfReport | undefined = reports.find((x) => x._id === id);
+      
+      // If not found in legacy reports, search in group variants for AssetReport pseudo-reports
+      if (!reportWithUrl) {
+        for (const group of groups) {
+          const found = Object.values(group.variants).find((v) => v && v._id === id);
+          if (found) {
+            reportWithUrl = found;
+            break;
+          }
+        }
+      }
+      
+      if (reportWithUrl && (reportWithUrl as any).url) {
+        // Direct download from URL (AssetReport preview_files)
+        const directUrl = (reportWithUrl as any).url as string;
+        const fileName = reportWithUrl.filename || `report-${id}.${reportWithUrl.fileType}`;
+        
+        // Fetch and download from direct URL
+        const response = await fetch(directUrl);
+        if (!response.ok) throw new Error("Failed to fetch file");
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 500);
+        toast.success(`Download started: ${fileName}`);
+      } else if (reportWithUrl) {
+        // Legacy download through backend API
+        const { blob, filename } = await ReportsService.downloadReport(id);
+        const fileName = filename || reportWithUrl.filename || `report-${id}.docx`;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 500);
+        toast.success(`Download started: ${fileName}`);
+      } else {
+        throw new Error("Report not found");
+      }
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || "Download failed";
       console.error("Download failed", e);
