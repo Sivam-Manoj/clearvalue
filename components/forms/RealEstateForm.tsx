@@ -33,7 +33,7 @@ const PROG_WEIGHTS = {
 const STEPS = [
   { key: "client_upload", label: "Uploading images" },
   { key: "r2_upload", label: "Storing images" },
-  { key: "ai_analysis", label: "Analyzing with AI" },
+  { key: "ai_analysis", label: "Analyzing images" },
   { key: "find_comparables", label: "Finding comparables" },
   { key: "valuation", label: "Calculating valuation" },
   { key: "market_trend", label: "Fetching market trends" },
@@ -520,7 +520,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           </select>
         </section>
 
-        {/* Smart Fill (AI) */}
+        {/* Smart Fill (Software) */}
         <section className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">

@@ -413,7 +413,7 @@ export default function PreviewModal({
               </div>
             </div>
 
-            {/* AI narrative fields removed to match DOCX inputs */}
+            {/* Software narrative fields removed to match DOCX inputs */}
 
             {/* Quick Stats */}
             <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4">
