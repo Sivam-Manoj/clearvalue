@@ -122,8 +122,19 @@ export default function ReportsPage() {
 
   const groups = useMemo<ReportGroup[]>(() => {
     const map = new Map<string, ReportGroup>();
+    
+    // Get all AssetReport IDs to filter out their PdfReports
+    const assetReportIds = new Set(assetReports.map(ar => ar._id));
+    
     for (const r of reports) {
-      const key = String(((r as any).report as string | undefined) || r._id);
+      const reportRef = (r as any).report as string | undefined;
+      
+      // SKIP PdfReports that belong to AssetReports - we'll show AssetReports with preview_files instead
+      if (reportRef && assetReportIds.has(reportRef)) {
+        continue;
+      }
+      
+      const key = String(reportRef || r._id);
       let g = map.get(key);
       if (!g) {
         g = {
@@ -163,12 +174,7 @@ export default function ReportsPage() {
 
     // Add/merge asset reports to the list without overwriting existing variants
     for (const ar of assetReports) {
-      // SKIP approved AssetReports - they already have PdfReport records for download
       const status = ar.status as string;
-      if (status === "approved") {
-        continue; // PdfReports will handle the display and downloads
-      }
-      
       const statusText =
         ar.status === "pending_approval"
           ? "Pending Approval"
