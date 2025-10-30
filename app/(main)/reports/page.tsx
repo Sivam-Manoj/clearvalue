@@ -890,21 +890,7 @@ export default function ReportsPage() {
                                   </td>
                                   <td className="px-3 py-2">
                                     <span className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm bg-emerald-50 text-emerald-700 ring-emerald-200">
-                                      {(() => {
-                                        const fmv = String(g.fairMarketValue ?? "");
-                                        // If FMV already has currency symbol, show as is
-                                        if (fmv.match(/[$€£¥₹]/)) return fmv;
-                                        // If it's just a number, add currency
-                                        const num = parseFloat(fmv.replace(/[^0-9.-]/g, ""));
-                                        if (Number.isFinite(num) && num > 0) {
-                                          return new Intl.NumberFormat("en-US", {
-                                            style: "currency",
-                                            currency: "CAD",
-                                            maximumFractionDigits: 0
-                                          }).format(num);
-                                        }
-                                        return fmv || "—";
-                                      })()}
+                                      {String(g.fairMarketValue ?? "—")}
                                     </span>
                                   </td>
                                   <td className="px-3 py-2">
