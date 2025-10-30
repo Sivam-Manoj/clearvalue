@@ -163,10 +163,16 @@ export default function ReportsPage() {
 
     // Add/merge asset reports to the list without overwriting existing variants
     for (const ar of assetReports) {
+      // SKIP approved AssetReports - they already have PdfReport records for download
+      const status = ar.status as string;
+      if (status === "approved") {
+        continue; // PdfReports will handle the display and downloads
+      }
+      
       const statusText =
         ar.status === "pending_approval"
           ? "Pending Approval"
-          : ar.status === "approved"
+          : status === "approved"
           ? "Approved"
           : "";
       const key = ar._id;
