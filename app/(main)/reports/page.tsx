@@ -440,22 +440,18 @@ export default function ReportsPage() {
       }
       
       if (reportWithUrl && (reportWithUrl as any).url) {
-        // Direct download from URL (AssetReport preview_files)
+        // Direct download from URL (AssetReport preview_files) - no CORS issues
         const directUrl = (reportWithUrl as any).url as string;
         const fileName = reportWithUrl.filename || `report-${id}.${reportWithUrl.fileType}`;
         
-        // Fetch and download from direct URL
-        const response = await fetch(directUrl);
-        if (!response.ok) throw new Error("Failed to fetch file");
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        // Use direct link - browser handles download without CORS
         const a = document.createElement("a");
-        a.href = url;
+        a.href = directUrl;
         a.download = fileName;
+        a.target = "_blank"; // Open in new tab if download attr doesn't work
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 500);
         toast.success(`Download started: ${fileName}`);
       } else if (reportWithUrl) {
         // Legacy download through backend API
