@@ -63,7 +63,7 @@ export default function PreviewsPage() {
       </div>
     );
   }
-
+  //AI
   return (
     <div className="relative isolate">
       <div
@@ -89,7 +89,7 @@ export default function PreviewsPage() {
               No Previews Available
             </h3>
             <p className="text-gray-600 mb-4">
-              Submit a new asset report to see AI-generated previews here.
+              Submit a new asset report to see previews here.
             </p>
             <a
               href="/dashboard"
