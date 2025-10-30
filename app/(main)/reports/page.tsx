@@ -204,7 +204,7 @@ export default function ReportsPage() {
       const total = Number.isFinite(baseFMV as any) ? (baseFMV as number) : sumFromLots;
       const fmvStr = total > 0
         ? new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(total)
-        : "";
+        : `${currency} 0.00`;
 
       const addressBase = (ar as any).client_name || (ar as any).preview_data?.client_name || "Asset Report";
       
@@ -890,7 +890,21 @@ export default function ReportsPage() {
                                   </td>
                                   <td className="px-3 py-2">
                                     <span className="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium ring-1 shadow-sm bg-emerald-50 text-emerald-700 ring-emerald-200">
-                                      {String(g.fairMarketValue ?? "")}
+                                      {(() => {
+                                        const fmv = String(g.fairMarketValue ?? "");
+                                        // If FMV already has currency symbol, show as is
+                                        if (fmv.match(/[$€£¥₹]/)) return fmv;
+                                        // If it's just a number, add currency
+                                        const num = parseFloat(fmv.replace(/[^0-9.-]/g, ""));
+                                        if (Number.isFinite(num) && num > 0) {
+                                          return new Intl.NumberFormat("en-US", {
+                                            style: "currency",
+                                            currency: "CAD",
+                                            maximumFractionDigits: 0
+                                          }).format(num);
+                                        }
+                                        return fmv || "—";
+                                      })()}
                                     </span>
                                   </td>
                                   <td className="px-3 py-2">
