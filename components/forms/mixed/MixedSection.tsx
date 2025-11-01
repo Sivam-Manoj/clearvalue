@@ -78,7 +78,12 @@ export default function MixedSection({
   const [focusBoxFH, setFocusBoxFH] = useState<number>(0.62);
   const [focusBoxCX, setFocusBoxCX] = useState<number>(0.5);
   const [focusBoxCY, setFocusBoxCY] = useState<number>(0.5);
-  const pinchStateRef = useRef<{ active: boolean; startDist: number; startFW: number; startFH: number } | null>(null);
+  const pinchStateRef = useRef<{
+    active: boolean;
+    startDist: number;
+    startFW: number;
+    startFH: number;
+  } | null>(null);
   const [focusLockAR, setFocusLockAR] = useState<boolean>(false);
   const focusARRef = useRef<number>(1);
   const dragStateRef = useRef<{
@@ -97,7 +102,10 @@ export default function MixedSection({
   const bottomControlsRef = useRef<HTMLDivElement>(null);
   const [controlsHeight, setControlsHeight] = useState<number>(0);
   const cameraViewRef = useRef<HTMLDivElement>(null);
-  const [cameraViewSize, setCameraViewSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  const [cameraViewSize, setCameraViewSize] = useState<{
+    w: number;
+    h: number;
+  }>({ w: 0, h: 0 });
   const [videoAR, setVideoAR] = useState<number | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -661,10 +669,14 @@ export default function MixedSection({
       if (!(dispW > 0 && dispH > 0)) return;
       const minDisp = Math.min(dispW, dispH);
       const startW = Math.round(
-        (typeof focusBoxFW === "number" ? focusBoxFW : focusBoxFrac || FOCUS_BOX_FRACTION) * Math.max(1, dispW)
+        (typeof focusBoxFW === "number"
+          ? focusBoxFW
+          : focusBoxFrac || FOCUS_BOX_FRACTION) * Math.max(1, dispW)
       );
       const startH = Math.round(
-        (typeof focusBoxFH === "number" ? focusBoxFH : focusBoxFrac || FOCUS_BOX_FRACTION) * Math.max(1, dispH)
+        (typeof focusBoxFH === "number"
+          ? focusBoxFH
+          : focusBoxFrac || FOCUS_BOX_FRACTION) * Math.max(1, dispH)
       );
       const cx = Math.round(
         (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * dispW
@@ -790,8 +802,14 @@ export default function MixedSection({
               const maxHLimit = Math.min(s.anchorY, maxH);
               const wCand = Math.min(w, maxWLimit);
               const hCand = Math.min(h, maxHLimit);
-              let wFinal = Math.max(minDim, Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar));
-              let hFinal = Math.max(minDim, Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar));
+              let wFinal = Math.max(
+                minDim,
+                Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar)
+              );
+              let hFinal = Math.max(
+                minDim,
+                Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar)
+              );
               wFinal = Math.min(wFinal, hFinal * ar);
               hFinal = Math.min(hFinal, wFinal / ar);
               newW = wFinal;
@@ -814,8 +832,14 @@ export default function MixedSection({
               const maxHLimit = Math.min(s.anchorY, maxH);
               const wCand = Math.min(w, maxWLimit);
               const hCand = Math.min(h, maxHLimit);
-              let wFinal = Math.max(minDim, Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar));
-              let hFinal = Math.max(minDim, Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar));
+              let wFinal = Math.max(
+                minDim,
+                Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar)
+              );
+              let hFinal = Math.max(
+                minDim,
+                Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar)
+              );
               wFinal = Math.min(wFinal, hFinal * ar);
               hFinal = Math.min(hFinal, wFinal / ar);
               newW = wFinal;
@@ -838,8 +862,14 @@ export default function MixedSection({
               const maxHLimit = Math.min(dispH - s.anchorY, maxH);
               const wCand = Math.min(w, maxWLimit);
               const hCand = Math.min(h, maxHLimit);
-              let wFinal = Math.max(minDim, Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar));
-              let hFinal = Math.max(minDim, Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar));
+              let wFinal = Math.max(
+                minDim,
+                Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar)
+              );
+              let hFinal = Math.max(
+                minDim,
+                Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar)
+              );
               wFinal = Math.min(wFinal, hFinal * ar);
               hFinal = Math.min(hFinal, wFinal / ar);
               newW = wFinal;
@@ -862,8 +892,14 @@ export default function MixedSection({
               const maxHLimit = Math.min(dispH - s.anchorY, maxH);
               const wCand = Math.min(w, maxWLimit);
               const hCand = Math.min(h, maxHLimit);
-              let wFinal = Math.max(minDim, Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar));
-              let hFinal = Math.max(minDim, Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar));
+              let wFinal = Math.max(
+                minDim,
+                Math.min(wCand, hCand * ar, maxWLimit, maxHLimit * ar)
+              );
+              let hFinal = Math.max(
+                minDim,
+                Math.min(hCand, wCand / ar, maxHLimit, maxWLimit / ar)
+              );
               wFinal = Math.min(wFinal, hFinal * ar);
               hFinal = Math.min(hFinal, wFinal / ar);
               newW = wFinal;
@@ -880,7 +916,10 @@ export default function MixedSection({
             newW = s.startW;
             if (focusLockAR) {
               const ar = Math.max(0.0001, focusARRef.current || 1);
-              const horiz = Math.min(2 * Math.min(s.anchorX, dispW - s.anchorX), maxW);
+              const horiz = Math.min(
+                2 * Math.min(s.anchorX, dispW - s.anchorX),
+                maxW
+              );
               let wFromH = Math.max(minDim, Math.min(horiz, newH * ar));
               let hFromW = Math.max(minDim, Math.min(newH, wFromH / ar));
               newW = wFromH;
@@ -897,7 +936,10 @@ export default function MixedSection({
             newW = s.startW;
             if (focusLockAR) {
               const ar = Math.max(0.0001, focusARRef.current || 1);
-              const horiz = Math.min(2 * Math.min(s.anchorX, dispW - s.anchorX), maxW);
+              const horiz = Math.min(
+                2 * Math.min(s.anchorX, dispW - s.anchorX),
+                maxW
+              );
               let wFromH = Math.max(minDim, Math.min(horiz, newH * ar));
               let hFromW = Math.max(minDim, Math.min(newH, wFromH / ar));
               newW = wFromH;
@@ -914,7 +956,10 @@ export default function MixedSection({
             newH = s.startH;
             if (focusLockAR) {
               const ar = Math.max(0.0001, focusARRef.current || 1);
-              const vert = Math.min(2 * Math.min(s.anchorY, dispH - s.anchorY), maxH);
+              const vert = Math.min(
+                2 * Math.min(s.anchorY, dispH - s.anchorY),
+                maxH
+              );
               let hFromW = Math.max(minDim, Math.min(vert, newW / ar));
               let wFromH = Math.max(minDim, Math.min(newW, hFromW * ar));
               newW = wFromH;
@@ -931,7 +976,10 @@ export default function MixedSection({
             newH = s.startH;
             if (focusLockAR) {
               const ar = Math.max(0.0001, focusARRef.current || 1);
-              const vert = Math.min(2 * Math.min(s.anchorY, dispH - s.anchorY), maxH);
+              const vert = Math.min(
+                2 * Math.min(s.anchorY, dispH - s.anchorY),
+                maxH
+              );
               let hFromW = Math.max(minDim, Math.min(vert, newW / ar));
               let wFromH = Math.max(minDim, Math.min(newW, hFromW * ar));
               newW = wFromH;
@@ -1149,8 +1197,12 @@ export default function MixedSection({
     }
     ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, outW, outH);
     if (focusOn) {
-      let fw = Math.floor((focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * outW);
-      let fh = Math.floor((focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * outH);
+      let fw = Math.floor(
+        (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * outW
+      );
+      let fh = Math.floor(
+        (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * outH
+      );
       let fx = Math.floor((outW - fw) / 2);
       let fy = Math.floor((outH - fh) / 2);
       try {
@@ -1162,12 +1214,16 @@ export default function MixedSection({
           const scaledH = vh * s;
           const offsetX = Math.max(0, (scaledW - dispW) / 2);
           const offsetY = Math.max(0, (scaledH - dispH) / 2);
-          const boxWDisp = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * dispW;
-          const boxHDisp = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * dispH;
+          const boxWDisp =
+            (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * dispW;
+          const boxHDisp =
+            (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * dispH;
           fw = Math.max(1, Math.floor(boxWDisp / s));
           fh = Math.max(1, Math.floor(boxHDisp / s));
-          const cxDisp = (typeof focusBoxCX === 'number' ? focusBoxCX : 0.5) * dispW;
-          const cyDisp = (typeof focusBoxCY === 'number' ? focusBoxCY : 0.5) * dispH;
+          const cxDisp =
+            (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * dispW;
+          const cyDisp =
+            (typeof focusBoxCY === "number" ? focusBoxCY : 0.5) * dispH;
           const cxVid = (cxDisp + offsetX) / s;
           const cyVid = (cyDisp + offsetY) / s;
           fx = Math.max(0, Math.min(outW - fw, Math.floor(cxVid - fw / 2)));
@@ -1330,8 +1386,9 @@ export default function MixedSection({
                   {lot.mode ? lot.mode.replace("_", " ") : "Select mode"}
                 </div>
                 <div className="text-[11px] text-gray-600">
-                  Main: {lot.files.length} | Extra: {lot.extraFiles?.length || 0}{" "}
-                  | Video: {lot.videoFiles?.length || 0}
+                  Main: {lot.files.length} | Extra:{" "}
+                  {lot.extraFiles?.length || 0} | Video:{" "}
+                  {lot.videoFiles?.length || 0}
                 </div>
               </button>
             ))}
@@ -1363,12 +1420,13 @@ export default function MixedSection({
                 </div>
               </div>
 
-              {(!lots[activeIdx]?.mode) && (
+              {!lots[activeIdx]?.mode && (
                 <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700">
-                  <span className="font-medium">Required:</span> Select a mode for this lot
+                  <span className="font-medium">Required:</span> Select a mode
+                  for this lot
                 </div>
               )}
-              {((lots[activeIdx]?.files?.length ?? 0) === 0) && (
+              {(lots[activeIdx]?.files?.length ?? 0) === 0 && (
                 <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700">
                   <span className="font-medium">Required:</span> Add 1–30 images
                 </div>
@@ -1570,7 +1628,10 @@ export default function MixedSection({
         createPortal(
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 overflow-hidden touch-none overscroll-contain select-none">
             <div className="relative w-full h-full max-w-none max-h-full overflow-hidden flex flex-col rounded-none border-0 bg-black/30 ring-0 shadow-none">
-              <div className="relative flex-1 min-h-0 bg-black" ref={cameraViewRef}>
+              <div
+                className="relative flex-1 min-h-0 bg-black"
+                ref={cameraViewRef}
+              >
                 <video
                   ref={videoRef}
                   autoPlay
@@ -1609,8 +1670,10 @@ export default function MixedSection({
                         pinchStateRef.current = {
                           active: true,
                           startDist: dist,
-                          startFW: focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION,
-                          startFH: focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION,
+                          startFW:
+                            focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION,
+                          startFH:
+                            focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION,
                         };
                       }
                     }}
@@ -1623,24 +1686,44 @@ export default function MixedSection({
                       const ratio = dist / (s.startDist || 1);
                       const dispW = cameraViewSize.w || 1;
                       const dispH = cameraViewSize.h || 1;
-                      const cx = (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * dispW;
-                      const cy = (typeof focusBoxCY === "number" ? focusBoxCY : 0.5) * dispH;
+                      const cx =
+                        (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) *
+                        dispW;
+                      const cy =
+                        (typeof focusBoxCY === "number" ? focusBoxCY : 0.5) *
+                        dispH;
                       const startFW = s.startFW || 0.62;
                       const startFH = s.startFH || 0.62;
                       if (focusLockAR) {
                         const maxHalfW = Math.min(cx, dispW - cx);
                         const maxHalfH = Math.min(cy, dispH - cy);
-                        const maxFW = Math.max(0, (2 * maxHalfW) / Math.max(1, dispW));
-                        const maxFH = Math.max(0, (2 * maxHalfH) / Math.max(1, dispH));
+                        const maxFW = Math.max(
+                          0,
+                          (2 * maxHalfW) / Math.max(1, dispW)
+                        );
+                        const maxFH = Math.max(
+                          0,
+                          (2 * maxHalfH) / Math.max(1, dispH)
+                        );
                         const minScaleByW = 40 / Math.max(1, startFW * dispW);
                         const minScaleByH = 40 / Math.max(1, startFH * dispH);
                         const sMin = Math.max(minScaleByW, minScaleByH);
-                        const sMaxW = (maxFW > 0 ? maxFW : 0.98) / Math.max(0.0001, startFW);
-                        const sMaxH = (maxFH > 0 ? maxFH : 0.98) / Math.max(0.0001, startFH);
+                        const sMaxW =
+                          (maxFW > 0 ? maxFW : 0.98) /
+                          Math.max(0.0001, startFW);
+                        const sMaxH =
+                          (maxFH > 0 ? maxFH : 0.98) /
+                          Math.max(0.0001, startFH);
                         const sMax = Math.max(0.0001, Math.min(sMaxW, sMaxH));
                         const sClamped = Math.max(sMin, Math.min(sMax, ratio));
-                        const nextFW = Math.max(40 / dispW, Math.min(0.98, startFW * sClamped));
-                        const nextFH = Math.max(40 / dispH, Math.min(0.98, startFH * sClamped));
+                        const nextFW = Math.max(
+                          40 / dispW,
+                          Math.min(0.98, startFW * sClamped)
+                        );
+                        const nextFH = Math.max(
+                          40 / dispH,
+                          Math.min(0.98, startFH * sClamped)
+                        );
                         setFocusBoxFW(nextFW);
                         setFocusBoxFH(nextFH);
                       } else {
@@ -1648,10 +1731,18 @@ export default function MixedSection({
                         let nextFH = startFH * ratio;
                         const minW = 40 / Math.max(1, dispW);
                         const minH = 40 / Math.max(1, dispH);
-                        const maxWByCenter = (2 * Math.min(cx, dispW - cx)) / Math.max(1, dispW);
-                        const maxHByCenter = (2 * Math.min(cy, dispH - cy)) / Math.max(1, dispH);
-                        nextFW = Math.max(minW, Math.min(0.98, Math.min(nextFW, maxWByCenter || 0.98)));
-                        nextFH = Math.max(minH, Math.min(0.98, Math.min(nextFH, maxHByCenter || 0.98)));
+                        const maxWByCenter =
+                          (2 * Math.min(cx, dispW - cx)) / Math.max(1, dispW);
+                        const maxHByCenter =
+                          (2 * Math.min(cy, dispH - cy)) / Math.max(1, dispH);
+                        nextFW = Math.max(
+                          minW,
+                          Math.min(0.98, Math.min(nextFW, maxWByCenter || 0.98))
+                        );
+                        nextFH = Math.max(
+                          minH,
+                          Math.min(0.98, Math.min(nextFH, maxHByCenter || 0.98))
+                        );
                         setFocusBoxFW(nextFW);
                         setFocusBoxFH(nextFH);
                       }
@@ -1664,10 +1755,50 @@ export default function MixedSection({
                       onPointerDown={(e) => startDrag("move", e)}
                       className="absolute border-4 border-red-500 rounded-sm"
                       style={{
-                        width: cameraViewSize.w > 0 ? Math.round((focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * cameraViewSize.w) : undefined,
-                        height: cameraViewSize.h > 0 ? Math.round((focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * cameraViewSize.h) : undefined,
-                        left: cameraViewSize.w > 0 ? Math.round(((typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * cameraViewSize.w) - (((focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * cameraViewSize.w) / 2)) : undefined,
-                        top: cameraViewSize.h > 0 ? Math.round(((typeof focusBoxCY === "number" ? focusBoxCY : 0.5) * cameraViewSize.h) - (((focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * cameraViewSize.h) / 2)) : undefined,
+                        width:
+                          cameraViewSize.w > 0
+                            ? Math.round(
+                                (focusBoxFW ||
+                                  focusBoxFrac ||
+                                  FOCUS_BOX_FRACTION) * cameraViewSize.w
+                              )
+                            : undefined,
+                        height:
+                          cameraViewSize.h > 0
+                            ? Math.round(
+                                (focusBoxFH ||
+                                  focusBoxFrac ||
+                                  FOCUS_BOX_FRACTION) * cameraViewSize.h
+                              )
+                            : undefined,
+                        left:
+                          cameraViewSize.w > 0
+                            ? Math.round(
+                                (typeof focusBoxCX === "number"
+                                  ? focusBoxCX
+                                  : 0.5) *
+                                  cameraViewSize.w -
+                                  ((focusBoxFW ||
+                                    focusBoxFrac ||
+                                    FOCUS_BOX_FRACTION) *
+                                    cameraViewSize.w) /
+                                    2
+                              )
+                            : undefined,
+                        top:
+                          cameraViewSize.h > 0
+                            ? Math.round(
+                                (typeof focusBoxCY === "number"
+                                  ? focusBoxCY
+                                  : 0.5) *
+                                  cameraViewSize.h -
+                                  ((focusBoxFH ||
+                                    focusBoxFrac ||
+                                    FOCUS_BOX_FRACTION) *
+                                    cameraViewSize.h) /
+                                    2
+                              )
+                            : undefined,
                         cursor: "move",
                       }}
                       tabIndex={0}
@@ -1676,24 +1807,45 @@ export default function MixedSection({
                         const dispH = cameraViewSize.h;
                         if (!(dispW > 0 && dispH > 0)) return;
                         const step = e.shiftKey ? 5 : 1;
-                        const w = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * dispW;
-                        const h = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * dispH;
-                        let cx = (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) * dispW;
-                        let cy = (typeof focusBoxCY === "number" ? focusBoxCY : 0.5) * dispH;
+                        const w =
+                          (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) *
+                          dispW;
+                        const h =
+                          (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) *
+                          dispH;
+                        let cx =
+                          (typeof focusBoxCX === "number" ? focusBoxCX : 0.5) *
+                          dispW;
+                        let cy =
+                          (typeof focusBoxCY === "number" ? focusBoxCY : 0.5) *
+                          dispH;
                         if (e.key === "ArrowLeft") cx -= step;
                         else if (e.key === "ArrowRight") cx += step;
                         else if (e.key === "ArrowUp") cy -= step;
                         else if (e.key === "ArrowDown") cy += step;
                         else return;
-                        cx = Math.max(w / 2, Math.min(dispW - w / 2, Math.round(cx)));
-                        cy = Math.max(h / 2, Math.min(dispH - h / 2, Math.round(cy)));
+                        cx = Math.max(
+                          w / 2,
+                          Math.min(dispW - w / 2, Math.round(cx))
+                        );
+                        cy = Math.max(
+                          h / 2,
+                          Math.min(dispH - h / 2, Math.round(cy))
+                        );
                         setFocusBoxCX(cx / Math.max(1, dispW));
                         setFocusBoxCY(cy / Math.max(1, dispH));
-                        try { e.preventDefault(); e.stopPropagation(); } catch {}
+                        try {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        } catch {}
                       }}
                     >
                       <div
-                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("nw", e); }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          startDrag("nw", e);
+                        }}
                         style={{
                           position: "absolute",
                           left: -8,
@@ -1708,7 +1860,11 @@ export default function MixedSection({
                         }}
                       />
                       <div
-                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("ne", e); }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          startDrag("ne", e);
+                        }}
                         style={{
                           position: "absolute",
                           right: -8,
@@ -1723,7 +1879,11 @@ export default function MixedSection({
                         }}
                       />
                       <div
-                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("se", e); }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          startDrag("se", e);
+                        }}
                         style={{
                           position: "absolute",
                           right: -8,
@@ -1738,7 +1898,11 @@ export default function MixedSection({
                         }}
                       />
                       <div
-                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("sw", e); }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          startDrag("sw", e);
+                        }}
                         style={{
                           position: "absolute",
                           left: -8,
@@ -1753,7 +1917,11 @@ export default function MixedSection({
                         }}
                       />
                       <div
-                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("n", e); }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          startDrag("n", e);
+                        }}
                         style={{
                           position: "absolute",
                           left: "50%",
@@ -1769,7 +1937,11 @@ export default function MixedSection({
                         }}
                       />
                       <div
-                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("s", e); }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          startDrag("s", e);
+                        }}
                         style={{
                           position: "absolute",
                           left: "50%",
@@ -1785,7 +1957,11 @@ export default function MixedSection({
                         }}
                       />
                       <div
-                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("e", e); }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          startDrag("e", e);
+                        }}
                         style={{
                           position: "absolute",
                           top: "50%",
@@ -1801,7 +1977,11 @@ export default function MixedSection({
                         }}
                       />
                       <div
-                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); startDrag("w", e); }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          startDrag("w", e);
+                        }}
                         style={{
                           position: "absolute",
                           top: "50%",
@@ -1896,20 +2076,39 @@ export default function MixedSection({
                                   setFocusLockAR((prev) => {
                                     const next = !prev;
                                     if (next) {
-                                      const fw = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispW || 1);
-                                      const fh = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispH || 1);
-                                      const ar = Math.max(0.0001, fw / Math.max(1, fh));
+                                      const fw =
+                                        (focusBoxFW ||
+                                          focusBoxFrac ||
+                                          FOCUS_BOX_FRACTION) * (dispW || 1);
+                                      const fh =
+                                        (focusBoxFH ||
+                                          focusBoxFrac ||
+                                          FOCUS_BOX_FRACTION) * (dispH || 1);
+                                      const ar = Math.max(
+                                        0.0001,
+                                        fw / Math.max(1, fh)
+                                      );
                                       focusARRef.current = ar;
                                     }
                                     return next;
                                   });
                                 }}
-                                className={`inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 ring-1 ring-white/20 hover:bg-white/15 ${focusLockAR ? "bg-red-600/80 text-white" : "bg-white/10 text-white"}`}
+                                className={`inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 ring-1 ring-white/20 hover:bg-white/15 ${
+                                  focusLockAR
+                                    ? "bg-red-600/80 text-white"
+                                    : "bg-white/10 text-white"
+                                }`}
                                 title="Aspect Lock"
                                 aria-label="Aspect Lock"
                               >
-                                {focusLockAR ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                                <span className="text-[12px] ml-1">{focusLockAR ? "Lock On" : "Lock Off"}</span>
+                                {focusLockAR ? (
+                                  <Lock className="h-4 w-4" />
+                                ) : (
+                                  <Unlock className="h-4 w-4" />
+                                )}
+                                <span className="text-[12px] ml-1">
+                                  {focusLockAR ? "Lock On" : "Lock Off"}
+                                </span>
                               </button>
                             </div>
                           </div>
@@ -1948,27 +2147,34 @@ export default function MixedSection({
                             aria-label="Exit"
                           >
                             <X className="h-5 w-5" />
-                            <span className="text-[14px] leading-none font-medium whitespace-nowrap">Exit</span>
+                            <span className="text-[14px] leading-none font-medium whitespace-nowrap">
+                              Exit
+                            </span>
                           </button>
                           <div className="min-w-0 flex-1 text-center overflow-hidden px-2">
                             <span
                               className="block truncate whitespace-nowrap leading-none font-semibold tracking-tight"
                               style={{ fontSize: "clamp(14px, 3vw, 18px)" }}
                             >
-                              Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
+                              Total:{" "}
+                              {lots.reduce((s, l) => s + l.files.length, 0)}/
                               {maxTotalImages}
                               {" | "}Lot {activeIdx + 1}:{" "}
-                              {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot} (Main)
-                              {" | "}Extra: {lots[activeIdx]?.extraFiles.length ?? 0}/
+                              {lots[activeIdx]?.files.length ?? 0}/
+                              {maxImagesPerLot} (Main)
+                              {" | "}Extra:{" "}
+                              {lots[activeIdx]?.extraFiles.length ?? 0}/
                               {maxExtraImagesPerLot}
-                              {" | "}Mode: {lots[activeIdx]?.mode === "single_lot"
+                              {" | "}Mode:{" "}
+                              {lots[activeIdx]?.mode === "single_lot"
                                 ? "Bundle"
                                 : lots[activeIdx]?.mode === "per_item"
                                 ? "Per Item"
                                 : lots[activeIdx]?.mode === "per_photo"
                                 ? "Per Photo"
                                 : "—"}
-                              {isRecording && ` | REC ${formatTimer(recMillis)}`}
+                              {isRecording &&
+                                ` | REC ${formatTimer(recMillis)}`}
                             </span>
                           </div>
                           <div className="flex items-center justify-end gap-1.5 shrink-0">
@@ -2000,7 +2206,9 @@ export default function MixedSection({
                               ) : (
                                 <ZapOff className="h-5 w-5" />
                               )}
-                              <span className="text-[13px] leading-none whitespace-nowrap">{flashOn ? "On" : "Off"}</span>
+                              <span className="text-[13px] leading-none whitespace-nowrap">
+                                {flashOn ? "On" : "Off"}
+                              </span>
                             </button>
                             <button
                               type="button"
@@ -2013,7 +2221,9 @@ export default function MixedSection({
                               title="Focus"
                               aria-label="Focus"
                             >
-                              <span className="text-[13px] leading-none whitespace-nowrap">Focus</span>
+                              <span className="text-[13px] leading-none whitespace-nowrap">
+                                Focus
+                              </span>
                               <span className="text-[12px] ml-1 opacity-90 whitespace-nowrap">
                                 {focusOn ? "On" : "Off"}
                               </span>
@@ -2026,20 +2236,39 @@ export default function MixedSection({
                                 setFocusLockAR((prev) => {
                                   const next = !prev;
                                   if (next) {
-                                    const fw = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispW || 1);
-                                    const fh = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispH || 1);
-                                    const ar = Math.max(0.0001, fw / Math.max(1, fh));
+                                    const fw =
+                                      (focusBoxFW ||
+                                        focusBoxFrac ||
+                                        FOCUS_BOX_FRACTION) * (dispW || 1);
+                                    const fh =
+                                      (focusBoxFH ||
+                                        focusBoxFrac ||
+                                        FOCUS_BOX_FRACTION) * (dispH || 1);
+                                    const ar = Math.max(
+                                      0.0001,
+                                      fw / Math.max(1, fh)
+                                    );
                                     focusARRef.current = ar;
                                   }
                                   return next;
                                 });
                               }}
-                              className={`inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg px-2 ring-1 ring-white/20 hover:bg-white/15 whitespace-nowrap ${focusLockAR ? "bg-red-600/80 text-white" : "bg-white/10 text-white"}`}
+                              className={`inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg px-2 ring-1 ring-white/20 hover:bg-white/15 whitespace-nowrap ${
+                                focusLockAR
+                                  ? "bg-red-600/80 text-white"
+                                  : "bg-white/10 text-white"
+                              }`}
                               title="Aspect Lock"
                               aria-label="Aspect Lock"
                             >
-                              {focusLockAR ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                              <span className="text-[12px] ml-1 whitespace-nowrap">{focusLockAR ? "Lock On" : "Lock Off"}</span>
+                              {focusLockAR ? (
+                                <Lock className="h-4 w-4" />
+                              ) : (
+                                <Unlock className="h-4 w-4" />
+                              )}
+                              <span className="text-[12px] ml-1 whitespace-nowrap">
+                                {focusLockAR ? "Lock On" : "Lock Off"}
+                              </span>
                             </button>
                           </div>
                         </div>
@@ -2155,19 +2384,38 @@ export default function MixedSection({
                             setFocusLockAR((prev) => {
                               const next = !prev;
                               if (next) {
-                                const fw = (focusBoxFW || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispW || 1);
-                                const fh = (focusBoxFH || focusBoxFrac || FOCUS_BOX_FRACTION) * (dispH || 1);
-                                const ar = Math.max(0.0001, fw / Math.max(1, fh));
+                                const fw =
+                                  (focusBoxFW ||
+                                    focusBoxFrac ||
+                                    FOCUS_BOX_FRACTION) * (dispW || 1);
+                                const fh =
+                                  (focusBoxFH ||
+                                    focusBoxFrac ||
+                                    FOCUS_BOX_FRACTION) * (dispH || 1);
+                                const ar = Math.max(
+                                  0.0001,
+                                  fw / Math.max(1, fh)
+                                );
                                 focusARRef.current = ar;
                               }
                               return next;
                             });
                           }}
-                          className={`inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-2 py-0 ring-1 ring-white/20 hover:bg-white/15 ${focusLockAR ? "bg-red-600/80 text-white" : "bg-white/10 text-white"}`}
+                          className={`inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-2 py-0 ring-1 ring-white/20 hover:bg-white/15 ${
+                            focusLockAR
+                              ? "bg-red-600/80 text-white"
+                              : "bg-white/10 text-white"
+                          }`}
                           title="Aspect Lock"
                         >
-                          {focusLockAR ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                          <span className="text-[12px] ml-1">{focusLockAR ? "Lock On" : "Lock Off"}</span>
+                          {focusLockAR ? (
+                            <Lock className="h-3.5 w-3.5" />
+                          ) : (
+                            <Unlock className="h-3.5 w-3.5" />
+                          )}
+                          <span className="text-[12px] ml-1">
+                            {focusLockAR ? "Lock On" : "Lock Off"}
+                          </span>
                         </button>
                       </div>
                     </div>
@@ -2176,10 +2424,10 @@ export default function MixedSection({
 
                 {/* Landscape: All controls on right side */}
                 {orientation === "landscape" && (
-                  <div className="pointer-events-auto absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5 sm:gap-2">
+                  <div className="pointer-events-auto absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1">
                     {/* Zoom controls at top */}
-                    <div className="flex items-center gap-1.5 rounded-lg bg-black/60 px-2 py-1 ring-1 ring-white/20 backdrop-blur">
-                      <ZoomOut className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white/90" />
+                    <div className="flex items-center gap-1 rounded-lg bg-black/60 px-1.5 py-0.5 ring-1 ring-white/20 backdrop-blur">
+                      <ZoomOut className="h-3 w-3 text-white/90" />
                       <input
                         type="range"
                         min={1}
@@ -2187,143 +2435,153 @@ export default function MixedSection({
                         step={0.1}
                         value={zoom}
                         onChange={(e) => setZoom(parseFloat(e.target.value))}
-                        className="w-[70px] sm:w-[90px] accent-rose-500 cursor-pointer text-[16px]"
+                        className="w-[65px] accent-rose-500 cursor-pointer text-[16px]"
                       />
-                      <ZoomIn className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white/90" />
-                      <div className="ml-0.5 w-7 text-right text-[9px] sm:text-[10px] text-white/90">
+                      <ZoomIn className="h-3 w-3 text-white/90" />
+                      <div className="w-6 text-right text-[9px] text-white/90">
                         {zoom.toFixed(1)}x
                       </div>
                     </div>
                     
                     {/* Capture buttons */}
-                    <div className="flex items-stretch gap-0.5 sm:gap-1">
+                    <div className="flex items-stretch gap-0.5">
                       <button
                         type="button"
                         onClick={() => handleCapture("single_lot")}
-                        className="h-8 sm:h-9 min-w-[72px] sm:min-w-[80px] inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-white shadow-[0_3px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        className="h-7 px-1.5 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                         title="Capture - Bundle"
                       >
-                        <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Bundle
+                        <Camera className="h-3 w-3" /><span className="whitespace-nowrap">Bundle</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleCapture("single_lot", true)}
-                        className="h-8 sm:h-9 min-w-[72px] sm:min-w-[80px] inline-flex cursor-pointer items-center justify-center gap-0.5 sm:gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                        className="h-7 px-1.5 inline-flex cursor-pointer items-center justify-center rounded-full bg-gradient-to-b from-blue-500 to-blue-600 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
                         title="Capture - Bundle Extra (Report Only)"
                       >
-                        Extra
+                        <span className="whitespace-nowrap">Extra</span>
                       </button>
                     </div>
-                    <div className="flex items-stretch gap-0.5 sm:gap-1">
+                    <div className="flex items-stretch gap-0.5">
                       <button
                         type="button"
                         onClick={() => handleCapture("per_item")}
-                        className="h-8 sm:h-9 min-w-[72px] sm:min-w-[80px] inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-white shadow-[0_3px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        className="h-7 px-1.5 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                         title="Capture - Item"
                       >
-                        <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Item
+                        <Camera className="h-3 w-3" /><span className="whitespace-nowrap">Item</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleCapture("per_item", true)}
-                        className="h-8 sm:h-9 min-w-[72px] sm:min-w-[80px] inline-flex cursor-pointer items-center justify-center gap-0.5 sm:gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                        className="h-7 px-1.5 inline-flex cursor-pointer items-center justify-center rounded-full bg-gradient-to-b from-blue-500 to-blue-600 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
                         title="Capture - Item Extra (Report Only)"
                       >
-                        Extra
+                        <span className="whitespace-nowrap">Extra</span>
                       </button>
                     </div>
-                    <div className="flex items-stretch gap-0.5 sm:gap-1">
+                    <div className="flex items-stretch gap-0.5">
                       <button
                         type="button"
                         onClick={() => handleCapture("per_photo")}
-                        className="h-8 sm:h-9 min-w-[72px] sm:min-w-[80px] inline-flex cursor-pointer items-center justify-center gap-1 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 px-2 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-white shadow-[0_3px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
+                        className="h-7 px-1.5 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500 to-rose-600 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.45)] hover:from-rose-400 hover:to-rose-600"
                         title="Capture - Photo"
                       >
-                        <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Photo
+                        <Camera className="h-3 w-3" /><span className="whitespace-nowrap">Photo</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleCapture("per_photo", true)}
-                        className="h-8 sm:h-9 min-w-[72px] sm:min-w-[80px] inline-flex cursor-pointer items-center justify-center gap-0.5 sm:gap-1 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 px-2 sm:px-2.5 text-[10px] sm:text-xs font-semibold text-white shadow-[0_3px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
+                        className="h-7 px-1.5 inline-flex cursor-pointer items-center justify-center rounded-full bg-gradient-to-b from-blue-500 to-blue-600 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(29,78,216,0.45)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.45)] hover:from-blue-400 hover:to-blue-600"
                         title="Capture - Photo Extra (Report Only)"
                       >
-                        Extra
+                        <span className="whitespace-nowrap">Extra</span>
                       </button>
                     </div>
                     
                     {/* Record button */}
-                    <div className="flex items-stretch justify-stretch">
-                      <button
-                        type="button"
-                        disabled={!lots[activeIdx]?.mode}
-                        onClick={() => {
-                          if (!lots[activeIdx]?.mode) return;
-                          if (isRecording) {
-                            try {
-                              playRecordStop();
-                            } catch {}
-                            stopRecording();
-                          } else {
-                            try {
-                              playRecordStart();
-                            } catch {}
-                            startRecording();
-                          }
-                        }}
-                        className={`h-8 sm:h-9 w-full inline-flex cursor-pointer items-center justify-center rounded-full px-2 sm:px-2.5 text-[10px] sm:text-xs font-semibold ring-1 ring-white/20 ${
-                          isRecording
-                            ? "bg-blue-900 text-white hover:bg-blue-800"
-                            : "bg-blue-600 text-white hover:bg-blue-500"
-                        } ${
-                          !lots[activeIdx]?.mode
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                        title={
-                          isRecording ? "Stop Recording" : "Start Recording"
+                    <button
+                      type="button"
+                      disabled={!lots[activeIdx]?.mode}
+                      onClick={() => {
+                        if (!lots[activeIdx]?.mode) return;
+                        if (isRecording) {
+                          try {
+                            playRecordStop();
+                          } catch {}
+                          stopRecording();
+                        } else {
+                          try {
+                            playRecordStart();
+                          } catch {}
+                          startRecording();
                         }
-                      >
-                        {isRecording ? "Stop" : "Record"}
-                      </button>
-                    </div>
+                      }}
+                      className={`h-7 w-full inline-flex cursor-pointer items-center justify-center rounded-full px-1.5 text-[9px] font-semibold ring-1 ring-white/20 ${
+                        isRecording
+                          ? "bg-blue-900 text-white hover:bg-blue-800"
+                          : "bg-blue-600 text-white hover:bg-blue-500"
+                      } ${
+                        !lots[activeIdx]?.mode
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                      title={
+                        isRecording ? "Stop Recording" : "Start Recording"
+                      }
+                    >
+                      {isRecording ? "Stop" : "Record"}
+                    </button>
                     
-                    {/* Previous/Next navigation buttons at bottom */}
-                    <div className="flex flex-col gap-0.5 sm:gap-1">
+                    {/* Previous/Next navigation buttons */}
+                    <div className="flex flex-col gap-0.5">
                       <button
                         type="button"
                         onClick={goPrevLot}
                         disabled={activeIdx <= 0}
-                        className="h-7 sm:h-8 w-full inline-flex items-center justify-center gap-1 rounded-lg bg-blue-600 px-2 text-[9px] sm:text-[10px] font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                        className="h-6 w-full inline-flex items-center justify-center gap-0.5 rounded-lg bg-blue-600 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                         aria-label="Previous lot"
                       >
-                        <ChevronLeft className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                        <ChevronLeft className="h-2.5 w-2.5" />
                         <span>Prev</span>
                       </button>
                       <button
                         type="button"
                         onClick={goNextLot}
-                        className="h-7 sm:h-8 w-full inline-flex items-center justify-center gap-1 rounded-lg bg-green-600 px-2 text-[9px] sm:text-[10px] font-semibold text-white ring-1 ring-white/10 hover:bg-green-500 cursor-pointer"
+                        className="h-6 w-full inline-flex items-center justify-center gap-0.5 rounded-lg bg-green-600 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-green-500 cursor-pointer"
                         aria-label="Next lot"
                       >
                         <span>Next</span>
-                        <ChevronRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                        <ChevronRight className="h-2.5 w-2.5" />
                       </button>
                     </div>
+                    
+                    {/* Done button at bottom */}
+                    <button
+                      type="button"
+                      onClick={finishAndClose}
+                      className="h-9 w-full inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.45)] focus:outline-none cursor-pointer"
+                      aria-label="Done"
+                      title="Done"
+                    >
+                      <Check className="h-4 w-4" />
+                      <span className="text-[10px] font-bold">Done</span>
+                    </button>
                   </div>
                 )}
 
-                {/* Bottom controls */}
-                <div
-                  ref={bottomControlsRef}
-                  className="pointer-events-auto absolute inset-x-0 z-20 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur"
-                  style={{
-                    bottom: 0,
-                    paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)",
-                  }}
-                >
-                  <div className="mx-auto w-full max-w-[560px] sm:max-w-[780px]">
-                    {/* Portrait: zoom above controls */}
-                    {orientation !== "landscape" && (
+                {/* Bottom controls - hidden in landscape */}
+                {orientation !== "landscape" && (
+                  <div
+                    ref={bottomControlsRef}
+                    className="pointer-events-auto absolute inset-x-0 z-20 border-t border-white/10 bg-black/40 px-2 sm:px-3 py-2 backdrop-blur"
+                    style={{
+                      bottom: 0,
+                      paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)",
+                    }}
+                  >
+                    <div className="mx-auto w-full max-w-[560px] sm:max-w-[780px]">
+                      {/* Portrait: zoom above controls */}
                       <div className="mb-1 flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/15 backdrop-blur">
                         <ZoomOut className="h-3.5 w-3.5 text-white/90" />
                         <input
@@ -2340,16 +2598,8 @@ export default function MixedSection({
                           {zoom.toFixed(1)}x
                         </div>
                       </div>
-                    )}
-                    {/* Controls row: Portrait has 3 buttons, Landscape has only Done button centered */}
-                    <div
-                      className={`grid items-center gap-2 w-full ${
-                        orientation === "landscape"
-                          ? "grid-cols-1 justify-items-center"
-                          : "grid-cols-[2fr_1fr_2fr]"
-                      }`}
-                    >
-                      {orientation !== "landscape" && (
+                      {/* Portrait: 3 button controls */}
+                      <div className="grid items-center gap-2 w-full grid-cols-[2fr_1fr_2fr]">
                         <button
                           type="button"
                           onClick={goPrevLot}
@@ -2360,17 +2610,15 @@ export default function MixedSection({
                           <ChevronLeft className="h-3 w-3" />
                           <span className="text-[10px]">Previous</span>
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={finishAndClose}
-                        className={`${orientation === "landscape" ? "h-11 sm:h-12 w-[140px] sm:w-[160px]" : "h-12 sm:h-14 w-full"} inline-flex items-center justify-center rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_6px_0_0_rgba(190,18,60,0.45)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_3px_0_0_rgba(190,18,60,0.45)] focus:outline-none cursor-pointer`}
-                        aria-label="Done"
-                        title="Done"
-                      >
-                        <Check className={orientation === "landscape" ? "h-6 w-6 sm:h-7 sm:w-7" : "h-7 w-7"} />
-                      </button>
-                      {orientation !== "landscape" && (
+                        <button
+                          type="button"
+                          onClick={finishAndClose}
+                          className="h-12 sm:h-14 w-full inline-flex items-center justify-center rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_6px_0_0_rgba(190,18,60,0.45)] ring-2 ring-rose-300/60 hover:from-rose-400 hover:to-rose-600 active:translate-y-0.5 active:shadow-[0_3px_0_0_rgba(190,18,60,0.45)] focus:outline-none cursor-pointer"
+                          aria-label="Done"
+                          title="Done"
+                        >
+                          <Check className="h-7 w-7" />
+                        </button>
                         <button
                           type="button"
                           onClick={goNextLot}
@@ -2380,10 +2628,8 @@ export default function MixedSection({
                           <span className="text-[10px]">Next</span>
                           <ChevronRight className="h-3 w-3" />
                         </button>
-                      )}
-                    </div>
-                    {/* Row 2: Capture buttons - right side for landscape, bottom for portrait */}
-                    {orientation !== "landscape" && (
+                      </div>
+                      {/* Row 2: Capture buttons - bottom for portrait */}
                       <div className="mt-2 grid grid-cols-4 gap-2 w-full">
                         <div className="flex flex-col gap-1">
                           <button
@@ -2474,9 +2720,9 @@ export default function MixedSection({
                           </button>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Error overlay */}
                 {cameraError && (
