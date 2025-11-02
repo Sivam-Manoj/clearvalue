@@ -2536,12 +2536,12 @@ export default function MixedSection({
                     </button>
                     
                     {/* Previous/Next navigation buttons */}
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex items-stretch gap-0.5">
                       <button
                         type="button"
                         onClick={goPrevLot}
                         disabled={activeIdx <= 0}
-                        className="h-7 w-full inline-flex items-center justify-center gap-0.5 rounded-lg bg-blue-600/60 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500/60 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                        className="h-9 flex-1 inline-flex items-center justify-center gap-0.5 rounded-md bg-blue-600/60 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500/60 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                         aria-label="Previous lot"
                       >
                         <ChevronLeft className="h-2.5 w-2.5" />
@@ -2550,7 +2550,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={goNextLot}
-                        className="h-7 w-full inline-flex items-center justify-center gap-0.5 rounded-lg bg-green-600/60 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-green-500/60 cursor-pointer"
+                        className="h-9 flex-1 inline-flex items-center justify-center gap-0.5 rounded-md bg-green-600/60 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-green-500/60 cursor-pointer"
                         aria-label="Next lot"
                       >
                         <span>Next</span>
