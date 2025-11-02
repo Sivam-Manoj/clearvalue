@@ -2424,9 +2424,9 @@ export default function MixedSection({
 
                 {/* Landscape: All controls on right side */}
                 {orientation === "landscape" && (
-                  <div className="pointer-events-auto absolute right-0 inset-y-0 z-30 flex flex-col gap-1 justify-end">
+                  <div className="pointer-events-auto absolute right-0 inset-y-0 z-30 flex flex-col justify-between py-2">
                     {/* Zoom controls at top */}
-                    <div className="flex items-center gap-1 rounded-lg bg-black/40 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur">
+                    <div className="flex items-center gap-1 rounded-lg bg-black/40 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur mb-1">
                       <ZoomOut className="h-3 w-3 text-white/90" />
                       <input
                         type="range"
@@ -2443,6 +2443,8 @@ export default function MixedSection({
                       </div>
                     </div>
                     
+                    {/* Bottom buttons group */}
+                    <div className="flex flex-col gap-1">
                     {/* Capture buttons */}
                     <div className="flex items-stretch gap-0.5">
                       <button
@@ -2567,6 +2569,7 @@ export default function MixedSection({
                       <Check className="h-4 w-4" />
                       <span className="text-[10px] font-bold">Done</span>
                     </button>
+                    </div>
                   </div>
                 )}
 
