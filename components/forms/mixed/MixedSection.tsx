@@ -2424,7 +2424,7 @@ export default function MixedSection({
 
                 {/* Landscape: All controls on right side */}
                 {orientation === "landscape" && (
-                  <div className="pointer-events-auto absolute right-0 z-30 flex flex-col overflow-y-auto" style={{ top: 'calc(env(safe-area-inset-top) + 52px)', bottom: '8px', maxHeight: 'calc(100vh - env(safe-area-inset-top) - 60px)', paddingTop: '4px', paddingBottom: '4px' }}>
+                  <div className="pointer-events-auto absolute right-0 z-30 flex flex-col overflow-y-auto" style={{ top: 'calc(env(safe-area-inset-top) + 52px)', bottom: '8px', maxHeight: 'calc(100vh - env(safe-area-inset-top) - 60px)', paddingTop: '4px', }}>
                     {/* Zoom controls at top */}
                     <div className="flex items-center gap-1 rounded-lg bg-black/40 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur mb-1 flex-shrink-0">
                       <ZoomOut className="h-3 w-3 text-white/90" />
@@ -2519,7 +2519,7 @@ export default function MixedSection({
                           startRecording();
                         }
                       }}
-                      className={`h-8 w-full inline-flex cursor-pointer items-center justify-center rounded-full px-1.5 text-[9px] font-semibold ring-1 ring-white/10 ${
+                      className={`h-11 w-full inline-flex cursor-pointer items-center justify-center rounded-full px-1.5 text-[9px] font-semibold ring-1 ring-white/10 ${
                         isRecording
                           ? "bg-yellow-600/60 text-white hover:bg-yellow-700/60"
                           : "bg-yellow-500/60 text-white hover:bg-yellow-600/60"
