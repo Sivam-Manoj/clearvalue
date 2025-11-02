@@ -2003,9 +2003,10 @@ export default function MixedSection({
                 {/* Top overlay: counters / flash */}
                 <div className="pointer-events-auto absolute top-0 left-0 right-0 z-30">
                   <div
-                    className={`w-full px-1.5 sm:px-2 py-0.5`}
+                    className={`w-full px-1.5 sm:px-2`}
                     style={{
                       paddingTop: "calc(env(safe-area-inset-top) + 2px)",
+                      paddingBottom: 0,
                     }}
                   >
                     <div className="sm:hidden text-white">
@@ -2424,7 +2425,7 @@ export default function MixedSection({
 
                 {/* Landscape: All controls on right side */}
                 {orientation === "landscape" && (
-                  <div className="pointer-events-auto absolute right-0 z-30 flex flex-col overflow-y-auto" style={{ top: 'calc(env(safe-area-inset-top) + 52px)', bottom: '8px', maxHeight: 'calc(100vh - env(safe-area-inset-top) - 60px)',  paddingBottom: '4px' }}>
+                  <div className="pointer-events-auto absolute right-0 z-30 flex flex-col" style={{ top: 'calc(env(safe-area-inset-top) + 45px)', bottom: 'env(safe-area-inset-bottom, 4px)', maxHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom, 4px) - 45px)', overflowY: 'auto', overflowX: 'hidden' }}>
                     {/* Zoom controls at top */}
                     <div className="flex items-center gap-1 rounded-lg bg-black/40 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur mb-1 flex-shrink-0">
                       <ZoomOut className="h-3 w-3 text-white/90" />
