@@ -2425,7 +2425,7 @@ export default function MixedSection({
 
                 {/* Landscape: All controls on right side */}
                 {orientation === "landscape" && (
-                  <div className="pointer-events-auto absolute right-0 z-30 flex flex-col justify-between py-1" style={{ top: 'calc(env(safe-area-inset-top) + 45px)', bottom: 'max(env(safe-area-inset-bottom), 4px)', height: 'calc(100vh - env(safe-area-inset-top) - max(env(safe-area-inset-bottom), 4px) - 45px)' }}>
+                  <div className="pointer-events-auto absolute right-0 z-30 flex flex-col gap-0.5 py-1 overflow-y-auto" style={{ top: 'calc(env(safe-area-inset-top) + 45px)', bottom: 'max(env(safe-area-inset-bottom), 4px)', maxHeight: 'calc(100vh - env(safe-area-inset-top) - max(env(safe-area-inset-bottom), 4px) - 45px)' }}>
                     {/* Zoom controls at top */}
                     <div className="flex items-center gap-1 rounded-lg bg-black/40 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur flex-shrink-0">
                       <ZoomOut className="h-3 w-3 text-white/90" />
@@ -2444,10 +2444,8 @@ export default function MixedSection({
                       </div>
                     </div>
                     
-                    {/* All buttons group - fills remaining space */}
-                    <div className="flex flex-col gap-0.5 flex-1 min-h-0">
                     {/* Capture buttons */}
-                    <div className="flex items-stretch gap-0.5 flex-1">
+                    <div className="flex items-stretch gap-0.5 flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => handleCapture("single_lot")}
@@ -2465,7 +2463,7 @@ export default function MixedSection({
                         <span className="whitespace-nowrap">Extra</span>
                       </button>
                     </div>
-                    <div className="flex items-stretch gap-0.5 flex-1">
+                    <div className="flex items-stretch gap-0.5 flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => handleCapture("per_item")}
@@ -2483,7 +2481,7 @@ export default function MixedSection({
                         <span className="whitespace-nowrap">Extra</span>
                       </button>
                     </div>
-                    <div className="flex items-stretch gap-0.5 flex-1">
+                    <div className="flex items-stretch gap-0.5 flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => handleCapture("per_photo")}
@@ -2520,7 +2518,7 @@ export default function MixedSection({
                           startRecording();
                         }
                       }}
-                      className={`h-9 w-full inline-flex cursor-pointer items-center justify-center rounded-full px-1.5 text-[9px] font-semibold ring-1 ring-white/10 ${
+                      className={`h-9 w-full flex-shrink-0 inline-flex cursor-pointer items-center justify-center rounded-full px-1.5 text-[9px] font-semibold ring-1 ring-white/10 ${
                         isRecording
                           ? "bg-yellow-600/60 text-white hover:bg-yellow-700/60"
                           : "bg-yellow-500/60 text-white hover:bg-yellow-600/60"
@@ -2537,7 +2535,7 @@ export default function MixedSection({
                     </button>
                     
                     {/* Previous/Next navigation buttons */}
-                    <div className="flex items-stretch gap-0.5 flex-1">
+                    <div className="flex items-stretch gap-0.5 flex-shrink-0">
                       <button
                         type="button"
                         onClick={goPrevLot}
@@ -2570,7 +2568,6 @@ export default function MixedSection({
                       <Check className="h-3.5 w-3.5" />
                       <span className="text-[10px] font-bold">Done</span>
                     </button>
-                    </div>
                   </div>
                 )}
 
