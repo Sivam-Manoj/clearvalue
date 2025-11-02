@@ -2424,9 +2424,9 @@ export default function MixedSection({
 
                 {/* Landscape: All controls on right side */}
                 {orientation === "landscape" && (
-                  <div className="pointer-events-auto absolute right-0 bottom-0 z-30 flex flex-col gap-1">
+                  <div className="pointer-events-auto absolute right-0 inset-y-0 z-30 flex flex-col gap-1 justify-end">
                     {/* Zoom controls at top */}
-                    <div className="flex items-center gap-1 rounded-lg bg-black/50 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur">
+                    <div className="flex items-center gap-1 rounded-lg bg-black/40 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur">
                       <ZoomOut className="h-3 w-3 text-white/90" />
                       <input
                         type="range"
@@ -2448,7 +2448,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("single_lot")}
-                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500/80 to-rose-600/80 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.35)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.35)] hover:from-rose-400/80 hover:to-rose-600/80"
+                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500/60 to-rose-600/60 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.25)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.25)] hover:from-rose-400/60 hover:to-rose-600/60"
                         title="Capture - Bundle"
                       >
                         <Camera className="h-3 w-3" /><span className="whitespace-nowrap">Bundle</span>
@@ -2456,7 +2456,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("single_lot", true)}
-                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center rounded-full bg-gradient-to-b from-blue-500/80 to-blue-600/80 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(29,78,216,0.35)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.35)] hover:from-blue-400/80 hover:to-blue-600/80"
+                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center rounded-full bg-gradient-to-b from-blue-500/60 to-blue-600/60 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(29,78,216,0.25)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.25)] hover:from-blue-400/60 hover:to-blue-600/60"
                         title="Capture - Bundle Extra (Report Only)"
                       >
                         <span className="whitespace-nowrap">Extra</span>
@@ -2466,7 +2466,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("per_item")}
-                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500/80 to-rose-600/80 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.35)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.35)] hover:from-rose-400/80 hover:to-rose-600/80"
+                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500/60 to-rose-600/60 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.25)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.25)] hover:from-rose-400/60 hover:to-rose-600/60"
                         title="Capture - Item"
                       >
                         <Camera className="h-3 w-3" /><span className="whitespace-nowrap">Item</span>
@@ -2474,7 +2474,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("per_item", true)}
-                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center rounded-full bg-gradient-to-b from-blue-500/80 to-blue-600/80 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(29,78,216,0.35)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.35)] hover:from-blue-400/80 hover:to-blue-600/80"
+                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center rounded-full bg-gradient-to-b from-blue-500/60 to-blue-600/60 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(29,78,216,0.25)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.25)] hover:from-blue-400/60 hover:to-blue-600/60"
                         title="Capture - Item Extra (Report Only)"
                       >
                         <span className="whitespace-nowrap">Extra</span>
@@ -2484,7 +2484,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("per_photo")}
-                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500/80 to-rose-600/80 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.35)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.35)] hover:from-rose-400/80 hover:to-rose-600/80"
+                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500/60 to-rose-600/60 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.25)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.25)] hover:from-rose-400/60 hover:to-rose-600/60"
                         title="Capture - Photo"
                       >
                         <Camera className="h-3 w-3" /><span className="whitespace-nowrap">Photo</span>
@@ -2492,7 +2492,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={() => handleCapture("per_photo", true)}
-                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center rounded-full bg-gradient-to-b from-blue-500/80 to-blue-600/80 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(29,78,216,0.35)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.35)] hover:from-blue-400/80 hover:to-blue-600/80"
+                        className="h-9 flex-1 inline-flex cursor-pointer items-center justify-center rounded-full bg-gradient-to-b from-blue-500/60 to-blue-600/60 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(29,78,216,0.25)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(29,78,216,0.25)] hover:from-blue-400/60 hover:to-blue-600/60"
                         title="Capture - Photo Extra (Report Only)"
                       >
                         <span className="whitespace-nowrap">Extra</span>
@@ -2519,8 +2519,8 @@ export default function MixedSection({
                       }}
                       className={`h-8 w-full inline-flex cursor-pointer items-center justify-center rounded-full px-1.5 text-[9px] font-semibold ring-1 ring-white/10 ${
                         isRecording
-                          ? "bg-yellow-600/80 text-white hover:bg-yellow-700/80"
-                          : "bg-yellow-500/80 text-white hover:bg-yellow-600/80"
+                          ? "bg-yellow-600/60 text-white hover:bg-yellow-700/60"
+                          : "bg-yellow-500/60 text-white hover:bg-yellow-600/60"
                       } ${
                         !lots[activeIdx]?.mode
                           ? "opacity-50 cursor-not-allowed"
@@ -2539,7 +2539,7 @@ export default function MixedSection({
                         type="button"
                         onClick={goPrevLot}
                         disabled={activeIdx <= 0}
-                        className="h-7 w-full inline-flex items-center justify-center gap-0.5 rounded-lg bg-blue-600/80 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500/80 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                        className="h-7 w-full inline-flex items-center justify-center gap-0.5 rounded-lg bg-blue-600/60 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-blue-500/60 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                         aria-label="Previous lot"
                       >
                         <ChevronLeft className="h-2.5 w-2.5" />
@@ -2548,7 +2548,7 @@ export default function MixedSection({
                       <button
                         type="button"
                         onClick={goNextLot}
-                        className="h-7 w-full inline-flex items-center justify-center gap-0.5 rounded-lg bg-green-600/80 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-green-500/80 cursor-pointer"
+                        className="h-7 w-full inline-flex items-center justify-center gap-0.5 rounded-lg bg-green-600/60 px-1.5 text-[9px] font-semibold text-white ring-1 ring-white/10 hover:bg-green-500/60 cursor-pointer"
                         aria-label="Next lot"
                       >
                         <span>Next</span>
@@ -2560,7 +2560,7 @@ export default function MixedSection({
                     <button
                       type="button"
                       onClick={finishAndClose}
-                      className="h-10 w-full inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-rose-500/80 to-rose-600/80 text-white shadow-[0_4px_0_0_rgba(190,18,60,0.35)] ring-2 ring-rose-300/40 hover:from-rose-400/80 hover:to-rose-600/80 active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.35)] focus:outline-none cursor-pointer"
+                      className="h-10 w-full inline-flex items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-rose-500/60 to-rose-600/60 text-white shadow-[0_4px_0_0_rgba(190,18,60,0.25)] ring-2 ring-rose-300/30 hover:from-rose-400/60 hover:to-rose-600/60 active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.25)] focus:outline-none cursor-pointer"
                       aria-label="Done"
                       title="Done"
                     >
