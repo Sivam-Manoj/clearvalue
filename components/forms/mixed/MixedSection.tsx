@@ -2424,7 +2424,7 @@ export default function MixedSection({
 
                 {/* Landscape: All controls on right side */}
                 {orientation === "landscape" && (
-                  <div className="pointer-events-auto absolute right-0 inset-y-0 z-30 flex flex-col justify-between py-2">
+                  <div className="pointer-events-auto absolute right-0 bottom-0 z-30 flex flex-col justify-between" style={{ top: 'calc(env(safe-area-inset-top) + 52px)', paddingTop: '8px', paddingBottom: '8px' }}>
                     {/* Zoom controls at top */}
                     <div className="flex items-center gap-1 rounded-lg bg-black/40 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur mb-1">
                       <ZoomOut className="h-3 w-3 text-white/90" />
