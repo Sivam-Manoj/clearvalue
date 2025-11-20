@@ -149,7 +149,7 @@ export default function MixedSection({
       // @ts-ignore
       mql.addListener(handler as any);
     }
-    // Fallback to window resize heuristic
+    // Fallback to window resize heuristic Required
     const onResize = () => {
       try {
         const isLandscape = window.innerWidth >= window.innerHeight;
@@ -1428,7 +1428,7 @@ export default function MixedSection({
               )}
               {(lots[activeIdx]?.files?.length ?? 0) === 0 && (
                 <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700">
-                  <span className="font-medium">Required:</span> Add 1–30 images
+                  <span className="font-medium">Required:</span> Add 1–50 images
                 </div>
               )}
 
