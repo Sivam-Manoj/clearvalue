@@ -46,7 +46,7 @@ type Props = {
 export default function MixedSection({
   value,
   onChange,
-  maxImagesPerLot = 30,
+  maxImagesPerLot = 50,
   maxExtraImagesPerLot = 100,
   maxTotalImages = 500,
   downloadPrefix,
@@ -2425,7 +2425,15 @@ export default function MixedSection({
 
                 {/* Landscape: All controls on right side */}
                 {orientation === "landscape" && (
-                  <div className="pointer-events-auto absolute right-0 z-30 flex flex-col gap-0.5 py-1 overflow-y-auto" style={{ top: 'calc(env(safe-area-inset-top) + 45px)', bottom: 'max(env(safe-area-inset-bottom), 4px)', maxHeight: 'calc(100vh - env(safe-area-inset-top) - max(env(safe-area-inset-bottom), 4px) - 45px)' }}>
+                  <div
+                    className="pointer-events-auto absolute right-0 z-30 flex flex-col gap-0.5 py-1 overflow-y-auto"
+                    style={{
+                      top: "calc(env(safe-area-inset-top) + 45px)",
+                      bottom: "max(env(safe-area-inset-bottom), 4px)",
+                      maxHeight:
+                        "calc(100vh - env(safe-area-inset-top) - max(env(safe-area-inset-bottom), 4px) - 45px)",
+                    }}
+                  >
                     {/* Zoom controls at top */}
                     <div className="flex items-center gap-1 rounded-lg bg-black/40 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur flex-shrink-0">
                       <ZoomOut className="h-3 w-3 text-white/90" />
@@ -2443,7 +2451,7 @@ export default function MixedSection({
                         {zoom.toFixed(1)}x
                       </div>
                     </div>
-                    
+
                     {/* Capture buttons */}
                     <div className="flex items-stretch gap-0.5 flex-shrink-0">
                       <button
@@ -2452,7 +2460,8 @@ export default function MixedSection({
                         className="h-11 flex-1 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500/60 to-rose-600/60 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.25)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.25)] hover:from-rose-400/60 hover:to-rose-600/60"
                         title="Capture - Bundle"
                       >
-                        <Camera className="h-3 w-3" /><span className="whitespace-nowrap">Bundle</span>
+                        <Camera className="h-3 w-3" />
+                        <span className="whitespace-nowrap">Bundle</span>
                       </button>
                       <button
                         type="button"
@@ -2470,7 +2479,8 @@ export default function MixedSection({
                         className="h-11 flex-1 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500/60 to-rose-600/60 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.25)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.25)] hover:from-rose-400/60 hover:to-rose-600/60"
                         title="Capture - Item"
                       >
-                        <Camera className="h-3 w-3" /><span className="whitespace-nowrap">Item</span>
+                        <Camera className="h-3 w-3" />
+                        <span className="whitespace-nowrap">Item</span>
                       </button>
                       <button
                         type="button"
@@ -2488,7 +2498,8 @@ export default function MixedSection({
                         className="h-11 flex-1 inline-flex cursor-pointer items-center justify-center gap-0.5 rounded-full bg-gradient-to-b from-rose-500/60 to-rose-600/60 text-[9px] font-semibold text-white shadow-[0_2px_0_0_rgba(190,18,60,0.25)] transition active:translate-y-0.5 active:shadow-[0_1px_0_0_rgba(190,18,60,0.25)] hover:from-rose-400/60 hover:to-rose-600/60"
                         title="Capture - Photo"
                       >
-                        <Camera className="h-3 w-3" /><span className="whitespace-nowrap">Photo</span>
+                        <Camera className="h-3 w-3" />
+                        <span className="whitespace-nowrap">Photo</span>
                       </button>
                       <button
                         type="button"
@@ -2499,7 +2510,7 @@ export default function MixedSection({
                         <span className="whitespace-nowrap">Extra</span>
                       </button>
                     </div>
-                    
+
                     {/* Record button */}
                     <button
                       type="button"
@@ -2527,13 +2538,11 @@ export default function MixedSection({
                           ? "opacity-50 cursor-not-allowed"
                           : ""
                       }`}
-                      title={
-                        isRecording ? "Stop Recording" : "Start Recording"
-                      }
+                      title={isRecording ? "Stop Recording" : "Start Recording"}
                     >
                       {isRecording ? "Stop" : "Record"}
                     </button>
-                    
+
                     {/* Previous/Next navigation buttons */}
                     <div className="flex items-stretch gap-0.5 flex-shrink-0">
                       <button
@@ -2556,7 +2565,7 @@ export default function MixedSection({
                         <span className="leading-none">Lot</span>
                       </button>
                     </div>
-                    
+
                     {/* Done button at bottom */}
                     <button
                       type="button"
