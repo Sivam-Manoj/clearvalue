@@ -705,8 +705,12 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         ...(factorsAgeCondition.trim() && {
           factors_age_condition: factorsAgeCondition.trim(),
         }),
-        ...(factorsQuality.trim() && { factors_quality: factorsQuality.trim() }),
-        ...(factorsAnalysis.trim() && { factors_analysis: factorsAnalysis.trim() }),
+        ...(factorsQuality.trim() && {
+          factors_quality: factorsQuality.trim(),
+        }),
+        ...(factorsAnalysis.trim() && {
+          factors_analysis: factorsAnalysis.trim(),
+        }),
         ...(grouping === "catalogue" ||
         grouping === "combined" ||
         grouping === "mixed"
@@ -1080,10 +1084,14 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
 
             {/* Factors Affecting Value */}
             <section className="space-y-3 rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50/50 to-indigo-50/30 p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-900">Factors Affecting Value</h3>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Factors Affecting Value
+              </h3>
               <div className="grid grid-cols-1 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-600">Age & Condition</label>
+                  <label className="text-xs text-gray-600">
+                    Age & Condition
+                  </label>
                   <textarea
                     value={factorsAgeCondition}
                     onChange={(e) => setFactorsAgeCondition(e.target.value)}
@@ -1123,7 +1131,8 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                     Quick Comparison Table
                   </h3>
                   <p className="text-xs text-gray-600 mt-0.5">
-                    Compare multiple valuation methods with software explanations
+                    Compare multiple valuation methods with software
+                    explanations
                   </p>
                 </div>
                 <button
@@ -1324,7 +1333,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
               <MixedSection
                 value={mixedLots}
                 onChange={setMixedLots}
-                maxImagesPerLot={30}
+                maxImagesPerLot={50}
                 maxExtraImagesPerLot={100}
                 maxTotalImages={500}
                 downloadPrefix={(contractNo || "asset").replace(
