@@ -650,12 +650,6 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         toast.error(msg);
         return;
       }
-      if (images.length > MAX_NON_CAT_IMAGES) {
-        const msg = `Maximum ${MAX_NON_CAT_IMAGES} images allowed.`;
-        setError(msg);
-        toast.error(msg);
-        return;
-      }
     }
 
     try {
