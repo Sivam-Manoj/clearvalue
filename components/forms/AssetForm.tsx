@@ -42,7 +42,8 @@ export type AssetFormHandle = {
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
 const DRAFT_KEY = "cv_asset_draft";
-const MAX_NON_CAT_IMAGES = 10;
+// Removed MAX_NON_CAT_IMAGES - no limits on image uploads
+// AI analysis limited to 50 images per lot on backend
 
 // const GROUPING_OPTIONS: {
 //   value: AssetGroupingMode;

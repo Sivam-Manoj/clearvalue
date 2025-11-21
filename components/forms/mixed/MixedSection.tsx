@@ -26,29 +26,29 @@ import ImageAnnotator, { AnnBox } from "./ImageAnnotator";
 export type MixedMode = "single_lot" | "per_item" | "per_photo";
 export type MixedLot = {
   id: string;
-  files: File[]; // Main images for processing (max 30)
-  extraFiles: File[]; // Extra images for report only (max 100)
+  files: File[]; // Main images for AI processing (first 50 analyzed, rest included in report)
+  extraFiles: File[]; // Extra images for report only (not analyzed by AI)
   coverIndex: number; // 0-based within files
   mode?: MixedMode;
-  videoFiles?: File[]; // Videos (report-only; zipped with originals)
+  videoFiles?: File[]; // Videos (report-only; zipped with originals, typically 1 per lot)
   annotations?: Record<string, AnnBox[]>; // normalized boxes per file key
 };
 
 type Props = {
   value: MixedLot[];
   onChange: (lots: MixedLot[]) => void;
-  maxImagesPerLot?: number; // default 30 (main images for processing)
-  maxExtraImagesPerLot?: number; // default 100 (extra report images)
-  maxTotalImages?: number; // default 500
+  maxImagesPerLot?: number; // No limit (first 50 analyzed by AI)
+  maxExtraImagesPerLot?: number; // No limit
+  maxTotalImages?: number; // No limit
   downloadPrefix?: string; // optional: used for saving captured images locally
 };
 
 export default function MixedSection({
   value,
   onChange,
-  maxImagesPerLot = 50,
-  maxExtraImagesPerLot = 100,
-  maxTotalImages = 500,
+  maxImagesPerLot = Number.MAX_SAFE_INTEGER, // Unlimited (AI analyzes first 50)
+  maxExtraImagesPerLot = Number.MAX_SAFE_INTEGER, // Unlimited
+  maxTotalImages = Number.MAX_SAFE_INTEGER, // Unlimited
   downloadPrefix,
 }: Props) {
   const [lots, setLots] = useState<MixedLot[]>(value || []);
@@ -281,23 +281,9 @@ export default function MixedSection({
         toast.warn("Select a mode for this lot first.");
         return prev;
       }
-      const totalSoFar = prev.reduce((s, l) => s + l.files.length, 0);
-      const remainingTotal = Math.max(0, maxTotalImages - totalSoFar);
-      if (remainingTotal <= 0) {
-        toast.error("Reached maximum total images limit.");
-        return prev;
-      }
-      const roomInLot = Math.max(0, maxImagesPerLot - lot.files.length);
-      if (roomInLot <= 0) {
-        toast.error(`This lot already has ${maxImagesPerLot} images.`);
-        return prev;
-      }
-      const allowedCount = Math.min(remainingTotal, roomInLot, incoming.length);
-      const accepted = incoming.slice(0, allowedCount);
-      if (accepted.length < incoming.length) {
-        toast.warn("Some images were not added due to limits.");
-      }
-      out[idx] = { ...lot, files: [...lot.files, ...accepted] };
+      // No limits enforced - accept all incoming files
+      // Note: First 50 images per lot will be analyzed by AI
+      out[idx] = { ...lot, files: [...lot.files, ...incoming] };
       return out;
     });
   }
@@ -315,26 +301,11 @@ export default function MixedSection({
       if (!lot) return prev;
 
       if (isExtra) {
-        // Add to extra files (no mode check needed)
+        // Add to extra files (no mode check needed, no limits)
         const current = out[idx];
-        const roomInLot = Math.max(
-          0,
-          maxExtraImagesPerLot - current.extraFiles.length
-        );
-        if (roomInLot <= 0) {
-          toast.error(
-            `This lot already has ${maxExtraImagesPerLot} extra images.`
-          );
-          return prev;
-        }
-        const allowedCount = Math.min(roomInLot, incoming.length);
-        const accepted = incoming.slice(0, allowedCount);
-        if (accepted.length < incoming.length) {
-          toast.warn("Some extra images were not added due to limits.");
-        }
         out[idx] = {
           ...current,
-          extraFiles: [...current.extraFiles, ...accepted],
+          extraFiles: [...current.extraFiles, ...incoming],
         };
         return out;
       }
@@ -349,24 +320,10 @@ export default function MixedSection({
         toast.warn("Select a mode for this lot first.");
         return prev;
       }
-      const totalSoFar = prev.reduce((s, l) => s + l.files.length, 0);
-      const remainingTotal = Math.max(0, maxTotalImages - totalSoFar);
-      if (remainingTotal <= 0) {
-        toast.error("Reached maximum total images limit.");
-        return prev;
-      }
+      // No limits enforced - accept all incoming files
+      // Note: First 50 images per lot will be analyzed by AI
       const current = out[idx];
-      const roomInLot = Math.max(0, maxImagesPerLot - current.files.length);
-      if (roomInLot <= 0) {
-        toast.error(`This lot already has ${maxImagesPerLot} images.`);
-        return prev;
-      }
-      const allowedCount = Math.min(remainingTotal, roomInLot, incoming.length);
-      const accepted = incoming.slice(0, allowedCount);
-      if (accepted.length < incoming.length) {
-        toast.warn("Some images were not added due to limits.");
-      }
-      out[idx] = { ...current, files: [...current.files, ...accepted] };
+      out[idx] = { ...current, files: [...current.files, ...incoming] };
       return out;
     });
   }
@@ -2115,14 +2072,11 @@ export default function MixedSection({
                           </div>
                           <div className="mt-0.5 text-center text-[12px] font-medium truncate">
                             Total:{" "}
-                            {lots.reduce((s, l) => s + l.files.length, 0)}/
-                            {maxTotalImages}
+                            {lots.reduce((s, l) => s + l.files.length, 0)} images
                             {" | "}Lot {activeIdx + 1}:{" "}
-                            {lots[activeIdx]?.files.length ?? 0}/
-                            {maxImagesPerLot} (Main)
+                            {lots[activeIdx]?.files.length ?? 0} main
                             {" | "}Extra:{" "}
-                            {lots[activeIdx]?.extraFiles.length ?? 0}/
-                            {maxExtraImagesPerLot}
+                            {lots[activeIdx]?.extraFiles.length ?? 0}
                             {" | "}Mode:{" "}
                             {lots[activeIdx]?.mode === "single_lot"
                               ? "Bundle"
@@ -2158,14 +2112,11 @@ export default function MixedSection({
                               style={{ fontSize: "clamp(14px, 3vw, 18px)" }}
                             >
                               Total:{" "}
-                              {lots.reduce((s, l) => s + l.files.length, 0)}/
-                              {maxTotalImages}
+                              {lots.reduce((s, l) => s + l.files.length, 0)} images
                               {" | "}Lot {activeIdx + 1}:{" "}
-                              {lots[activeIdx]?.files.length ?? 0}/
-                              {maxImagesPerLot} (Main)
+                              {lots[activeIdx]?.files.length ?? 0} main
                               {" | "}Extra:{" "}
-                              {lots[activeIdx]?.extraFiles.length ?? 0}/
-                              {maxExtraImagesPerLot}
+                              {lots[activeIdx]?.extraFiles.length ?? 0}
                               {" | "}Mode:{" "}
                               {lots[activeIdx]?.mode === "single_lot"
                                 ? "Bundle"
@@ -2291,11 +2242,11 @@ export default function MixedSection({
                           title={`Total: ${lots.reduce(
                             (s, l) => s + l.files.length,
                             0
-                          )}/${maxTotalImages} | Lot ${activeIdx + 1}: ${
+                          )} images | Lot ${activeIdx + 1}: ${
                             lots[activeIdx]?.files.length ?? 0
-                          }/${maxImagesPerLot} (Main) | Extra: ${
+                          } main (first 50 analyzed by AI) | Extra: ${
                             lots[activeIdx]?.extraFiles.length ?? 0
-                          }/${maxExtraImagesPerLot} | Mode: ${
+                          } | Mode: ${
                             lots[activeIdx]?.mode === "single_lot"
                               ? "Bundle"
                               : lots[activeIdx]?.mode === "per_item"
@@ -2309,14 +2260,11 @@ export default function MixedSection({
                               : ""
                           }`}
                         >
-                          Total: {lots.reduce((s, l) => s + l.files.length, 0)}/
-                          {maxTotalImages}
+                          Total: {lots.reduce((s, l) => s + l.files.length, 0)} images
                           {" | "}Lot {activeIdx + 1}:{" "}
-                          {lots[activeIdx]?.files.length ?? 0}/{maxImagesPerLot}{" "}
-                          (Main)
+                          {lots[activeIdx]?.files.length ?? 0} main
                           {" | "}Extra:{" "}
-                          {lots[activeIdx]?.extraFiles.length ?? 0}/
-                          {maxExtraImagesPerLot}
+                          {lots[activeIdx]?.extraFiles.length ?? 0}
                           {" | "}Mode:{" "}
                           {lots[activeIdx]?.mode === "single_lot"
                             ? "Bundle"
