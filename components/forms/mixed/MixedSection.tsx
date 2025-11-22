@@ -2072,7 +2072,8 @@ export default function MixedSection({
                           </div>
                           <div className="mt-0.5 text-center text-[12px] font-medium truncate">
                             Total:{" "}
-                            {lots.reduce((s, l) => s + l.files.length, 0)} images
+                            {lots.reduce((s, l) => s + l.files.length, 0)}{" "}
+                            images
                             {" | "}Lot {activeIdx + 1}:{" "}
                             {lots[activeIdx]?.files.length ?? 0} main
                             {" | "}Extra:{" "}
@@ -2112,7 +2113,8 @@ export default function MixedSection({
                               style={{ fontSize: "clamp(14px, 3vw, 18px)" }}
                             >
                               Total:{" "}
-                              {lots.reduce((s, l) => s + l.files.length, 0)} images
+                              {lots.reduce((s, l) => s + l.files.length, 0)}{" "}
+                              images
                               {" | "}Lot {activeIdx + 1}:{" "}
                               {lots[activeIdx]?.files.length ?? 0} main
                               {" | "}Extra:{" "}
@@ -2260,7 +2262,8 @@ export default function MixedSection({
                               : ""
                           }`}
                         >
-                          Total: {lots.reduce((s, l) => s + l.files.length, 0)} images
+                          Total: {lots.reduce((s, l) => s + l.files.length, 0)}{" "}
+                          images
                           {" | "}Lot {activeIdx + 1}:{" "}
                           {lots[activeIdx]?.files.length ?? 0} main
                           {" | "}Extra:{" "}
@@ -2491,7 +2494,7 @@ export default function MixedSection({
                       {isRecording ? "Stop" : "Record"}
                     </button>
 
-                    {/* Previous/Next navigation buttons 1-50 */} 
+                    {/* Previous/Next navigation buttons 1-50 */}
                     <div className="flex items-stretch gap-0.5 flex-shrink-0">
                       <button
                         type="button"
