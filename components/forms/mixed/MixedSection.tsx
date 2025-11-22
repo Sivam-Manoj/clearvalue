@@ -33,7 +33,7 @@ export type MixedLot = {
   videoFiles?: File[]; // Videos (report-only; zipped with originals, typically 1 per lot)
   annotations?: Record<string, AnnBox[]>; // normalized boxes per file key
 };
-
+//Add 1–50 images
 type Props = {
   value: MixedLot[];
   onChange: (lots: MixedLot[]) => void;
@@ -42,7 +42,7 @@ type Props = {
   maxTotalImages?: number; // No limit
   downloadPrefix?: string; // optional: used for saving captured images locally
 };
-
+//50
 export default function MixedSection({
   value,
   onChange,
@@ -1383,11 +1383,11 @@ export default function MixedSection({
                   for this lot
                 </div>
               )}
-              {(lots[activeIdx]?.files?.length ?? 0) === 0 && (
+              {/* {(lots[activeIdx]?.files?.length ?? 0) === 0 && (
                 <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-700">
                   <span className="font-medium">Required:</span> Add 1–50 images
                 </div>
-              )}
+              )} */}
 
               {/* Mode selection */}
               <div className="mt-3 flex flex-wrap gap-2">
@@ -2491,7 +2491,7 @@ export default function MixedSection({
                       {isRecording ? "Stop" : "Record"}
                     </button>
 
-                    {/* Previous/Next navigation buttons */}
+                    {/* Previous/Next navigation buttons 1-50 */} 
                     <div className="flex items-stretch gap-0.5 flex-shrink-0">
                       <button
                         type="button"
