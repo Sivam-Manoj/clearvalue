@@ -385,8 +385,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         setSelectedValuationMethods(fd.selectedValuationMethods as any);
       if (Array.isArray(fd.combinedModes))
         setCombinedModes(fd.combinedModes as any);
-      if (typeof fd.preparedFor === "string")
-        setPreparedFor(fd.preparedFor);
+      if (typeof fd.preparedFor === "string") setPreparedFor(fd.preparedFor);
       if (typeof fd.factorsAgeCondition === "string")
         setFactorsAgeCondition(fd.factorsAgeCondition);
       if (typeof fd.factorsQuality === "string")

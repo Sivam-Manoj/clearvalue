@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthService } from "@/services/auth";
 import { Mail, Hash, Loader2 } from "lucide-react";
@@ -8,8 +8,16 @@ import { Mail, Hash, Loader2 } from "lucide-react";
 export default function VerifyEmailForm() {
   const router = useRouter();
   const search = useSearchParams();
-  const [email, setEmail] = useState(search.get("email") ?? "");
+  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+
+  // Safely read search params after mount to avoid hydration issues
+  useEffect(() => {
+    const emailParam = search.get("email");
+    if (emailParam && !email) {
+      setEmail(emailParam);
+    }
+  }, [search]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

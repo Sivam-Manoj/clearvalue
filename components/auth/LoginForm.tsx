@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthContext } from "@/context/AuthContext";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
@@ -9,12 +9,20 @@ export default function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const { login } = useAuthContext();
-  const [email, setEmail] = useState(search.get("email") ?? "");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@clearvalue.com";
+
+  // Safely read search params after mount to avoid hydration issues
+  useEffect(() => {
+    const emailParam = search.get("email");
+    if (emailParam && !email) {
+      setEmail(emailParam);
+    }
+  }, [search]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

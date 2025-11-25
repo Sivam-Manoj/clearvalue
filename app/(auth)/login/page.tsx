@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import LoginForm from "@/components/auth/LoginForm";
 import Image from "next/image";
- 
+
+// Force dynamic rendering to avoid static generation issues with useSearchParams
+export const dynamic = "force-dynamic";
 
 export default function Page() {
   return (
