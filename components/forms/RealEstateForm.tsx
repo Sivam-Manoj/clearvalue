@@ -1169,9 +1169,9 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           </section>
         )}
 
-        {/* House Details */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-900">House Details</h3>
+        {/* House Details Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
+          <h3 className="text-base font-semibold text-gray-900">Building Details</h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <label className="block text-xs font-medium text-gray-700">
@@ -1272,15 +1272,16 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               onChange={(e) => handleKnownIssuesChange(e.target.value)}
             />
           </div>
-        </section>
+        </div>
 
         {/* Inspector Info is auto-filled from profile on submit */}
 
-        {/* Map Image Upload */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-rose-600" />
-            Map/Location Image (Optional)
+        {/* Map Image Upload Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-3">
+          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-rose-600" />
+            Map/Location Image
+            <span className="text-xs font-normal text-gray-500">(Optional)</span>
           </h3>
           <input
             ref={mapInputRef}
@@ -1334,9 +1335,10 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               </p>
             </div>
           )}
-        </section>
+        </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-4">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
           <button
             type="button"
             className="w-full sm:w-auto rounded-xl border border-gray-200 bg-white/80 px-6 py-3 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
