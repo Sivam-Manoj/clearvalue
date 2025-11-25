@@ -632,40 +632,38 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   }
 
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
-      <div className="relative">
+    <form className="space-y-6" onSubmit={onSubmit}>
+      <div className="relative space-y-6">
         {error && (
           <div className="rounded-xl border border-red-200/70 bg-red-50/80 p-3 text-sm text-red-700 shadow ring-1 ring-black/5 backdrop-blur">
             {error}
           </div>
         )}
 
-        {/* Language Selection */}
-        <section className="space-y-2">
-          <label className="block text-xs font-medium text-gray-700">
-            Language
-          </label>
-          <select
-            className="mt-1 w-full max-w-xs rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-            value={details.language || "en"}
-            onChange={(e) =>
-              setDetails((prev) => ({
-                ...prev,
-                language: e.target.value as any,
-              }))
-            }
-          >
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-            <option value="es">Español</option>
-          </select>
-        </section>
+        {/* Step 1: Property Type & Images - Most Important at Top */}
+        <div className="rounded-2xl border border-rose-100 bg-gradient-to-br from-white via-rose-50/30 to-white p-5 shadow-sm">
+          <RealEstateSection
+            value={property}
+            onChange={setProperty}
+            maxImages={50}
+            downloadPrefix={(
+              details?.property_details?.address || "real-estate"
+            ).replace(/[^a-zA-Z0-9_-]/g, "-")}
+          />
+        </div>
 
-        {/* Smart Fill (Software) */}
-        <section className="space-y-4">
-          <h3 className="text-sm font-medium text-gray-900">
-            AI-Assisted Form Fill
-          </h3>
+        {/* Step 2: AI-Assisted Form Fill (Collapsible Card) */}
+        <details className="group rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <summary className="flex cursor-pointer items-center justify-between p-4 text-sm font-medium text-gray-900 hover:bg-gray-50 rounded-2xl">
+            <span className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-gray-800 to-black text-xs text-white font-bold">✦</span>
+              AI-Assisted Form Fill (Optional)
+            </span>
+            <svg className="h-5 w-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div className="border-t border-gray-100 p-4 space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
               <label className="block text-xs font-medium text-gray-700">
@@ -798,13 +796,34 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               />
             )}
           </div>
-        </section>
+          </div>
+        </details>
 
-        {/* Property Details */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-900">
-            Property Details
-          </h3>
+        {/* Step 3: Property Details Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-5">
+          {/* Language Selection - inline with title */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h3 className="text-base font-semibold text-gray-900">Property Details</h3>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-gray-600">Language:</label>
+              <select
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.language || "en"}
+                onChange={(e) =>
+                  setDetails((prev) => ({
+                    ...prev,
+                    language: e.target.value as any,
+                  }))
+                }
+              >
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Property Details Fields */}
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-medium text-gray-700">
@@ -928,12 +947,11 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
               />
             </div>
           </div>
-        </section>
 
-        {/* Report Dates */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-900">Report Dates</h3>
-          <div className="grid gap-3 sm:grid-cols-3">
+          {/* Report Dates - inside the same card */}
+          <div className="pt-4 border-t border-gray-100">
+            <h4 className="text-sm font-medium text-gray-900 mb-3">Report Dates</h4>
+            <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <label className="block text-xs font-medium text-gray-700">
                 Report Date
@@ -977,8 +995,9 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
                 }
               />
             </div>
+            </div>
           </div>
-        </section>
+        </div>
 
         {/* Farmland Details (Agricultural only) */}
         {details.property_type === "agricultural" && (
@@ -1256,16 +1275,6 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         </section>
 
         {/* Inspector Info is auto-filled from profile on submit */}
-
-        {/* Property Type & Images Section */}
-        <RealEstateSection
-          value={property}
-          onChange={setProperty}
-          maxImages={50}
-          downloadPrefix={(
-            details?.property_details?.address || "real-estate"
-          ).replace(/[^a-zA-Z0-9_-]/g, "-")}
-        />
 
         {/* Map Image Upload */}
         <section className="space-y-3">
