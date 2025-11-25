@@ -3,16 +3,28 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X, Clock, Trash2, FileText } from "lucide-react";
-import { SavedInputService, type SavedInput } from "@/services/savedInputs";
+import {
+  SavedInputService,
+  type SavedInput,
+  type FormType,
+  type AssetFormData,
+  type RealEstateFormData,
+} from "@/services/savedInputs";
 import { toast } from "react-toastify";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
   onLoadInput: (savedInput: SavedInput) => void;
+  formType?: FormType; // Filter by form type, undefined shows all
 };
 
-export default function InputsHistoryModal({ isOpen, onClose, onLoadInput }: Props) {
+export default function InputsHistoryModal({
+  isOpen,
+  onClose,
+  onLoadInput,
+  formType,
+}: Props) {
   const router = useRouter();
   const [savedInputs, setSavedInputs] = useState<SavedInput[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,10 +39,12 @@ export default function InputsHistoryModal({ isOpen, onClose, onLoadInput }: Pro
   const fetchSavedInputs = async () => {
     try {
       setLoading(true);
-      const inputs = await SavedInputService.getAll();
+      const inputs = await SavedInputService.getAll(formType);
       setSavedInputs(inputs);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to load saved inputs");
+      toast.error(
+        error?.response?.data?.message || "Failed to load saved inputs"
+      );
     } finally {
       setLoading(false);
     }
@@ -57,7 +71,11 @@ export default function InputsHistoryModal({ isOpen, onClose, onLoadInput }: Pro
     router.push("/dashboard");
     // Dispatch custom event after a brief delay to ensure form is mounted
     setTimeout(() => {
-      const event = new CustomEvent("load-saved-input", { detail: savedInput });
+      const eventName =
+        savedInput.formType === "realEstate"
+          ? "load-realestate-input"
+          : "load-saved-input";
+      const event = new CustomEvent(eventName, { detail: savedInput });
       window.dispatchEvent(event);
     }, 300);
   };
@@ -133,28 +151,59 @@ export default function InputsHistoryModal({ isOpen, onClose, onLoadInput }: Pro
                         {item.name}
                       </h3>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600">
-                        {item.formData.clientName && (
+                        {/* Asset form fields */}
+                        {(item.formData as AssetFormData).clientName && (
                           <div>
                             <span className="font-medium">Client:</span>{" "}
-                            {item.formData.clientName}
+                            {(item.formData as AssetFormData).clientName}
                           </div>
                         )}
-                        {item.formData.contractNo && (
+                        {(item.formData as AssetFormData).contractNo && (
                           <div>
                             <span className="font-medium">Contract:</span>{" "}
-                            {item.formData.contractNo}
+                            {(item.formData as AssetFormData).contractNo}
                           </div>
                         )}
-                        {item.formData.appraisalPurpose && (
+                        {(item.formData as AssetFormData).appraisalPurpose && (
                           <div className="col-span-2">
                             <span className="font-medium">Purpose:</span>{" "}
-                            {item.formData.appraisalPurpose}
+                            {(item.formData as AssetFormData).appraisalPurpose}
+                          </div>
+                        )}
+                        {/* Real Estate form fields */}
+                        {(item.formData as RealEstateFormData).property_details
+                          ?.address && (
+                          <div className="col-span-2">
+                            <span className="font-medium">Address:</span>{" "}
+                            {
+                              (item.formData as RealEstateFormData)
+                                .property_details?.address
+                            }
+                          </div>
+                        )}
+                        {(item.formData as RealEstateFormData).property_type && (
+                          <div>
+                            <span className="font-medium">Type:</span>{" "}
+                            {(item.formData as RealEstateFormData).property_type}
                           </div>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
                         <Clock className="h-3.5 w-3.5" />
                         <span>{formatDateTime(item.createdAt)}</span>
+                        {item.formType && (
+                          <span
+                            className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                              item.formType === "realEstate"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {item.formType === "realEstate"
+                              ? "Real Estate"
+                              : "Asset"}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <button

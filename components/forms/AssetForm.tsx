@@ -14,7 +14,11 @@ import {
   type AssetCreateDetails,
   type AssetGroupingMode,
 } from "@/services/asset";
-import { SavedInputService, type SavedInput } from "@/services/savedInputs";
+import {
+  SavedInputService,
+  type SavedInput,
+  type AssetFormData,
+} from "@/services/savedInputs";
 import { Check, Save } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuthContext } from "@/context/AuthContext";
@@ -340,6 +344,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
 
       await SavedInputService.create({
         name: autoName,
+        formType: "asset",
         formData,
       });
 
@@ -352,7 +357,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
   // Load saved input from history
   function loadSavedInput(savedInput: SavedInput) {
     try {
-      const fd = savedInput.formData;
+      const fd = savedInput.formData as AssetFormData;
       if (!fd) return;
 
       // For Mixed-only mode, ignore any saved grouping and force 'mixed'
@@ -380,14 +385,14 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         setSelectedValuationMethods(fd.selectedValuationMethods as any);
       if (Array.isArray(fd.combinedModes))
         setCombinedModes(fd.combinedModes as any);
-      if (typeof (fd as any).preparedFor === "string")
-        setPreparedFor((fd as any).preparedFor);
-      if (typeof (fd as any).factorsAgeCondition === "string")
-        setFactorsAgeCondition((fd as any).factorsAgeCondition);
-      if (typeof (fd as any).factorsQuality === "string")
-        setFactorsQuality((fd as any).factorsQuality);
-      if (typeof (fd as any).factorsAnalysis === "string")
-        setFactorsAnalysis((fd as any).factorsAnalysis);
+      if (typeof fd.preparedFor === "string")
+        setPreparedFor(fd.preparedFor);
+      if (typeof fd.factorsAgeCondition === "string")
+        setFactorsAgeCondition(fd.factorsAgeCondition);
+      if (typeof fd.factorsQuality === "string")
+        setFactorsQuality(fd.factorsQuality);
+      if (typeof fd.factorsAnalysis === "string")
+        setFactorsAnalysis(fd.factorsAnalysis);
 
       toast.success(`Loaded: ${savedInput.name}`);
     } catch (error) {

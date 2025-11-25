@@ -98,6 +98,21 @@ export default function DashboardPage() {
     };
   }, []);
 
+  // Listen for load-realestate-input event to open real estate drawer
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const savedInput = e.detail;
+      if (savedInput) {
+        setDrawerType("real-estate");
+        setDrawerOpen(true);
+      }
+    };
+    window.addEventListener("load-realestate-input" as any, handler as any);
+    return () => {
+      window.removeEventListener("load-realestate-input" as any, handler as any);
+    };
+  }, []);
+
   const fetchRecent = useCallback(async () => {
     setRecentLoading(true);
     setRecentError(null);

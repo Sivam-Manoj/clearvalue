@@ -6,11 +6,17 @@ import {
   RealEstateService,
   type RealEstateDetails,
 } from "@/services/realEstate";
-import { X, Upload, Mic, Square, Camera, Check, Download } from "lucide-react";
+import { X, Upload, Mic, Square, Check, MapPin, Save } from "lucide-react";
+import {
+  SavedInputService,
+  type SavedInput,
+  type RealEstateFormData,
+} from "@/services/savedInputs";
 import { AIService, type RealEstateDetailsPatch } from "@/services/ai";
 import { toast } from "react-toastify";
-import RealEstateCamera from "./real-estate/RealEstateCamera";
-import JSZip from "jszip";
+import RealEstateSection, {
+  type RealEstateProperty,
+} from "./real-estate/RealEstateSection";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -43,7 +49,10 @@ const STEPS = [
 
 type StepKey = (typeof STEPS)[number]["key"];
 
-const makeInitialStepStates = (): Record<StepKey, "pending" | "active" | "done"> => {
+const makeInitialStepStates = (): Record<
+  StepKey,
+  "pending" | "active" | "done"
+> => {
   return STEPS.reduce((acc, step) => {
     acc[step.key] = "pending";
     return acc;
@@ -68,10 +77,15 @@ const deriveStepStates = (
   return states;
 };
 
+export type RealEstateFormHandle = {
+  loadSavedInput: (savedInput: SavedInput) => void;
+};
+
 export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   const { user } = useAuthContext();
   const [details, setDetails] = useState<RealEstateDetails>({
     language: "en",
+    property_type: "residential",
     property_details: {
       owner_name: "",
       address: "",
@@ -96,6 +110,18 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       number_of_half_bathrooms: "",
       known_issues: [],
     },
+    farmland_details: {
+      total_title_acres: undefined,
+      cultivated_acres: undefined,
+      rm_area: "",
+      soil_class: "",
+      crop_type: "",
+      is_rented: false,
+      annual_rent_per_acre: undefined,
+      irrigation: false,
+      access_quality: "good",
+      distance_to_city_km: undefined,
+    },
     inspector_info: {
       inspector_name: "",
       company_name: "",
@@ -105,11 +131,11 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
     },
   });
 
-  const [images, setImages] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [property, setProperty] = useState<RealEstateProperty | null>(null);
+  const [mapImage, setMapImage] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mapInputRef = useRef<HTMLInputElement>(null);
   const specInputRef = useRef<HTMLInputElement>(null);
   const [specFile, setSpecFile] = useState<File | null>(null);
   const [notesText, setNotesText] = useState("");
@@ -119,10 +145,13 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
-  const [cameraOpen, setCameraOpen] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
-  const [progressPhase, setProgressPhase] = useState<"idle" | "upload" | "processing" | "done" | "error">("idle");
-  const [stepStates, setStepStates] = useState<Record<StepKey, "pending" | "active" | "done">>(makeInitialStepStates);
+  const [progressPhase, setProgressPhase] = useState<
+    "idle" | "upload" | "processing" | "done" | "error"
+  >("idle");
+  const [stepStates, setStepStates] = useState<
+    Record<StepKey, "pending" | "active" | "done">
+  >(makeInitialStepStates);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const jobIdRef = useRef<string | null>(null);
   const pollStartedRef = useRef(false);
@@ -165,55 +194,42 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
     }));
   }
 
-  function handleImagesChange(files: FileList | null) {
-    if (!files) return;
-    const incoming = Array.from(files);
-    setImages((prev) => {
-      const combined = [...prev, ...incoming];
-      if (combined.length > 10) {
-        setError("You can upload up to 10 images. Extra files were ignored.");
-      } else {
-        setError(null);
-      }
-      return combined.slice(0, 10);
-    });
+  function handleFarmlandChange<
+    K extends keyof NonNullable<RealEstateDetails["farmland_details"]>
+  >(field: K, value: NonNullable<RealEstateDetails["farmland_details"]>[K]) {
+    setDetails((prev) => ({
+      ...prev,
+      farmland_details: {
+        ...prev.farmland_details,
+        [field]: value,
+      },
+    }));
   }
 
-  function addCapturedImages(files: File[]) {
-    if (!files || files.length === 0) return;
-    setImages((prev) => {
-      const combined = [...prev, ...files];
-      if (combined.length > 10) {
-        toast.warn("Reached maximum of 10 images. Some captures were not added.");
-      }
-      return combined.slice(0, 10);
-    });
+  function handlePropertyTypeChange(
+    type: "agricultural" | "commercial" | "residential"
+  ) {
+    setDetails((prev) => ({
+      ...prev,
+      property_type: type,
+      property_details: {
+        ...prev.property_details,
+        property_type: type,
+      },
+    }));
   }
 
-  useEffect(() => {
-    const urls = images.map((file) => URL.createObjectURL(file));
-    setPreviews(urls);
-    return () => {
-      urls.forEach((u) => URL.revokeObjectURL(u));
-    };
-  }, [images]);
+  function handleMapImageChange(files: FileList | null) {
+    if (!files || files.length === 0) {
+      setMapImage(null);
+      return;
+    }
+    setMapImage(files[0]);
+  }
 
-  async function downloadAllImagesZip() {
-    try {
-      if (images.length === 0) return;
-      const zip = new JSZip();
-      for (const f of images) zip.file(f.name, f);
-      const blob = await zip.generateAsync({ type: "blob" });
-      const safePrefix = (details?.property_details?.address || 'real-estate').replace(/[^a-zA-Z0-9_-]/g, '-');
-      const zipName = `${safePrefix}-images-${Date.now()}.zip`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = zipName;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
-    } catch {}
+  function removeMapImage() {
+    setMapImage(null);
+    if (mapInputRef.current) mapInputRef.current.value = "";
   }
 
   useEffect(() => {
@@ -221,10 +237,6 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       if (audioUrl) URL.revokeObjectURL(audioUrl);
     };
   }, [audioUrl]);
-
-  function removeImage(index: number) {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  }
 
   function mergeNonEmpty<T extends Record<string, any>>(
     prev: T,
@@ -371,6 +383,90 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
     }
   }
 
+  // Save inputs to database
+  async function saveInputs() {
+    try {
+      const baseName =
+        details.property_details?.address?.trim() ||
+        details.property_details?.owner_name?.trim() ||
+        "Unnamed Property";
+      const dateStr = new Date().toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const autoName = `${baseName} - ${dateStr}`;
+
+      const formData: RealEstateFormData = {
+        language: details.language,
+        property_type: details.property_type,
+        property_details: details.property_details,
+        report_dates: details.report_dates,
+        house_details: details.house_details,
+        farmland_details: details.farmland_details,
+      };
+
+      await SavedInputService.create({
+        name: autoName,
+        formType: "realEstate",
+        formData,
+      });
+
+      toast.success("Draft saved successfully!");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to save draft");
+    }
+  }
+
+  // Load saved input from history
+  function loadSavedInput(savedInput: SavedInput) {
+    try {
+      const fd = savedInput.formData as RealEstateFormData;
+      if (!fd) return;
+
+      setDetails((prev) => ({
+        ...prev,
+        language: fd.language || prev.language,
+        property_type: fd.property_type || prev.property_type,
+        property_details: {
+          ...prev.property_details,
+          ...fd.property_details,
+        },
+        report_dates: {
+          ...prev.report_dates,
+          ...fd.report_dates,
+        },
+        house_details: {
+          ...prev.house_details,
+          ...fd.house_details,
+        },
+        farmland_details: {
+          ...prev.farmland_details,
+          ...fd.farmland_details,
+        },
+      }));
+
+      toast.success(`Loaded: ${savedInput.name}`);
+    } catch (error) {
+      toast.error("Failed to load saved draft");
+    }
+  }
+
+  // Listen for global event to load saved input (from Navbar)
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const savedInput = e.detail;
+      if (savedInput && savedInput.formType === "realEstate") {
+        loadSavedInput(savedInput);
+      }
+    };
+    window.addEventListener("load-realestate-input" as any, handler as any);
+    return () => {
+      window.removeEventListener("load-realestate-input" as any, handler as any);
+    };
+  }, []);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!details.property_details.address) {
@@ -378,9 +474,16 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       toast.error("Address is required.");
       return;
     }
+
+    if (!property || !property.propertyType) {
+      setError("Please select a property type.");
+      toast.error("Please select a property type.");
+      return;
+    }
+
     try {
-      if (images.length === 0) {
-        const msg = "Please add at least one image.";
+      if (property.mainImages.length === 0) {
+        const msg = "Please add at least one property image.";
         setError(msg);
         toast.error(msg);
         return;
@@ -413,6 +516,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       };
       const payload: RealEstateDetails = {
         ...details,
+        property_type: property.propertyType,
         report_dates: {
           report_date: details.report_dates.report_date,
           effective_date: details.report_dates.effective_date,
@@ -422,6 +526,16 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       };
       payload.progress_id = jobId;
 
+      // Separate main images (for AI) and extra images (for report only)
+      const mainImages: File[] = [...property.mainImages];
+      const extraImages: File[] = [...property.extraImages];
+      // Add map image to extra images if available
+      if (mapImage) {
+        extraImages.push(mapImage);
+      }
+      // Videos from property (if RealEstateSection supports videos)
+      const videos: File[] = (property as any).videos || [];
+
       const startPolling = () => {
         if (!jobIdRef.current || pollStartedRef.current) return;
         pollStartedRef.current = true;
@@ -430,8 +544,12 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           try {
             const rec = await RealEstateService.progress(jobIdRef.current!);
             const clientWeight = PROG_WEIGHTS.client_upload;
-            const server01 = Math.max(0, Math.min(1, rec?.serverProgress01 ?? 0));
-            const overall = (clientWeight + server01 * (1 - clientWeight)) * 100;
+            const server01 = Math.max(
+              0,
+              Math.min(1, rec?.serverProgress01 ?? 0)
+            );
+            const overall =
+              (clientWeight + server01 * (1 - clientWeight)) * 100;
             setProgressPhase(
               rec.phase === "error"
                 ? "error"
@@ -453,22 +571,29 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         }, 800);
       };
 
-      const res = await RealEstateService.create(payload, images, {
-        onUploadProgress: (fraction: number) => {
-          const pct = Math.max(0, Math.min(1, fraction));
-          const weighted = pct * PROG_WEIGHTS.client_upload * 100;
-          setProgressPhase("upload");
-          setProgressPercent((prev) => (weighted > prev ? weighted : prev));
-          if (weighted >= PROG_WEIGHTS.client_upload * 100 - 0.5) {
-            setStepStates((prev) => ({
-              ...prev,
-              client_upload: "done",
-              r2_upload: prev.r2_upload === "pending" ? "active" : prev.r2_upload,
-            }));
-            startPolling();
-          }
-        },
-      });
+      const res = await RealEstateService.create(
+        payload,
+        mainImages,
+        extraImages,
+        videos,
+        {
+          onUploadProgress: (fraction: number) => {
+            const pct = Math.max(0, Math.min(1, fraction));
+            const weighted = pct * PROG_WEIGHTS.client_upload * 100;
+            setProgressPhase("upload");
+            setProgressPercent((prev) => (weighted > prev ? weighted : prev));
+            if (weighted >= PROG_WEIGHTS.client_upload * 100 - 0.5) {
+              setStepStates((prev) => ({
+                ...prev,
+                client_upload: "done",
+                r2_upload:
+                  prev.r2_upload === "pending" ? "active" : prev.r2_upload,
+              }));
+              startPolling();
+            }
+          },
+        }
+      );
 
       startPolling();
 
@@ -489,7 +614,9 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       }
       setProgressPhase("error");
       const msg =
-        err?.response?.data?.message || err?.message || "Failed to create report";
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to create report";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -508,11 +635,18 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
 
         {/* Language Selection */}
         <section className="space-y-2">
-          <label className="block text-xs font-medium text-gray-700">Language</label>
+          <label className="block text-xs font-medium text-gray-700">
+            Language
+          </label>
           <select
             className="mt-1 w-full max-w-xs rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
             value={details.language || "en"}
-            onChange={(e) => setDetails((prev) => ({ ...prev, language: e.target.value as any }))}
+            onChange={(e) =>
+              setDetails((prev) => ({
+                ...prev,
+                language: e.target.value as any,
+              }))
+            }
           >
             <option value="en">English</option>
             <option value="fr">Français</option>
@@ -521,8 +655,11 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         </section>
 
         {/* Smart Fill (Software) */}
-        <section className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <section className="space-y-4">
+          <h3 className="text-sm font-medium text-gray-900">
+            AI-Assisted Form Fill
+          </h3>
+          <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
               <label className="block text-xs font-medium text-gray-700">
                 Spec Sheet Image
@@ -534,15 +671,15 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
                 onChange={(e) => handleSpecChange(e.target.files)}
                 className="sr-only"
               />
-              <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
-                <p className="text-xs text-gray-600">
+              <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-4 text-center backdrop-blur shadow-inner">
+                <p className="text-xs text-gray-600 truncate px-2">
                   {specFile ? specFile.name : "No file selected"}
                 </p>
-                <div className="mt-2 flex items-center justify-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                   <button
                     type="button"
                     onClick={() => specInputRef.current?.click()}
-                    className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+                    className="rounded-xl border border-gray-200 bg-white/80 px-3 py-2 text-xs sm:text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
                   >
                     Select Image
                   </button>
@@ -550,9 +687,9 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
                     type="button"
                     onClick={analyzeSpec}
                     disabled={!specFile || aiLoading}
-                    className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50 focus:outline-none"
+                    className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50 focus:outline-none"
                   >
-                    {aiLoading ? "Analyzing..." : "Analyze Image"}
+                    {aiLoading ? "Analyzing..." : "Analyze"}
                   </button>
                 </div>
               </div>
@@ -562,16 +699,17 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
                 Notes / Transcript
               </label>
               <textarea
-                className="mt-1 h-28 w-full rounded-2xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                className="mt-1 h-28 w-full rounded-2xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 resize-none"
                 value={notesText}
                 onChange={(e) => setNotesText(e.target.value)}
+                placeholder="Add notes or paste transcript..."
               />
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={fillFromText}
                   disabled={!notesText.trim() || aiLoading}
-                  className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50 focus:outline-none"
+                  className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50 focus:outline-none"
                 >
                   {aiLoading ? "Filling..." : "Fill From Text"}
                 </button>
@@ -584,50 +722,83 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
             <label className="block text-xs font-medium text-gray-700">
               Voice Record
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {!isRecording ? (
                 <button
                   type="button"
                   onClick={startRecording}
-                  className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]"
+                  className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]"
                 >
-                  <Mic className="mr-1 inline h-4 w-4" /> Start Recording
+                  <Mic className="mr-1 inline h-3 w-3 sm:h-4 sm:w-4" /> Start
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={stopRecording}
-                  className="rounded-xl bg-gradient-to-b from-red-500 to-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(220,38,38,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(220,38,38,0.5)]"
+                  className="rounded-xl bg-gradient-to-b from-red-500 to-red-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(220,38,38,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(220,38,38,0.5)]"
                 >
-                  <Square className="mr-1 inline h-4 w-4" /> Stop
+                  <Square className="mr-1 inline h-3 w-3 sm:h-4 sm:w-4" /> Stop
                 </button>
               )}
               <button
                 type="button"
                 onClick={useRecording}
                 disabled={!audioBlob || aiLoading}
-                className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50"
               >
-                {aiLoading ? "Processing..." : "Use Recording to Fill"}
+                {aiLoading ? "Processing..." : "Use Recording"}
               </button>
               <button
                 type="button"
                 onClick={clearRecording}
                 disabled={!audioBlob}
-                className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5 disabled:opacity-50"
+                className="rounded-xl border border-gray-200 bg-white/80 px-3 py-2 text-xs sm:text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5 disabled:opacity-50"
               >
                 Clear
               </button>
             </div>
             {audioUrl && (
-              <audio src={audioUrl} controls className="mt-2 w-full" />
+              <audio
+                src={audioUrl}
+                controls
+                className="mt-2 w-full max-w-md rounded-xl"
+              />
+            )}
+          </div>
+        </section>
+
+        {/* Property Type Selector */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Property Type</h3>
+          <div className="flex flex-wrap gap-2">
+            {(["residential", "commercial", "agricultural"] as const).map(
+              (type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handlePropertyTypeChange(type)}
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                    details.property_type === type
+                      ? "bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)]"
+                      : "bg-white/80 text-gray-700 border border-gray-200/70 hover:bg-gray-50"
+                  }`}
+                >
+                  {type === "agricultural"
+                    ? "Agricultural Land"
+                    : type === "commercial"
+                    ? "Commercial Property"
+                    : "Residential Property"}
+                </button>
+              )
             )}
           </div>
         </section>
 
         {/* Property Details */}
         <section className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-900">Property Details</h3>
+          <h3 className="text-sm font-medium text-gray-900">
+            Property Details
+          </h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-medium text-gray-700">
@@ -678,7 +849,11 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
                 className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                 value={details.property_details.municipality}
                 onChange={(e) =>
-                  handleChange("property_details", "municipality", e.target.value)
+                  handleChange(
+                    "property_details",
+                    "municipality",
+                    e.target.value
+                  )
                 }
               />
             </div>
@@ -690,7 +865,11 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
                 className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
                 value={details.property_details.title_number}
                 onChange={(e) =>
-                  handleChange("property_details", "title_number", e.target.value)
+                  handleChange(
+                    "property_details",
+                    "title_number",
+                    e.target.value
+                  )
                 }
               />
             </div>
@@ -742,248 +921,431 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
                 }
               />
             </div>
-            
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* Report Dates */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Report Dates</h3>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Report Date
-            </label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.report_dates.report_date}
-              onChange={(e) =>
-                handleChange("report_dates", "report_date", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Effective Date
-            </label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.report_dates.effective_date}
-              onChange={(e) =>
-                handleChange("report_dates", "effective_date", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Inspection Date
-            </label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.report_dates.inspection_date}
-              onChange={(e) =>
-                handleChange("report_dates", "inspection_date", e.target.value)
-              }
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* House Details */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">House Details</h3>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Year Built
-            </label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.house_details.year_built}
-              onChange={(e) =>
-                handleChange("house_details", "year_built", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Square Footage
-            </label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.house_details.square_footage}
-              onChange={(e) =>
-                handleChange("house_details", "square_footage", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Lot Size (sqft)
-            </label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.house_details.lot_size_sqft}
-              onChange={(e) =>
-                handleChange("house_details", "lot_size_sqft", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Rooms
-            </label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.house_details.number_of_rooms}
-              onChange={(e) =>
-                handleChange("house_details", "number_of_rooms", e.target.value)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Full Bathrooms
-            </label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.house_details.number_of_full_bathrooms}
-              onChange={(e) =>
-                handleChange(
-                  "house_details",
-                  "number_of_full_bathrooms",
-                  e.target.value
-                )
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Half Bathrooms
-            </label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.house_details.number_of_half_bathrooms}
-              onChange={(e) =>
-                handleChange(
-                  "house_details",
-                  "number_of_half_bathrooms",
-                  e.target.value
-                )
-              }
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700">
-            Known Issues (comma separated)
-          </label>
-          <input
-            className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-            value={details.house_details.known_issues.join(", ")}
-            onChange={(e) => handleKnownIssuesChange(e.target.value)}
-          />
-        </div>
-      </section>
-
-      {/* Inspector Info is auto-filled from profile on submit */}
-
-      {/* Images */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Images (max 10)</h3>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => handleImagesChange(e.target.files)}
-          className="sr-only"
-        />
-        <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
-          <Upload className="mx-auto h-8 w-8 text-gray-400" />
-          <p className="mt-2 text-sm text-gray-700">Add images</p>
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] focus:outline-none"
-            >
-              <Upload className="h-4 w-4" />
-              Select Images
-            </button>
-            <button
-              type="button"
-              onClick={() => setCameraOpen(true)}
-              className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] focus:outline-none"
-            >
-              <Camera className="h-4 w-4" />
-              Open Camera
-            </button>
-            <button
-              type="button"
-              onClick={downloadAllImagesZip}
-              disabled={images.length === 0}
-              className="ml-2 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 border border-gray-200 shadow disabled:opacity-50"
-              title="Download images as ZIP"
-            >
-              <Download className="h-4 w-4" />
-              Download ZIP
-            </button>
-          </div>
-          <p className="mt-1 text-xs text-gray-500">
-            PNG, JPG. Up to 10 images.
-          </p>
-        </div>
-        <p className="text-xs text-gray-500">
-          Selected: {images.length} file(s)
-        </p>
-        {images.length > 0 && (
-          <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-2 shadow ring-1 ring-black/5 backdrop-blur">
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {previews.map((src, idx) => (
-                <div
-                  key={idx}
-                  className="relative group overflow-hidden rounded-xl shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-xl"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={src}
-                    alt={images[idx]?.name || `image-${idx + 1}`}
-                    className="h-28 w-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    aria-label="Remove image"
-                    onClick={() => removeImage(idx)}
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1.5 text-white shadow-lg hover:bg-black/80 transition"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+        {/* Report Dates */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Report Dates</h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Report Date
+              </label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.report_dates.report_date}
+                onChange={(e) =>
+                  handleChange("report_dates", "report_date", e.target.value)
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Effective Date
+              </label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.report_dates.effective_date}
+                onChange={(e) =>
+                  handleChange("report_dates", "effective_date", e.target.value)
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Inspection Date
+              </label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.report_dates.inspection_date}
+                onChange={(e) =>
+                  handleChange(
+                    "report_dates",
+                    "inspection_date",
+                    e.target.value
+                  )
+                }
+              />
             </div>
           </div>
-        )}
-      </section>
+        </section>
 
-        <div className="flex items-center gap-2 pt-2">
+        {/* Farmland Details (Agricultural only) */}
+        {details.property_type === "agricultural" && (
+          <section className="space-y-3 rounded-2xl border border-green-200 bg-green-50/50 p-4">
+            <h3 className="text-sm font-medium text-green-900">
+              Farmland Details
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700">
+                  Total Title Acres
+                </label>
+                <input
+                  type="number"
+                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={details.farmland_details?.total_title_acres || ""}
+                  onChange={(e) =>
+                    handleFarmlandChange(
+                      "total_title_acres",
+                      e.target.value ? parseFloat(e.target.value) : undefined
+                    )
+                  }
+                  placeholder="e.g., 160"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">
+                  Cultivated Acres
+                </label>
+                <input
+                  type="number"
+                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={details.farmland_details?.cultivated_acres || ""}
+                  onChange={(e) =>
+                    handleFarmlandChange(
+                      "cultivated_acres",
+                      e.target.value ? parseFloat(e.target.value) : undefined
+                    )
+                  }
+                  placeholder="e.g., 150"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">
+                  Rural Municipality (RM)
+                </label>
+                <input
+                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={details.farmland_details?.rm_area || ""}
+                  onChange={(e) =>
+                    handleFarmlandChange("rm_area", e.target.value)
+                  }
+                  placeholder="e.g., RM of Corman Park"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">
+                  Soil Class (1-5)
+                </label>
+                <select
+                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={details.farmland_details?.soil_class || ""}
+                  onChange={(e) =>
+                    handleFarmlandChange("soil_class", e.target.value)
+                  }
+                >
+                  <option value="">Select...</option>
+                  <option value="1">Class 1 - Excellent</option>
+                  <option value="2">Class 2 - Good</option>
+                  <option value="3">Class 3 - Average</option>
+                  <option value="4">Class 4 - Fair</option>
+                  <option value="5">Class 5 - Poor</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">
+                  Crop Type
+                </label>
+                <input
+                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={details.farmland_details?.crop_type || ""}
+                  onChange={(e) =>
+                    handleFarmlandChange("crop_type", e.target.value)
+                  }
+                  placeholder="e.g., Wheat, Canola, Pasture"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">
+                  Access Quality
+                </label>
+                <select
+                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={details.farmland_details?.access_quality || "good"}
+                  onChange={(e) =>
+                    handleFarmlandChange(
+                      "access_quality",
+                      e.target.value as any
+                    )
+                  }
+                >
+                  <option value="excellent">Excellent (Paved)</option>
+                  <option value="good">Good (Gravel)</option>
+                  <option value="fair">Fair (Dirt)</option>
+                  <option value="poor">Poor</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">
+                  Distance to City (km)
+                </label>
+                <input
+                  type="number"
+                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={details.farmland_details?.distance_to_city_km || ""}
+                  onChange={(e) =>
+                    handleFarmlandChange(
+                      "distance_to_city_km",
+                      e.target.value ? parseFloat(e.target.value) : undefined
+                    )
+                  }
+                  placeholder="e.g., 25"
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-xs font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    checked={details.farmland_details?.is_rented || false}
+                    onChange={(e) =>
+                      handleFarmlandChange("is_rented", e.target.checked)
+                    }
+                  />
+                  Currently Rented
+                </label>
+                <label className="flex items-center gap-2 text-xs font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    checked={details.farmland_details?.irrigation || false}
+                    onChange={(e) =>
+                      handleFarmlandChange("irrigation", e.target.checked)
+                    }
+                  />
+                  Has Irrigation
+                </label>
+              </div>
+              {details.farmland_details?.is_rented && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">
+                    Annual Rent ($/acre)
+                  </label>
+                  <input
+                    type="number"
+                    className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
+                    value={details.farmland_details?.annual_rent_per_acre || ""}
+                    onChange={(e) =>
+                      handleFarmlandChange(
+                        "annual_rent_per_acre",
+                        e.target.value ? parseFloat(e.target.value) : undefined
+                      )
+                    }
+                    placeholder="e.g., 80"
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* House Details */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">House Details</h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Year Built
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.house_details.year_built}
+                onChange={(e) =>
+                  handleChange("house_details", "year_built", e.target.value)
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Square Footage
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.house_details.square_footage}
+                onChange={(e) =>
+                  handleChange(
+                    "house_details",
+                    "square_footage",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Lot Size (sqft)
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.house_details.lot_size_sqft}
+                onChange={(e) =>
+                  handleChange("house_details", "lot_size_sqft", e.target.value)
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Rooms
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.house_details.number_of_rooms}
+                onChange={(e) =>
+                  handleChange(
+                    "house_details",
+                    "number_of_rooms",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Full Bathrooms
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.house_details.number_of_full_bathrooms}
+                onChange={(e) =>
+                  handleChange(
+                    "house_details",
+                    "number_of_full_bathrooms",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">
+                Half Bathrooms
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                value={details.house_details.number_of_half_bathrooms}
+                onChange={(e) =>
+                  handleChange(
+                    "house_details",
+                    "number_of_half_bathrooms",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700">
+              Known Issues (comma separated)
+            </label>
+            <input
+              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
+              value={details.house_details.known_issues.join(", ")}
+              onChange={(e) => handleKnownIssuesChange(e.target.value)}
+            />
+          </div>
+        </section>
+
+        {/* Inspector Info is auto-filled from profile on submit */}
+
+        {/* Property Type & Images Section */}
+        <RealEstateSection
+          value={property}
+          onChange={setProperty}
+          maxImages={50}
+          downloadPrefix={(
+            details?.property_details?.address || "real-estate"
+          ).replace(/[^a-zA-Z0-9_-]/g, "-")}
+        />
+
+        {/* Map Image Upload */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-rose-600" />
+            Map/Location Image (Optional)
+          </h3>
+          <input
+            ref={mapInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleMapImageChange(e.target.files)}
+            className="sr-only"
+          />
+          {mapImage ? (
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={URL.createObjectURL(mapImage)}
+                  alt="Map"
+                  className="h-24 w-24 rounded-lg border border-gray-200 object-cover"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {mapImage.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(mapImage.size / 1024).toFixed(0)} KB
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeMapImage}
+                  className="flex-shrink-0 rounded-full bg-red-600 p-2 text-white hover:bg-red-700 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-white/70 to-gray-50/50 p-6 text-center backdrop-blur">
+              <MapPin className="mx-auto h-10 w-10 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-700">
+                Add map or location image
+              </p>
+              <button
+                type="button"
+                onClick={() => mapInputRef.current?.click()}
+                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] focus:outline-none"
+              >
+                <Upload className="h-4 w-4" />
+                Select Map Image
+              </button>
+              <p className="mt-2 text-xs text-gray-500">
+                PNG, JPG. Optional location/map reference image.
+              </p>
+            </div>
+          )}
+        </section>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-4">
           <button
             type="button"
-            className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+            className="w-full sm:w-auto rounded-xl border border-gray-200 bg-white/80 px-6 py-3 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
             onClick={onCancel}
             disabled={submitting}
           >
             Cancel
           </button>
           <button
+            type="button"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-3 text-sm font-semibold text-emerald-700 shadow hover:bg-emerald-100 transition active:translate-y-0.5"
+            onClick={saveInputs}
+            disabled={submitting}
+          >
+            <Save className="h-4 w-4" />
+            Save Draft
+          </button>
+          <button
             type="submit"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50"
             disabled={submitting}
           >
             {submitting ? "Creating..." : "Create Report"}
+            {!submitting && <Check className="h-4 w-4" />}
           </button>
         </div>
         {submitting && (
@@ -1033,7 +1395,10 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
                   <div
                     className="h-2 rounded bg-gradient-to-r from-rose-500 to-rose-600 transition-all duration-300 shadow-inner"
                     style={{
-                      width: `${Math.min(100, Math.max(0, progressPercent)).toFixed(0)}%`,
+                      width: `${Math.min(
+                        100,
+                        Math.max(0, progressPercent)
+                      ).toFixed(0)}%`,
                     }}
                   ></div>
                 </div>
@@ -1053,14 +1418,6 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           </div>
         )}
       </div>
-      {/* Camera Overlay */}
-      <RealEstateCamera
-        open={cameraOpen}
-        onClose={() => setCameraOpen(false)}
-        onAdd={(files) => addCapturedImages(files)}
-        downloadPrefix={(details?.property_details?.address || 'real-estate').replace(/[^a-zA-Z0-9_-]/g, '-')}
-        maxCount={10}
-      />
     </form>
   );
 }

@@ -6,6 +6,7 @@ export type RealEstateDetails = {
   progressId?: string;
   job_id?: string;
   language?: "en" | "fr" | "es";
+  property_type?: "agricultural" | "commercial" | "residential";
   property_details: {
     owner_name: string;
     address: string;
@@ -15,6 +16,7 @@ export type RealEstateDetails = {
     parcel_number: string;
     land_area_acres: string;
     source_quarter_section: string;
+    property_type?: string; // Duplicate for backend compatibility
   };
   report_dates: {
     report_date: string; // ISO date string
@@ -29,6 +31,19 @@ export type RealEstateDetails = {
     number_of_full_bathrooms: string;
     number_of_half_bathrooms: string;
     known_issues: string[];
+  };
+  // Farmland-specific details (for agricultural properties)
+  farmland_details?: {
+    total_title_acres?: number;
+    cultivated_acres?: number;
+    rm_area?: string; // Rural Municipality
+    soil_class?: string;
+    crop_type?: string;
+    is_rented?: boolean;
+    annual_rent_per_acre?: number;
+    irrigation?: boolean;
+    access_quality?: "excellent" | "good" | "fair" | "poor";
+    distance_to_city_km?: number;
   };
   inspector_info: {
     inspector_name: string;
@@ -71,13 +86,19 @@ export type RealEstateCreateOptions = {
 export const RealEstateService = {
   async create(
     details: RealEstateDetails,
-    images: File[],
+    images: File[], // Main images for AI analysis
+    extraImages: File[] = [], // Extra images (report only)
+    videos: File[] = [], // Videos (zip only)
     options?: RealEstateCreateOptions
   ): Promise<RealEstateCreateResponse> {
     const fd = new FormData();
     fd.append("details", JSON.stringify(details));
-    // Limit max images to 10 as per backend middleware
-    images.slice(0, 10).forEach((file) => fd.append("images", file));
+    // Main images (processed with logo, sent to AI, max 50)
+    images.forEach((file) => fd.append("images", file));
+    // Extra images (processed with logo, report only)
+    extraImages.forEach((file) => fd.append("extraImages", file));
+    // Videos (included in zip only)
+    videos.forEach((file) => fd.append("videos", file));
 
     const { data } = await API.post<RealEstateCreateResponse>("/real-estate", fd, {
       onUploadProgress: (event: AxiosProgressEvent) => {
