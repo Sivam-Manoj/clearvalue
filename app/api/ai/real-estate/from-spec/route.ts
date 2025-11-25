@@ -3,10 +3,14 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const MODEL_VISION = process.env.OPENAI_MODEL_VISION || "gpt-4o-mini";
+const MODEL_VISION = "gpt-4.1";
 
-function buildInstruction() {
-  return `You will be given a photo/scan of a real estate spec sheet. Read all text and extract as many fields as possible. Return ONLY JSON in this exact shape. Leave unknown fields as empty strings or empty arrays.
+function buildInstruction(imageCount: number) {
+  const imageText = imageCount > 1 
+    ? `You will be given ${imageCount} photos/scans of real estate spec sheets.` 
+    : "You will be given a photo/scan of a real estate spec sheet.";
+  
+  return `${imageText} Read all text from ALL images and extract as many fields as possible. Combine information from all images into a single result. Return ONLY JSON in this exact shape. Leave unknown fields as empty strings or empty arrays.
 {
   "property_details": {
     "owner_name": string,
@@ -48,16 +52,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "OPENAI_API_KEY not set" }, { status: 500 });
     }
     const form = await req.formData();
-    const file = form.get("file");
-    if (!(file instanceof Blob)) {
-      return NextResponse.json({ error: "Missing 'file'" }, { status: 400 });
+    
+    // Collect up to 5 images (file0, file1, file2, file3, file4)
+    const imageContents: { type: "image_url"; image_url: { url: string } }[] = [];
+    
+    for (let i = 0; i < 5; i++) {
+      const file = form.get(`file${i}`);
+      if (file instanceof Blob) {
+        const arrayBuf = await file.arrayBuffer();
+        const b64 = Buffer.from(arrayBuf).toString("base64");
+        const mime = (file as any).type || "image/png";
+        const dataUrl = `data:${mime};base64,${b64}`;
+        imageContents.push({ type: "image_url", image_url: { url: dataUrl } });
+      }
     }
 
-    const arrayBuf = await file.arrayBuffer();
-    const b64 = Buffer.from(arrayBuf).toString("base64");
-    // Try to guess mime, default to image/png
-    const mime = (file as any).type || "image/png";
-    const dataUrl = `data:${mime};base64,${b64}`;
+    if (imageContents.length === 0) {
+      return NextResponse.json({ error: "No images provided" }, { status: 400 });
+    }
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -70,12 +82,12 @@ export async function POST(req: Request) {
         response_format: { type: "json_object" },
         temperature: 0.2,
         messages: [
-          { role: "system", content: "You extract structured JSON fields for a real estate inspection form." },
+          { role: "system", content: "You extract structured JSON fields for a real estate inspection form. Analyze all provided images and combine the information." },
           {
             role: "user",
             content: [
-              { type: "text", text: buildInstruction() },
-              { type: "image_url", image_url: { url: dataUrl } },
+              { type: "text", text: buildInstruction(imageContents.length) },
+              ...imageContents,
             ],
           },
         ],
@@ -93,6 +105,6 @@ export async function POST(req: Request) {
     try { json = JSON.parse(content); } catch {}
     return NextResponse.json({ details: json });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "Failed to analyze image" }, { status: 500 });
+    return NextResponse.json({ error: e?.message || "Failed to analyze images" }, { status: 500 });
   }
 }

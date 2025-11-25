@@ -137,7 +137,7 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const mapInputRef = useRef<HTMLInputElement>(null);
   const specInputRef = useRef<HTMLInputElement>(null);
-  const [specFile, setSpecFile] = useState<File | null>(null);
+  const [specFiles, setSpecFiles] = useState<File[]>([]);
   const [notesText, setNotesText] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -292,17 +292,24 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
 
   function handleSpecChange(files: FileList | null) {
     if (!files || files.length === 0) {
-      setSpecFile(null);
       return;
     }
-    setSpecFile(files[0]);
+    // Append new files, limit to 5 total
+    setSpecFiles((prev) => {
+      const combined = [...prev, ...Array.from(files)];
+      return combined.slice(0, 5);
+    });
+  }
+
+  function removeSpecFile(index: number) {
+    setSpecFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function analyzeSpec() {
-    if (!specFile) return;
+    if (specFiles.length === 0) return;
     try {
       setAiLoading(true);
-      const patch = await AIService.fillFromSpecSheet(specFile);
+      const patch = await AIService.fillFromSpecSheet(specFiles);
       applyPatch(patch);
     } catch (e: any) {
       setError(e?.message || "Failed to analyze spec sheet");
@@ -662,31 +669,57 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
               <label className="block text-xs font-medium text-gray-700">
-                Spec Sheet Image
+                Spec Sheet Images (up to 5)
               </label>
               <input
                 ref={specInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={(e) => handleSpecChange(e.target.files)}
                 className="sr-only"
               />
-              <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-4 text-center backdrop-blur shadow-inner">
-                <p className="text-xs text-gray-600 truncate px-2">
-                  {specFile ? specFile.name : "No file selected"}
-                </p>
+              <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-4 backdrop-blur shadow-inner">
+                {specFiles.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-700 text-center">
+                      {specFiles.length} image{specFiles.length > 1 ? "s" : ""} selected
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {specFiles.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs text-gray-700 border border-gray-200"
+                        >
+                          <span className="truncate max-w-[100px]">{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeSpecFile(idx)}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-600 text-center">
+                    No files selected
+                  </p>
+                )}
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                   <button
                     type="button"
                     onClick={() => specInputRef.current?.click()}
                     className="rounded-xl border border-gray-200 bg-white/80 px-3 py-2 text-xs sm:text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
                   >
-                    Select Image
+                    {specFiles.length > 0 ? "Add More" : "Select Images"}
                   </button>
                   <button
                     type="button"
                     onClick={analyzeSpec}
-                    disabled={!specFile || aiLoading}
+                    disabled={specFiles.length === 0 || aiLoading}
                     className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50 focus:outline-none"
                   >
                     {aiLoading ? "Analyzing..." : "Analyze"}
@@ -763,33 +796,6 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
                 controls
                 className="mt-2 w-full max-w-md rounded-xl"
               />
-            )}
-          </div>
-        </section>
-
-        {/* Property Type Selector */}
-        <section className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-900">Property Type</h3>
-          <div className="flex flex-wrap gap-2">
-            {(["residential", "commercial", "agricultural"] as const).map(
-              (type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => handlePropertyTypeChange(type)}
-                  className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-                    details.property_type === type
-                      ? "bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-[0_4px_0_0_rgba(190,18,60,0.45)]"
-                      : "bg-white/80 text-gray-700 border border-gray-200/70 hover:bg-gray-50"
-                  }`}
-                >
-                  {type === "agricultural"
-                    ? "Agricultural Land"
-                    : type === "commercial"
-                    ? "Commercial Property"
-                    : "Residential Property"}
-                </button>
-              )
             )}
           </div>
         </section>

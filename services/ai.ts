@@ -10,9 +10,12 @@ export type RealEstateDetailsPatch = {
 const jsonHeaders = { "Content-Type": "application/json" } as const;
 
 export const AIService = {
-  async fillFromSpecSheet(file: File): Promise<RealEstateDetailsPatch> {
+  async fillFromSpecSheet(files: File[]): Promise<RealEstateDetailsPatch> {
     const fd = new FormData();
-    fd.append("file", file);
+    // Support up to 5 images
+    files.slice(0, 5).forEach((file, i) => {
+      fd.append(`file${i}`, file);
+    });
     const res = await fetch("/api/ai/real-estate/from-spec", {
       method: "POST",
       body: fd,
