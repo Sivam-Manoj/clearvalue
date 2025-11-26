@@ -93,12 +93,19 @@ export interface RealEstateReport {
   imageUrls: string[];
   status: ReportStatus;
   preview_data?: any;
+  preview_files?: {
+    docx?: string;
+    excel?: string;
+    images?: string;
+  };
   preview_submitted_at?: string;
   approval_requested_at?: string;
   approval_processed_at?: string;
   decline_reason?: string;
   property_details?: any;
   report_dates?: any;
+  valuation?: any;
+  farmland_valuation?: any;
   createdAt: string;
   updatedAt: string;
 }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FileText, Download, Trash2 } from "lucide-react";
 import { ReportsService, type PdfReport } from "@/services/reports";
 import { getAssetReports, type AssetReport } from "@/services/assets";
+import { RealEstateService, type RealEstateReport } from "@/services/realEstate";
 import { toast } from "react-toastify";
 import StatusBadge from "@/components/reports/StatusBadge";
 
@@ -24,6 +25,10 @@ export default function ReportsPage() {
   // Asset reports state (approved and pending approval)
   const [assetReports, setAssetReports] = useState<AssetReport[]>([]);
   const [assetReportsLoading, setAssetReportsLoading] = useState(true);
+
+  // Real Estate reports state (approved and pending approval)
+  const [realEstateReports, setRealEstateReports] = useState<RealEstateReport[]>([]);
+  const [realEstateReportsLoading, setRealEstateReportsLoading] = useState(true);
 
   // Load asset reports (approved and pending)
   useEffect(() => {
@@ -52,10 +57,37 @@ export default function ReportsPage() {
     };
   }, []);
 
+  // Load real estate reports (approved and pending)
+  useEffect(() => {
+    let cancelled = false;
+    setRealEstateReportsLoading(true);
+    RealEstateService.getReports()
+      .then((response) => {
+        if (!cancelled) {
+          const visibleReports = response.data.filter(
+            (report) =>
+              report.status === "approved" ||
+              report.status === "pending_approval"
+          );
+          setRealEstateReports(visibleReports);
+        }
+      })
+      .catch((err: any) => {
+        console.error("Failed to load real estate reports:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setRealEstateReportsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     const handler = () => {
       setLoading(true);
       setAssetReportsLoading(true);
+      setRealEstateReportsLoading(true);
       Promise.allSettled([
         ReportsService.getMyReports().then((data) => setReports(data)),
         getAssetReports().then((response) => {
@@ -64,9 +96,16 @@ export default function ReportsPage() {
           );
           setAssetReports(visible);
         }),
+        RealEstateService.getReports().then((response) => {
+          const visible = response.data.filter(
+            (report) => report.status === "approved" || report.status === "pending_approval"
+          );
+          setRealEstateReports(visible);
+        }),
       ]).finally(() => {
         setLoading(false);
         setAssetReportsLoading(false);
+        setRealEstateReportsLoading(false);
       });
     };
     if (typeof window !== "undefined") {
@@ -123,14 +162,15 @@ export default function ReportsPage() {
   const groups = useMemo<ReportGroup[]>(() => {
     const map = new Map<string, ReportGroup>();
     
-    // Get all AssetReport IDs to filter out their PdfReports
+    // Get all AssetReport and RealEstateReport IDs to filter out their PdfReports
     const assetReportIds = new Set(assetReports.map(ar => ar._id));
+    const realEstateReportIds = new Set(realEstateReports.map(re => re._id));
     
     for (const r of reports) {
       const reportRef = (r as any).report as string | undefined;
       
-      // SKIP PdfReports that belong to AssetReports - we'll show AssetReports with preview_files instead
-      if (reportRef && assetReportIds.has(reportRef)) {
+      // SKIP PdfReports that belong to AssetReports or RealEstateReports - we'll show them with preview_files instead
+      if (reportRef && (assetReportIds.has(reportRef) || realEstateReportIds.has(reportRef))) {
         continue;
       }
       
@@ -265,8 +305,83 @@ export default function ReportsPage() {
       map.set(key, merged);
     }
 
+    // Add/merge real estate reports to the list
+    for (const re of realEstateReports) {
+      const status = re.status as string;
+      const statusText =
+        re.status === "pending_approval"
+          ? "Pending Approval"
+          : status === "approved"
+          ? "Approved"
+          : "";
+      const key = re._id;
+      const existing = map.get(key);
+
+      // Compute FMV from real estate valuation data
+      const currency = "CAD";
+      const fmvRaw = (re as any)?.preview_data?.valuation?.fair_market_value ||
+        (re as any)?.preview_data?.farmland_valuation?.fair_market_value_formatted ||
+        (re as any)?.valuation?.fair_market_value || "";
+      const fmvStr = String(fmvRaw) || `${currency} —`;
+
+      const addressBase = (re as any)?.property_details?.address ||
+        (re as any)?.preview_data?.property_details?.address ||
+        (re as any)?.property_details?.owner_name ||
+        "Real Estate Report";
+      
+      // Extract preview_files URLs and create pseudo-reports for download functionality
+      const previewFiles = (re as any).preview_files || {};
+      const createPseudoReport = (url: string, fileType: string): PdfReport => ({
+        _id: `${re._id}-${fileType}`,
+        filename: `${addressBase.replace(/[^a-zA-Z0-9]/g, '_')}.${fileType}`,
+        fileType,
+        url,
+        address: addressBase,
+        fairMarketValue: fmvStr,
+        createdAt: re.createdAt,
+        approvalStatus: (re as any).status === "approved" ? "approved" : "pending",
+      } as PdfReport);
+      
+      const variants: ReportGroup["variants"] = {};
+      if (previewFiles.docx) variants.docx = createPseudoReport(previewFiles.docx, "docx");
+      if (previewFiles.excel) variants.xlsx = createPseudoReport(previewFiles.excel, "xlsx");
+      if (previewFiles.images) variants.images = createPseudoReport(previewFiles.images, "zip");
+      
+      let merged: ReportGroup;
+      if (existing) {
+        merged = {
+          ...existing,
+          address: `${addressBase} ${statusText ? `(${statusText})` : ""}`,
+          filename: existing.filename || `${addressBase}.docx`,
+          approvalStatus:
+            (re as any).status === "approved"
+              ? "approved"
+              : existing.approvalStatus || "pending",
+          type: existing.type || "RealEstate",
+          fairMarketValue: existing.fairMarketValue || fmvStr,
+          variants: {
+            ...existing.variants,
+            ...variants,
+          },
+        };
+      } else {
+        merged = {
+          key,
+          address: `${addressBase} ${statusText ? `(${statusText})` : ""}`,
+          filename: `${addressBase}.docx`,
+          fairMarketValue: fmvStr,
+          createdAt: re.createdAt,
+          approvalStatus:
+            (re as any).status === "approved" ? "approved" : "pending",
+          type: "RealEstate",
+          variants,
+        };
+      }
+      map.set(key, merged);
+    }
+
     return Array.from(map.values());
-  }, [reports, assetReports]);
+  }, [reports, assetReports, realEstateReports]);
 
   const filteredGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -338,8 +453,11 @@ export default function ReportsPage() {
       const t = (r as any)?.type;
       if (t) s.add(String(t));
     }
+    // Add types from asset and real estate reports
+    if (assetReports.length > 0) s.add("Asset");
+    if (realEstateReports.length > 0) s.add("RealEstate");
     return Array.from(s);
-  }, [reports]);
+  }, [reports, assetReports, realEstateReports]);
 
   // Accent helpers for per-type theming (keeps classes explicit for Tailwind JIT)
   type Accent = {
@@ -637,7 +755,7 @@ export default function ReportsPage() {
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm">
               {error}
             </div>
-          ) : (filteredGroups.length === 0 && assetReports.length === 0) ? (
+          ) : (filteredGroups.length === 0 && assetReports.length === 0 && realEstateReports.length === 0) ? (
             <div className="relative overflow-hidden rounded-2xl border border-dashed border-slate-200 bg-white p-8 sm:p-10 text-center shadow-sm">
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-100 text-sky-600 ring-1 ring-sky-100 shadow-inner">
                 <FileText className="h-7 w-7" />
