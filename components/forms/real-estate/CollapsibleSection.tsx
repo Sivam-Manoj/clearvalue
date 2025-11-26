@@ -26,16 +26,16 @@ export default function CollapsibleSection({
   const hasPartial = filledCount > 0 && filledCount < totalCount;
 
   const variantStyles = {
-    default: "border-gray-300 bg-gradient-to-b from-white to-gray-50/80",
-    success: "border-emerald-300 bg-gradient-to-b from-emerald-50/50 to-emerald-100/30",
-    warning: "border-amber-300 bg-gradient-to-b from-amber-50/50 to-amber-100/30",
-    info: "border-blue-300 bg-gradient-to-b from-blue-50/50 to-blue-100/30",
+    default: "border-gray-300/90 bg-gradient-to-b from-white via-gray-50/60 to-gray-100/80",
+    success: "border-emerald-300/90 bg-gradient-to-b from-emerald-50/40 via-white to-emerald-100/50",
+    warning: "border-amber-300/90 bg-gradient-to-b from-amber-50/40 via-white to-amber-100/50",
+    info: "border-blue-300/90 bg-gradient-to-b from-blue-50/40 via-white to-blue-100/50",
   };
 
   return (
-    <div className={`rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] overflow-hidden ${variantStyles[variant]}`}>
+    <div className={`rounded-xl border-2 shadow-[0_4px_12px_rgba(0,0,0,0.1),0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] overflow-hidden ${variantStyles[variant]}`}>
       {/* Header - Always visible, not clickable */}
-      <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-gray-100/80 to-gray-50/50 border-b border-gray-200/60">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-gray-100/90 via-gray-50/70 to-white/80 border-b-2 border-gray-200/70 shadow-[inset_0_-2px_4px_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-2 min-w-0">
           <span className="flex-shrink-0 text-gray-600 [&>svg]:h-4 [&>svg]:w-4 drop-shadow-sm">{icon}</span>
           <span className="font-semibold text-sm text-gray-800 truncate">{title}</span>
@@ -70,7 +70,7 @@ export default function CollapsibleSection({
       </div>
 
       {/* Content - Always expanded */}
-      <div className="px-3 py-3">{children}</div>
+      <div className="px-4 py-4 bg-gradient-to-b from-transparent to-gray-50/30">{children}</div>
     </div>
   );
 }

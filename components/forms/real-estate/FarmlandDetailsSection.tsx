@@ -17,8 +17,8 @@ export default function FarmlandDetailsSection({ details, onChange }: FarmlandDe
   const fields = [fd?.total_title_acres, fd?.cultivated_acres, fd?.rm_area, fd?.soil_class, fd?.crop_type, fd?.access_quality, fd?.distance_to_city_km];
   const filledCount = fields.filter((f) => f !== undefined && f !== null && f !== "").length;
 
-  const inputClass = "w-full rounded-lg border border-emerald-300 bg-gradient-to-b from-white to-emerald-50/30 px-2.5 py-2 text-sm text-gray-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_0_0_3px_rgba(52,211,153,0.1)] transition-all placeholder:text-gray-400 cursor-pointer";
-  const labelClass = "block text-[11px] font-semibold text-gray-700 mb-1 tracking-wide";
+  const inputClass = "w-full rounded-lg border-2 border-emerald-300/80 bg-gradient-to-b from-emerald-50/50 via-white to-emerald-100/40 px-3 py-2.5 text-sm text-gray-900 shadow-[inset_0_3px_6px_rgba(0,0,0,0.08),inset_0_-2px_4px_rgba(255,255,255,0.9),0_1px_3px_rgba(0,0,0,0.06)] focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:border-emerald-400 focus:shadow-[inset_0_3px_6px_rgba(0,0,0,0.08),inset_0_-2px_4px_rgba(255,255,255,0.9),0_0_0_4px_rgba(52,211,153,0.15)] transition-all placeholder:text-gray-400 hover:border-emerald-400";
+  const labelClass = "block text-[11px] font-bold text-gray-600 mb-1.5 tracking-wide uppercase drop-shadow-[0_1px_0_rgba(255,255,255,0.8)]";
 
   return (
     <CollapsibleSection title="Farmland" icon={<Wheat className="text-emerald-600" />} filledCount={filledCount} totalCount={fields.length} variant="success" required>
