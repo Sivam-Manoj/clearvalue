@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import {
   RealEstateService,
   type RealEstateDetails,
 } from "@/services/realEstate";
-import { X, Upload, Mic, Square, Check, MapPin, Save } from "lucide-react";
+import { Check, Save } from "lucide-react";
 import {
   SavedInputService,
   type SavedInput,
@@ -14,9 +14,17 @@ import {
 } from "@/services/savedInputs";
 import { AIService, type RealEstateDetailsPatch } from "@/services/ai";
 import { toast } from "react-toastify";
-import RealEstateSection, {
+
+// Section Components
+import {
+  RealEstateSection,
+  PropertyDetailsSection,
+  BuildingDetailsSection,
+  FarmlandDetailsSection,
+  MapUploadSection,
+  AIAssistSection,
   type RealEstateProperty,
-} from "./real-estate/RealEstateSection";
+} from "./real-estate";
 
 type Props = {
   onSuccess?: (message?: string) => void;
@@ -135,8 +143,6 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   const [mapImage, setMapImage] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const mapInputRef = useRef<HTMLInputElement>(null);
-  const specInputRef = useRef<HTMLInputElement>(null);
   const [specFiles, setSpecFiles] = useState<File[]>([]);
   const [notesText, setNotesText] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -229,7 +235,6 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
 
   function removeMapImage() {
     setMapImage(null);
-    if (mapInputRef.current) mapInputRef.current.value = "";
   }
 
   useEffect(() => {
@@ -470,7 +475,10 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
     };
     window.addEventListener("load-realestate-input" as any, handler as any);
     return () => {
-      window.removeEventListener("load-realestate-input" as any, handler as any);
+      window.removeEventListener(
+        "load-realestate-input" as any,
+        handler as any
+      );
     };
   }, []);
 
@@ -632,806 +640,104 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   }
 
   return (
-    <form className="space-y-6" onSubmit={onSubmit}>
-      <div className="relative space-y-6">
+    <form className="space-y-2" onSubmit={onSubmit}>
+      <div className="relative space-y-2">
         {error && (
-          <div className="rounded-xl border border-red-200/70 bg-red-50/80 p-3 text-sm text-red-700 shadow ring-1 ring-black/5 backdrop-blur">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </div>
         )}
 
-        {/* Step 1: Property Type & Images - Most Important at Top */}
-        <div className="rounded-2xl border border-rose-100 bg-gradient-to-br from-white via-rose-50/30 to-white p-5 shadow-sm">
-          <RealEstateSection
-            value={property}
-            onChange={setProperty}
-            maxImages={50}
-            downloadPrefix={(
-              details?.property_details?.address || "real-estate"
-            ).replace(/[^a-zA-Z0-9_-]/g, "-")}
-          />
-        </div>
-
-        {/* Step 2: AI-Assisted Form Fill (Collapsible Card) */}
-        <details className="group rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <summary className="flex cursor-pointer items-center justify-between p-4 text-sm font-medium text-gray-900 hover:bg-gray-50 rounded-2xl">
-            <span className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-gray-800 to-black text-xs text-white font-bold">✦</span>
-              AI-Assisted Form Fill (Optional)
-            </span>
-            <svg className="h-5 w-5 text-gray-500 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </summary>
-          <div className="border-t border-gray-100 p-4 space-y-4">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-gray-700">
-                Spec Sheet Images (up to 5)
-              </label>
-              <input
-                ref={specInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => handleSpecChange(e.target.files)}
-                className="sr-only"
-              />
-              <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-4 backdrop-blur shadow-inner">
-                {specFiles.length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-700 text-center">
-                      {specFiles.length} image{specFiles.length > 1 ? "s" : ""} selected
-                    </p>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {specFiles.map((file, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs text-gray-700 border border-gray-200"
-                        >
-                          <span className="truncate max-w-[100px]">{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeSpecFile(idx)}
-                            className="text-gray-400 hover:text-red-500"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-600 text-center">
-                    No files selected
-                  </p>
-                )}
-                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => specInputRef.current?.click()}
-                    className="rounded-xl border border-gray-200 bg-white/80 px-3 py-2 text-xs sm:text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
-                  >
-                    {specFiles.length > 0 ? "Add More" : "Select Images"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={analyzeSpec}
-                    disabled={specFiles.length === 0 || aiLoading}
-                    className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50 focus:outline-none"
-                  >
-                    {aiLoading ? "Analyzing..." : "Analyze"}
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-gray-700">
-                Notes / Transcript
-              </label>
-              <textarea
-                className="mt-1 h-28 w-full rounded-2xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300 resize-none"
-                value={notesText}
-                onChange={(e) => setNotesText(e.target.value)}
-                placeholder="Add notes or paste transcript..."
-              />
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={fillFromText}
-                  disabled={!notesText.trim() || aiLoading}
-                  className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50 focus:outline-none"
-                >
-                  {aiLoading ? "Filling..." : "Fill From Text"}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Voice record */}
-          <div className="space-y-2">
-            <label className="block text-xs font-medium text-gray-700">
-              Voice Record
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              {!isRecording ? (
-                <button
-                  type="button"
-                  onClick={startRecording}
-                  className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]"
-                >
-                  <Mic className="mr-1 inline h-3 w-3 sm:h-4 sm:w-4" /> Start
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={stopRecording}
-                  className="rounded-xl bg-gradient-to-b from-red-500 to-red-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(220,38,38,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(220,38,38,0.5)]"
-                >
-                  <Square className="mr-1 inline h-3 w-3 sm:h-4 sm:w-4" /> Stop
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={useRecording}
-                disabled={!audioBlob || aiLoading}
-                className="rounded-xl bg-gradient-to-b from-gray-900 to-black px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] disabled:opacity-50"
-              >
-                {aiLoading ? "Processing..." : "Use Recording"}
-              </button>
-              <button
-                type="button"
-                onClick={clearRecording}
-                disabled={!audioBlob}
-                className="rounded-xl border border-gray-200 bg-white/80 px-3 py-2 text-xs sm:text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5 disabled:opacity-50"
-              >
-                Clear
-              </button>
-            </div>
-            {audioUrl && (
-              <audio
-                src={audioUrl}
-                controls
-                className="mt-2 w-full max-w-md rounded-xl"
-              />
-            )}
-          </div>
-          </div>
-        </details>
-
-        {/* Step 3: Property Details Card */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-5">
-          {/* Language Selection - inline with title */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h3 className="text-base font-semibold text-gray-900">Property Details</h3>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium text-gray-600">Language:</label>
-              <select
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.language || "en"}
-                onChange={(e) =>
-                  setDetails((prev) => ({
-                    ...prev,
-                    language: e.target.value as any,
-                  }))
-                }
-              >
-                <option value="en">English</option>
-                <option value="fr">Français</option>
-                <option value="es">Español</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Property Details Fields */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Owner Name
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.property_details.owner_name}
-                onChange={(e) =>
-                  handleChange("property_details", "owner_name", e.target.value)
-                }
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-gray-700">
-                Address
-              </label>
-              <input
-                required
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.property_details.address}
-                onChange={(e) =>
-                  handleChange("property_details", "address", e.target.value)
-                }
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-gray-700">
-                Land Description
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.property_details.land_description}
-                onChange={(e) =>
-                  handleChange(
-                    "property_details",
-                    "land_description",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Municipality
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.property_details.municipality}
-                onChange={(e) =>
-                  handleChange(
-                    "property_details",
-                    "municipality",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Title Number
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.property_details.title_number}
-                onChange={(e) =>
-                  handleChange(
-                    "property_details",
-                    "title_number",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Parcel Number
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.property_details.parcel_number}
-                onChange={(e) =>
-                  handleChange(
-                    "property_details",
-                    "parcel_number",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Land Area (acres)
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.property_details.land_area_acres}
-                onChange={(e) =>
-                  handleChange(
-                    "property_details",
-                    "land_area_acres",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Source Quarter Section
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.property_details.source_quarter_section}
-                onChange={(e) =>
-                  handleChange(
-                    "property_details",
-                    "source_quarter_section",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-          </div>
-
-          {/* Report Dates - inside the same card */}
-          <div className="pt-4 border-t border-gray-100">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Report Dates</h4>
-            <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Report Date
-              </label>
-              <input
-                type="date"
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.report_dates.report_date}
-                onChange={(e) =>
-                  handleChange("report_dates", "report_date", e.target.value)
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Effective Date
-              </label>
-              <input
-                type="date"
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.report_dates.effective_date}
-                onChange={(e) =>
-                  handleChange("report_dates", "effective_date", e.target.value)
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Inspection Date
-              </label>
-              <input
-                type="date"
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.report_dates.inspection_date}
-                onChange={(e) =>
-                  handleChange(
-                    "report_dates",
-                    "inspection_date",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Farmland Details (Agricultural only) */}
-        {details.property_type === "agricultural" && (
-          <section className="space-y-3 rounded-2xl border border-green-200 bg-green-50/50 p-4">
-            <h3 className="text-sm font-medium text-green-900">
-              Farmland Details
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700">
-                  Total Title Acres
-                </label>
-                <input
-                  type="number"
-                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
-                  value={details.farmland_details?.total_title_acres || ""}
-                  onChange={(e) =>
-                    handleFarmlandChange(
-                      "total_title_acres",
-                      e.target.value ? parseFloat(e.target.value) : undefined
-                    )
-                  }
-                  placeholder="e.g., 160"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">
-                  Cultivated Acres
-                </label>
-                <input
-                  type="number"
-                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
-                  value={details.farmland_details?.cultivated_acres || ""}
-                  onChange={(e) =>
-                    handleFarmlandChange(
-                      "cultivated_acres",
-                      e.target.value ? parseFloat(e.target.value) : undefined
-                    )
-                  }
-                  placeholder="e.g., 150"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">
-                  Rural Municipality (RM)
-                </label>
-                <input
-                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
-                  value={details.farmland_details?.rm_area || ""}
-                  onChange={(e) =>
-                    handleFarmlandChange("rm_area", e.target.value)
-                  }
-                  placeholder="e.g., RM of Corman Park"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">
-                  Soil Class (1-5)
-                </label>
-                <select
-                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
-                  value={details.farmland_details?.soil_class || ""}
-                  onChange={(e) =>
-                    handleFarmlandChange("soil_class", e.target.value)
-                  }
-                >
-                  <option value="">Select...</option>
-                  <option value="1">Class 1 - Excellent</option>
-                  <option value="2">Class 2 - Good</option>
-                  <option value="3">Class 3 - Average</option>
-                  <option value="4">Class 4 - Fair</option>
-                  <option value="5">Class 5 - Poor</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">
-                  Crop Type
-                </label>
-                <input
-                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
-                  value={details.farmland_details?.crop_type || ""}
-                  onChange={(e) =>
-                    handleFarmlandChange("crop_type", e.target.value)
-                  }
-                  placeholder="e.g., Wheat, Canola, Pasture"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">
-                  Access Quality
-                </label>
-                <select
-                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
-                  value={details.farmland_details?.access_quality || "good"}
-                  onChange={(e) =>
-                    handleFarmlandChange(
-                      "access_quality",
-                      e.target.value as any
-                    )
-                  }
-                >
-                  <option value="excellent">Excellent (Paved)</option>
-                  <option value="good">Good (Gravel)</option>
-                  <option value="fair">Fair (Dirt)</option>
-                  <option value="poor">Poor</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">
-                  Distance to City (km)
-                </label>
-                <input
-                  type="number"
-                  className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
-                  value={details.farmland_details?.distance_to_city_km || ""}
-                  onChange={(e) =>
-                    handleFarmlandChange(
-                      "distance_to_city_km",
-                      e.target.value ? parseFloat(e.target.value) : undefined
-                    )
-                  }
-                  placeholder="e.g., 25"
-                />
-              </div>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-xs font-medium text-gray-700">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    checked={details.farmland_details?.is_rented || false}
-                    onChange={(e) =>
-                      handleFarmlandChange("is_rented", e.target.checked)
-                    }
-                  />
-                  Currently Rented
-                </label>
-                <label className="flex items-center gap-2 text-xs font-medium text-gray-700">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    checked={details.farmland_details?.irrigation || false}
-                    onChange={(e) =>
-                      handleFarmlandChange("irrigation", e.target.checked)
-                    }
-                  />
-                  Has Irrigation
-                </label>
-              </div>
-              {details.farmland_details?.is_rented && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-700">
-                    Annual Rent ($/acre)
-                  </label>
-                  <input
-                    type="number"
-                    className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-green-300"
-                    value={details.farmland_details?.annual_rent_per_acre || ""}
-                    onChange={(e) =>
-                      handleFarmlandChange(
-                        "annual_rent_per_acre",
-                        e.target.value ? parseFloat(e.target.value) : undefined
-                      )
-                    }
-                    placeholder="e.g., 80"
-                  />
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* House Details Card */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
-          <h3 className="text-base font-semibold text-gray-900">Building Details</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Year Built
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.house_details.year_built}
-                onChange={(e) =>
-                  handleChange("house_details", "year_built", e.target.value)
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Square Footage
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.house_details.square_footage}
-                onChange={(e) =>
-                  handleChange(
-                    "house_details",
-                    "square_footage",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Lot Size (sqft)
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.house_details.lot_size_sqft}
-                onChange={(e) =>
-                  handleChange("house_details", "lot_size_sqft", e.target.value)
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Rooms
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.house_details.number_of_rooms}
-                onChange={(e) =>
-                  handleChange(
-                    "house_details",
-                    "number_of_rooms",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Full Bathrooms
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.house_details.number_of_full_bathrooms}
-                onChange={(e) =>
-                  handleChange(
-                    "house_details",
-                    "number_of_full_bathrooms",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700">
-                Half Bathrooms
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-                value={details.house_details.number_of_half_bathrooms}
-                onChange={(e) =>
-                  handleChange(
-                    "house_details",
-                    "number_of_half_bathrooms",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700">
-              Known Issues (comma separated)
-            </label>
-            <input
-              className="mt-1 w-full rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-inner ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-rose-300"
-              value={details.house_details.known_issues.join(", ")}
-              onChange={(e) => handleKnownIssuesChange(e.target.value)}
+        {/* Row 1: Property Type & Images + AI Assist */}
+        <div className="grid gap-2 lg:grid-cols-2">
+          <div className="rounded-lg border border-rose-100 bg-gradient-to-br from-white via-rose-50/30 to-white p-3 shadow-sm">
+            <RealEstateSection
+              value={property}
+              onChange={setProperty}
+              maxImages={50}
+              downloadPrefix={(details?.property_details?.address || "real-estate").replace(/[^a-zA-Z0-9_-]/g, "-")}
             />
           </div>
+          <AIAssistSection
+            specFiles={specFiles}
+            onSpecChange={handleSpecChange}
+            onRemoveSpecFile={removeSpecFile}
+            onAnalyzeSpec={analyzeSpec}
+            notesText={notesText}
+            onNotesChange={setNotesText}
+            onFillFromText={fillFromText}
+            audioBlob={audioBlob}
+            audioUrl={audioUrl}
+            isRecording={isRecording}
+            onStartRecording={startRecording}
+            onStopRecording={stopRecording}
+            onUseRecording={useRecording}
+            onClearRecording={clearRecording}
+            aiLoading={aiLoading}
+          />
         </div>
 
-        {/* Inspector Info is auto-filled from profile on submit */}
-
-        {/* Map Image Upload Card */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-3">
-          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-rose-600" />
-            Map/Location Image
-            <span className="text-xs font-normal text-gray-500">(Optional)</span>
-          </h3>
-          <input
-            ref={mapInputRef}
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleMapImageChange(e.target.files)}
-            className="sr-only"
+        {/* Row 2: Property Details + Building Details */}
+        <div className="grid gap-2 lg:grid-cols-2">
+          <PropertyDetailsSection
+            details={details}
+            onChange={handleChange}
+            onLanguageChange={(lang) => setDetails((prev) => ({ ...prev, language: lang }))}
           />
-          {mapImage ? (
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={URL.createObjectURL(mapImage)}
-                  alt="Map"
-                  className="h-24 w-24 rounded-lg border border-gray-200 object-cover"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {mapImage.name}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {(mapImage.size / 1024).toFixed(0)} KB
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={removeMapImage}
-                  className="flex-shrink-0 rounded-full bg-red-600 p-2 text-white hover:bg-red-700 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+          <BuildingDetailsSection
+            details={details}
+            onChange={handleChange}
+            onKnownIssuesChange={handleKnownIssuesChange}
+          />
+        </div>
+
+        {/* Row 3: Farmland (if agricultural) + Map */}
+        <div className="grid gap-2 lg:grid-cols-2">
+          {details.property_type === "agricultural" ? (
+            <FarmlandDetailsSection details={details} onChange={handleFarmlandChange} />
           ) : (
-            <div className="rounded-xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-white/70 to-gray-50/50 p-6 text-center backdrop-blur">
-              <MapPin className="mx-auto h-10 w-10 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-700">
-                Add map or location image
-              </p>
-              <button
-                type="button"
-                onClick={() => mapInputRef.current?.click()}
-                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-gray-900 to-black px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)] focus:outline-none"
-              >
-                <Upload className="h-4 w-4" />
-                Select Map Image
-              </button>
-              <p className="mt-2 text-xs text-gray-500">
-                PNG, JPG. Optional location/map reference image.
-              </p>
-            </div>
+            <div className="hidden lg:block" />
           )}
+          <MapUploadSection
+            mapImage={mapImage}
+            onMapImageChange={handleMapImageChange}
+            onRemoveMapImage={removeMapImage}
+          />
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-          <button
-            type="button"
-            className="w-full sm:w-auto rounded-xl border border-gray-200 bg-white/80 px-6 py-3 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
-            onClick={onCancel}
-            disabled={submitting}
-          >
-            Cancel
+        <div className="flex items-center gap-2 pt-1">
+          <button type="button" className="rounded border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50" onClick={onCancel} disabled={submitting}>Cancel</button>
+          <button type="button" className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100" onClick={saveInputs} disabled={submitting}>
+            <Save className="h-3 w-3" />Save
           </button>
-          <button
-            type="button"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-3 text-sm font-semibold text-emerald-700 shadow hover:bg-emerald-100 transition active:translate-y-0.5"
-            onClick={saveInputs}
-            disabled={submitting}
-          >
-            <Save className="h-4 w-4" />
-            Save Draft
-          </button>
-          <button
-            type="submit"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50"
-            disabled={submitting}
-          >
-            {submitting ? "Creating..." : "Create Report"}
-            {!submitting && <Check className="h-4 w-4" />}
+          <button type="submit" className="inline-flex items-center gap-1 rounded bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50" disabled={submitting}>
+            {submitting ? "..." : "Create"}{!submitting && <Check className="h-3 w-3" />}
           </button>
         </div>
+
+        {/* Progress */}
         {submitting && (
-          <div className="mb-3">
-            <div className="w-full max-w-xl mx-auto rounded-2xl border border-rose-100/70 bg-white/80 p-4 shadow-2xl ring-1 ring-black/5 backdrop-blur">
-              <div className="mb-3 text-sm font-semibold text-gray-900">
-                Creating report...
-              </div>
-              <div className="mb-4 flex items-center justify-between">
-                {STEPS.map((s, idx) => {
-                  const state = stepStates[s.key];
-                  const isDone = state === "done";
-                  const isActive = state === "active";
-                  return (
-                    <div key={s.key} className="flex flex-1 items-center">
-                      <div
-                        className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold shadow ${
-                          isDone
-                            ? "border-rose-600 bg-rose-600 text-white shadow-[0_3px_0_0_rgba(190,18,60,0.5)]"
-                            : isActive
-                            ? "border-rose-600 text-rose-600 ring-2 ring-rose-300 animate-pulse"
-                            : "border-gray-300 text-gray-400"
-                        }`}
-                        title={s.label}
-                      >
-                        {isDone ? <Check className="h-4 w-4" /> : idx + 1}
-                      </div>
-                      {idx < STEPS.length - 1 && (
-                        <div className="mx-2 h-0.5 flex-1 rounded bg-gradient-to-r from-gray-200 to-gray-100">
-                          <div
-                            className={`h-0.5 rounded ${
-                              isDone
-                                ? "bg-gradient-to-r from-rose-500 to-rose-600"
-                                : isActive
-                                ? "bg-gradient-to-r from-rose-300 to-rose-400"
-                                : "bg-transparent"
-                            }`}
-                          ></div>
-                        </div>
-                      )}
+          <div className="rounded-lg border border-rose-100 bg-white p-3 shadow-sm">
+            <div className="flex items-center gap-1 mb-2">
+              {STEPS.map((s, idx) => {
+                const state = stepStates[s.key];
+                const isDone = state === "done";
+                const isActive = state === "active";
+                return (
+                  <div key={s.key} className="flex flex-1 items-center">
+                    <div className={`flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold ${isDone ? "border-rose-600 bg-rose-600 text-white" : isActive ? "border-rose-600 text-rose-600 animate-pulse" : "border-gray-300 text-gray-400"}`} title={s.label}>
+                      {isDone ? <Check className="h-2.5 w-2.5" /> : idx + 1}
                     </div>
-                  );
-                })}
-              </div>
-              <div>
-                <div className="h-2 w-full overflow-hidden rounded bg-gray-200">
-                  <div
-                    className="h-2 rounded bg-gradient-to-r from-rose-500 to-rose-600 transition-all duration-300 shadow-inner"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        Math.max(0, progressPercent)
-                      ).toFixed(0)}%`,
-                    }}
-                  ></div>
-                </div>
-                <div className="mt-2 text-xs text-gray-600">
-                  {progressPhase === "upload"
-                    ? "Uploading images..."
-                    : progressPhase === "processing"
-                    ? "Analyzing images and generating outputs..."
-                    : progressPhase === "done"
-                    ? "Finalizing..."
-                    : progressPhase === "error"
-                    ? "Encountered an error."
-                    : "Starting..."}
-                </div>
-              </div>
+                    {idx < STEPS.length - 1 && <div className="mx-0.5 h-0.5 flex-1 rounded bg-gray-200"><div className={`h-0.5 rounded ${isDone ? "bg-rose-500" : isActive ? "bg-rose-300" : ""}`} /></div>}
+                  </div>
+                );
+              })}
             </div>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-gray-200">
+              <div className="h-1 rounded-full bg-rose-500 transition-all" style={{ width: `${Math.min(100, Math.max(0, progressPercent)).toFixed(0)}%` }} />
+            </div>
+            <div className="mt-1 text-[10px] text-gray-500">{progressPhase === "upload" ? "Uploading..." : progressPhase === "processing" ? "Processing..." : progressPhase === "done" ? "Done!" : progressPhase === "error" ? "Error" : "Starting..."}</div>
           </div>
         )}
       </div>
