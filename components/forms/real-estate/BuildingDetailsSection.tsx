@@ -23,8 +23,8 @@ export default function BuildingDetailsSection({
   const fields = [hd.year_built, hd.square_footage, hd.lot_size_sqft, hd.number_of_rooms, hd.number_of_full_bathrooms, hd.number_of_half_bathrooms];
   const filledCount = fields.filter((f) => f && f.toString().trim() !== "").length;
 
-  const inputClass = "w-full rounded border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-rose-300";
-  const labelClass = "block text-[11px] font-medium text-gray-600 mb-0.5";
+  const inputClass = "w-full rounded-lg border border-gray-300 bg-gradient-to-b from-white to-gray-50 px-2.5 py-2 text-sm text-gray-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:outline-none focus:ring-2 focus:ring-rose-400/50 focus:border-rose-400 focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_0_0_3px_rgba(251,113,133,0.1)] transition-all placeholder:text-gray-400";
+  const labelClass = "block text-[11px] font-semibold text-gray-700 mb-1 tracking-wide";
 
   return (
     <CollapsibleSection title="Building Details" icon={<Building2 />} filledCount={filledCount} totalCount={fields.length} required>

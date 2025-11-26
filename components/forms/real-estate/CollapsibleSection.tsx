@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, Check, AlertCircle } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -18,75 +17,60 @@ export default function CollapsibleSection({
   title,
   icon,
   children,
-  defaultOpen = false,
   filledCount = 0,
   totalCount = 0,
   variant = "default",
   required = false,
 }: CollapsibleSectionProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
   const isComplete = totalCount > 0 && filledCount === totalCount;
   const hasPartial = filledCount > 0 && filledCount < totalCount;
 
   const variantStyles = {
-    default: "border-gray-200 bg-white",
-    success: "border-emerald-200 bg-emerald-50/30",
-    warning: "border-amber-200 bg-amber-50/30",
-    info: "border-blue-200 bg-blue-50/30",
-  };
-
-  const headerStyles = {
-    default: "hover:bg-gray-50",
-    success: "hover:bg-emerald-50",
-    warning: "hover:bg-amber-50",
-    info: "hover:bg-blue-50",
+    default: "border-gray-300 bg-gradient-to-b from-white to-gray-50/80",
+    success: "border-emerald-300 bg-gradient-to-b from-emerald-50/50 to-emerald-100/30",
+    warning: "border-amber-300 bg-gradient-to-b from-amber-50/50 to-amber-100/30",
+    info: "border-blue-300 bg-gradient-to-b from-blue-50/50 to-blue-100/30",
   };
 
   return (
-    <div className={`rounded-lg border shadow-sm overflow-hidden ${variantStyles[variant]}`}>
-      {/* Header */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors ${headerStyles[variant]}`}
-      >
+    <div className={`rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] overflow-hidden ${variantStyles[variant]}`}>
+      {/* Header - Always visible, not clickable */}
+      <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-gray-100/80 to-gray-50/50 border-b border-gray-200/60">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="flex-shrink-0 text-gray-500 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-          <span className="font-medium text-sm text-gray-900 truncate">{title}</span>
+          <span className="flex-shrink-0 text-gray-600 [&>svg]:h-4 [&>svg]:w-4 drop-shadow-sm">{icon}</span>
+          <span className="font-semibold text-sm text-gray-800 truncate">{title}</span>
           {required && (
-            <span className="flex-shrink-0 text-[9px] font-medium text-rose-500 bg-rose-50 px-1 py-0.5 rounded">
+            <span className="flex-shrink-0 text-[9px] font-medium text-rose-500 bg-rose-50 px-1 py-0.5 rounded shadow-sm">
               *
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          {!isOpen && totalCount > 0 && (
+          {totalCount > 0 && (
             <>
               {isComplete ? (
-                <span className="flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                <span className="flex items-center gap-0.5 text-[10px] font-medium text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full shadow-sm">
                   <Check className="h-2.5 w-2.5" />
+                  Complete
                 </span>
               ) : hasPartial ? (
-                <span className="text-[10px] font-medium text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full shadow-sm">
                   {filledCount}/{totalCount}
                 </span>
               ) : (
-                <span className="flex items-center text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                <span className="flex items-center gap-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full shadow-sm">
                   <AlertCircle className="h-2.5 w-2.5" />
+                  {totalCount} fields
                 </span>
               )}
             </>
           )}
-          <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
         </div>
-      </button>
-
-      {/* Content */}
-      <div className={`transition-all duration-200 ${isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}>
-        <div className="border-t border-gray-100 px-3 py-2">{children}</div>
       </div>
+
+      {/* Content - Always expanded */}
+      <div className="px-3 py-3">{children}</div>
     </div>
   );
 }

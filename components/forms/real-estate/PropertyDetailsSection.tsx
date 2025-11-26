@@ -27,8 +27,8 @@ export default function PropertyDetailsSection({
   const allFields = [...propertyFields, ...dateFields];
   const filledCount = allFields.filter((f) => f && f.toString().trim() !== "").length;
 
-  const inputClass = "w-full rounded border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-rose-300";
-  const labelClass = "block text-[11px] font-medium text-gray-600 mb-0.5";
+  const inputClass = "w-full rounded-lg border border-gray-300 bg-gradient-to-b from-white to-gray-50 px-2.5 py-2 text-sm text-gray-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:outline-none focus:ring-2 focus:ring-rose-400/50 focus:border-rose-400 focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_0_0_3px_rgba(251,113,133,0.1)] transition-all placeholder:text-gray-400";
+  const labelClass = "block text-[11px] font-semibold text-gray-700 mb-1 tracking-wide";
 
   return (
     <CollapsibleSection title="Property Details" icon={<Home />} filledCount={filledCount} totalCount={allFields.length} required>
@@ -36,7 +36,7 @@ export default function PropertyDetailsSection({
       <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
         <span className="text-[11px] text-gray-500">Lang:</span>
         <select
-          className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-rose-300"
+          className="rounded-lg border border-gray-300 bg-gradient-to-b from-white to-gray-50 px-2 py-1.5 text-xs text-gray-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.06),0_1px_2px_rgba(255,255,255,0.8)] focus:outline-none focus:ring-2 focus:ring-rose-400/50 focus:border-rose-400 transition-all cursor-pointer"
           value={details.language || "en"}
           onChange={(e) => onLanguageChange(e.target.value as "en" | "fr" | "es")}
         >
