@@ -191,7 +191,8 @@ export default function PreviewsPage() {
                                   Property Type
                                 </p>
                                 <p className="text-sm font-medium text-gray-700 capitalize">
-                                  {(report as any).property_type || "—"}
+                                  {(report as any).property_type || 
+                                   (report as any).preview_data?.property_type || "—"}
                                 </p>
                               </div>
                               <div>
@@ -290,16 +291,20 @@ export default function PreviewsPage() {
                                 {isRealEstate ? "Owner" : "Client"}
                               </p>
                               <p className="text-sm font-medium text-gray-900 truncate">
-                                {report.preview_data.owner_name ||
-                                  report.preview_data.client_name ||
+                                {(report as any).owner_name ||
+                                  report.preview_data?.owner_name ||
+                                  report.preview_data?.property_details?.owner_name ||
+                                  report.preview_data?.client_name ||
                                   "—"}
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Appraiser</p>
                               <p className="text-sm font-medium text-gray-900 truncate">
-                                {report.preview_data.appraiser ||
-                                  report.preview_data.inspector_name ||
+                                {(report as any).inspector_name ||
+                                  report.preview_data?.inspector_name ||
+                                  report.preview_data?.inspector_info?.inspector_name ||
+                                  report.preview_data?.appraiser ||
                                   "—"}
                               </p>
                             </div>

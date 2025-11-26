@@ -528,60 +528,10 @@ export default function RealEstatePreviewModal({
               </div>
             )}
 
-            {/* AI-Generated Sections */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-indigo-600">🤖</span>
-                AI-Generated Report Sections
-              </h3>
-              <div className="space-y-4">
-                <details className="border border-gray-200 rounded-lg p-3">
-                  <summary className="font-semibold text-gray-900 cursor-pointer">Executive Summary</summary>
-                  <textarea
-                    value={getValue("ai_sections.exec_summary")}
-                    onChange={(e) => updateField("ai_sections.exec_summary", e.target.value)}
-                    rows={4}
-                    className="mt-3 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                    placeholder="AI-generated executive summary..."
-                  />
-                </details>
-                <details className="border border-gray-200 rounded-lg p-3">
-                  <summary className="font-semibold text-gray-900 cursor-pointer">Property Description</summary>
-                  <textarea
-                    value={getValue("ai_sections.factual")}
-                    onChange={(e) => updateField("ai_sections.factual", e.target.value)}
-                    rows={4}
-                    className="mt-3 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Factual property description..."
-                  />
-                </details>
-                <details className="border border-gray-200 rounded-lg p-3">
-                  <summary className="font-semibold text-gray-900 cursor-pointer">Scope of Work</summary>
-                  <textarea
-                    value={getValue("ai_sections.scope")}
-                    onChange={(e) => updateField("ai_sections.scope", e.target.value)}
-                    rows={4}
-                    className="mt-3 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Scope of work..."
-                  />
-                </details>
-                <details className="border border-gray-200 rounded-lg p-3">
-                  <summary className="font-semibold text-gray-900 cursor-pointer">Market Analysis</summary>
-                  <textarea
-                    value={getValue("ai_sections.market")}
-                    onChange={(e) => updateField("ai_sections.market", e.target.value)}
-                    rows={4}
-                    className="mt-3 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Market conditions analysis..."
-                  />
-                </details>
-              </div>
-            </div>
-
             {/* Quick Stats */}
             <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
               <h4 className="text-sm font-bold text-gray-900 mb-3">📊 Report Statistics</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-emerald-600 capitalize">{propertyType}</div>
                   <div className="text-xs text-gray-600">Property Type</div>
@@ -593,12 +543,6 @@ export default function RealEstatePreviewModal({
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">{imageCount}</div>
                   <div className="text-xs text-gray-600">Images</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-amber-600">
-                    {getValue("ai_sections.exec_summary") ? "✓" : "—"}
-                  </div>
-                  <div className="text-xs text-gray-600">AI Content</div>
                 </div>
               </div>
             </div>
