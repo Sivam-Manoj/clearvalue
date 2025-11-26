@@ -83,6 +83,39 @@ export type RealEstateCreateOptions = {
   onUploadProgress?: (fraction: number) => void;
 };
 
+export type ReportStatus = 'draft' | 'preview' | 'pending_approval' | 'approved' | 'declined';
+
+export interface RealEstateReport {
+  _id: string;
+  user: string;
+  property_type: string;
+  language: string;
+  imageUrls: string[];
+  status: ReportStatus;
+  preview_data?: any;
+  preview_submitted_at?: string;
+  approval_requested_at?: string;
+  approval_processed_at?: string;
+  decline_reason?: string;
+  property_details?: any;
+  report_dates?: any;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RealEstatePreviewDataResponse {
+  message: string;
+  data: {
+    status: ReportStatus;
+    preview_data: any;
+    property_type?: string;
+    language?: string;
+    image_count?: number;
+    decline_reason?: string;
+    reportId: string;
+  };
+}
+
 export const RealEstateService = {
   async create(
     details: RealEstateDetails,
@@ -117,8 +150,39 @@ export const RealEstateService = {
     });
     return data;
   },
+
   async progress(id: string): Promise<RealEstateProgress> {
     const { data } = await API.get(`/real-estate/progress/${id}`);
     return data as RealEstateProgress;
+  },
+
+  /** Get all real estate reports for current user */
+  async getReports(): Promise<{ data: RealEstateReport[] }> {
+    const { data } = await API.get<{ data: RealEstateReport[] }>("/real-estate");
+    return data;
+  },
+
+  /** Get preview data for editing */
+  async getPreviewData(reportId: string): Promise<RealEstatePreviewDataResponse> {
+    const { data } = await API.get<RealEstatePreviewDataResponse>(`/real-estate/preview/${reportId}`);
+    return data;
+  },
+
+  /** Update preview data with user edits */
+  async updatePreviewData(reportId: string, previewData: any): Promise<{ message: string; data: any }> {
+    const { data } = await API.put<{ message: string; data: any }>(
+      `/real-estate/preview/${reportId}`,
+      { preview_data: previewData }
+    );
+    return data;
+  },
+
+  /** Submit report for admin approval */
+  async submitForApproval(reportId: string): Promise<{ message: string; data: any }> {
+    const { data } = await API.post<{ message: string; data: any }>(
+      `/real-estate/preview/${reportId}/submit`,
+      {}
+    );
+    return data;
   },
 };
