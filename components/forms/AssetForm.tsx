@@ -1339,34 +1339,35 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                   /[^a-zA-Z0-9_-]/g,
                   "-"
                 )}
+                actionButtons={
+                  <>
+                    <button
+                      type="button"
+                      className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-3 py-2 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+                      onClick={saveInputs}
+                    >
+                      <Save className="h-4 w-4" />
+                      Save Inputs
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full sm:w-auto rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-3 py-2 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
+                      onClick={clearForm}
+                      disabled={submitting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="w-full sm:w-auto inline-flex items-center gap-2 cursor-pointer rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50"
+                      disabled={submitting}
+                    >
+                      {submitting ? "Creating..." : "Create Report"}
+                    </button>
+                  </>
+                }
               />
             </section>
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
-                onClick={saveInputs}
-              >
-                <Save className="h-4 w-4" />
-                Save Inputs
-              </button>
-              <button
-                type="button"
-                className="rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
-                onClick={clearForm}
-                disabled={submitting}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 cursor-pointer rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50"
-                disabled={submitting}
-              >
-                {submitting ? "Creating..." : "Create Report"}
-              </button>
-            </div>
           </Fragment>
         )}
       </div>

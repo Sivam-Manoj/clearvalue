@@ -41,6 +41,7 @@ type Props = {
   maxExtraImagesPerLot?: number; // No limit
   maxTotalImages?: number; // No limit
   downloadPrefix?: string; // optional: used for saving captured images locally
+  actionButtons?: React.ReactNode; // Extra action buttons to show in toolbar
 };
 //50
 export default function MixedSection({
@@ -50,6 +51,7 @@ export default function MixedSection({
   maxExtraImagesPerLot = Number.MAX_SAFE_INTEGER, // Unlimited
   maxTotalImages = Number.MAX_SAFE_INTEGER, // Unlimited
   downloadPrefix,
+  actionButtons,
 }: Props) {
   const [lots, setLots] = useState<MixedLot[]>(value || []);
   const [activeIdx, setActiveIdx] = useState<number>(
@@ -1318,9 +1320,15 @@ export default function MixedSection({
           className="sr-only"
           onChange={(e) => onManualUploadVideo(e.target.files)}
         />
-        <div className="justify-self-end sm:ml-auto text-xs text-gray-600">
+        <div className="text-xs text-gray-600">
           Total: {totalImages} image(s)
         </div>
+        {actionButtons && (
+          <>
+            <div className="hidden sm:block w-px h-6 bg-gray-300" />
+            {actionButtons}
+          </>
+        )}
       </div>
 
       {/* Lots selector */}
