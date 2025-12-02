@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Save, Send, AlertCircle } from "lucide-react";
+import { Save, Send, AlertCircle, Image, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { getPreviewData, updatePreviewData, submitForApproval } from "@/services/assets";
 import BottomDrawer from "@/components/BottomDrawer";
@@ -30,6 +30,10 @@ export default function PreviewModal({
   const [hasChanges, setHasChanges] = useState(false);
   const [groupingMode, setGroupingMode] = useState<string | undefined>(undefined);
   const [imageCount, setImageCount] = useState<number | undefined>(undefined);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  // For lot-specific gallery view
+  const [galleryLotImages, setGalleryLotImages] = useState<{ urls: string[]; currentIdx: number } | null>(null);
 
   useEffect(() => {
     if (isOpen && reportId) {
@@ -46,6 +50,7 @@ export default function PreviewModal({
       setPreviewData(response.data.preview_data);
       setGroupingMode(response.data.grouping_mode);
       setImageCount(response.data.image_count);
+      setImageUrls(response.data.imageUrls || []);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to load preview data");
       onClose();
@@ -250,7 +255,7 @@ export default function PreviewModal({
                 <span className="text-blue-600">👤</span>
                 Basic Information
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
                     Client Name *
@@ -311,7 +316,7 @@ export default function PreviewModal({
                 <span className="text-green-600">📅</span>
                 Dates & Financial
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
                     Effective Date
@@ -384,7 +389,7 @@ export default function PreviewModal({
                     placeholder="e.g., Insurance, Sale, Financing, Internal Review"
                   />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
                       Appraiser Name
@@ -503,7 +508,72 @@ export default function PreviewModal({
                 </div>
               </div>
             </div>
+
           </div>
+
+          {/* Lot-Specific Photo Gallery Modal */}
+          {galleryLotImages !== null && (
+            <div className="fixed inset-0 z-50 bg-black/95 flex flex-col" onClick={() => setGalleryLotImages(null)}>
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 bg-black/50">
+                <div className="text-white text-sm font-medium">
+                  Photo {galleryLotImages.currentIdx + 1} of {galleryLotImages.urls.length}
+                </div>
+                <button
+                  onClick={() => setGalleryLotImages(null)}
+                  className="text-white hover:text-gray-300 transition-colors p-2"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Main Image */}
+              <div className="flex-1 flex items-center justify-center p-4 relative" onClick={(e) => e.stopPropagation()}>
+                {galleryLotImages.currentIdx > 0 && (
+                  <button
+                    onClick={() => setGalleryLotImages(prev => prev ? { ...prev, currentIdx: prev.currentIdx - 1 } : null)}
+                    className="absolute left-4 text-white hover:text-gray-300 transition-colors bg-black/30 rounded-full p-2"
+                  >
+                    <ChevronLeft className="h-8 w-8" />
+                  </button>
+                )}
+                {galleryLotImages.currentIdx < galleryLotImages.urls.length - 1 && (
+                  <button
+                    onClick={() => setGalleryLotImages(prev => prev ? { ...prev, currentIdx: prev.currentIdx + 1 } : null)}
+                    className="absolute right-4 text-white hover:text-gray-300 transition-colors bg-black/30 rounded-full p-2"
+                  >
+                    <ChevronRight className="h-8 w-8" />
+                  </button>
+                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={galleryLotImages.urls[galleryLotImages.currentIdx]}
+                  alt={`Photo ${galleryLotImages.currentIdx + 1}`}
+                  className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-2xl"
+                />
+              </div>
+
+              {/* Thumbnail Strip */}
+              <div className="bg-black/70 p-3" onClick={(e) => e.stopPropagation()}>
+                <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
+                  {galleryLotImages.urls.map((url, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setGalleryLotImages(prev => prev ? { ...prev, currentIdx: i } : null)}
+                      className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden cursor-pointer transition-all ${
+                        i === galleryLotImages.currentIdx 
+                          ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105' 
+                          : 'opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Assets/Lots */}
           <div className="mt-6 space-y-4 max-w-5xl mx-auto">
@@ -530,6 +600,45 @@ export default function PreviewModal({
                                 Delete
                               </button>
                             </div>
+                            {/* Lot Images */}
+                            {(() => {
+                              const lotImageIndexes: number[] = Array.isArray(lot.image_indexes) ? lot.image_indexes : (typeof lot.image_index === 'number' ? [lot.image_index] : []);
+                              const lotImages = lotImageIndexes.map(i => imageUrls[i]).filter(Boolean);
+                              if (lotImages.length === 0) return null;
+                              const openLotGallery = (startIdx: number) => {
+                                setGalleryLotImages({ urls: lotImages, currentIdx: startIdx });
+                              };
+                              return (
+                                <div className="mb-3">
+                                  <label className="flex items-center gap-2 text-xs text-gray-600 mb-1.5">
+                                    <Image className="h-3.5 w-3.5" />
+                                    Photos ({lotImages.length})
+                                  </label>
+                                  <div className="relative">
+                                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                                      {lotImages.slice(0, 20).map((url, imgIdx) => (
+                                        <div
+                                          key={imgIdx}
+                                          className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all"
+                                          onClick={() => openLotGallery(imgIdx)}
+                                        >
+                                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                                          <img src={url} alt={`Photo ${imgIdx + 1}`} className="w-full h-full object-cover" />
+                                        </div>
+                                      ))}
+                                      {lotImages.length > 20 && (
+                                        <div
+                                          className="flex-shrink-0 w-20 h-20 rounded-lg bg-gray-100 border-2 border-gray-300 cursor-pointer hover:bg-gray-200 transition-all flex items-center justify-center"
+                                          onClick={() => openLotGallery(20)}
+                                        >
+                                          <span className="text-sm font-semibold text-gray-600">+{lotImages.length - 20}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                             <div className="space-y-2">
                               <div>
                                 <label className="block text-xs text-gray-600 mb-1">Title</label>
@@ -590,6 +699,7 @@ export default function PreviewModal({
                         <thead className="bg-gray-50 text-gray-700">
                           <tr>
                             <th className="px-3 py-2 text-left">Lot #</th>
+                            <th className="px-3 py-2 text-left">Photos</th>
                             <th className="px-3 py-2 text-left">Title</th>
                             <th className="px-3 py-2 text-left">Description</th>
                             <th className="px-3 py-2 text-left">Details</th>
@@ -598,10 +708,45 @@ export default function PreviewModal({
                           </tr>
                         </thead>
                         <tbody>
-                          {group.items.map(({ lot, idx }, i) => (
+                          {group.items.map(({ lot, idx }, i) => {
+                            const lotImageIndexes: number[] = Array.isArray(lot.image_indexes) ? lot.image_indexes : (typeof lot.image_index === 'number' ? [lot.image_index] : []);
+                            const lotImages = lotImageIndexes.map(imgIdx => imageUrls[imgIdx]).filter(Boolean);
+                            const openLotGallery = (startIdx: number) => {
+                              setGalleryLotImages({ urls: lotImages, currentIdx: startIdx });
+                            };
+                            return (
                             <tr key={idx} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                              <td className="px-3 py-2 text-gray-800 font-medium">{String(lot.lot_id || idx + 1)}</td>
-                              <td className="px-3 py-2">
+                              <td className="px-3 py-2 text-gray-800 font-medium align-top">{String(lot.lot_id || idx + 1)}</td>
+                              <td className="px-3 py-2 align-top min-w-[180px]">
+                                {lotImages.length > 0 ? (
+                                  <div className="space-y-1">
+                                    <div className="flex gap-1.5 flex-wrap">
+                                      {lotImages.slice(0, 6).map((url, imgI) => (
+                                        <div
+                                          key={imgI}
+                                          className="w-14 h-14 rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all flex-shrink-0"
+                                          onClick={() => openLotGallery(imgI)}
+                                        >
+                                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                                          <img src={url} alt={`Photo ${imgI + 1}`} className="w-full h-full object-cover" />
+                                        </div>
+                                      ))}
+                                      {lotImages.length > 6 && (
+                                        <div
+                                          className="w-14 h-14 rounded-lg bg-gray-100 border-2 border-gray-300 cursor-pointer hover:bg-gray-200 transition-all flex items-center justify-center"
+                                          onClick={() => openLotGallery(6)}
+                                        >
+                                          <span className="text-xs font-bold text-gray-600">+{lotImages.length - 6}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <span className="text-[10px] text-gray-500">{lotImages.length} photo{lotImages.length !== 1 ? 's' : ''}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-gray-400">—</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 align-top">
                                 <input
                                   type="text"
                                   value={lot.title || ""}
@@ -610,7 +755,7 @@ export default function PreviewModal({
                                   placeholder="Title"
                                 />
                               </td>
-                              <td className="px-3 py-2">
+                              <td className="px-3 py-2 align-top">
                                 <textarea
                                   value={lot.description || ""}
                                   onChange={(e) => updateLot(idx, "description", e.target.value)}
@@ -619,7 +764,7 @@ export default function PreviewModal({
                                   rows={2}
                                 />
                               </td>
-                              <td className="px-3 py-2">
+                              <td className="px-3 py-2 align-top">
                                 <textarea
                                   value={lot.details || ""}
                                   onChange={(e) => updateLot(idx, "details", e.target.value)}
@@ -628,7 +773,7 @@ export default function PreviewModal({
                                   rows={2}
                                 />
                               </td>
-                              <td className="px-3 py-2">
+                              <td className="px-3 py-2 align-top">
                                 <input
                                   type="text"
                                   value={lot.estimated_value || ""}
@@ -637,7 +782,7 @@ export default function PreviewModal({
                                   placeholder="e.g., $25,000"
                                 />
                               </td>
-                              <td className="px-3 py-2">
+                              <td className="px-3 py-2 align-top">
                                 <button
                                   onClick={() => deleteLot(idx)}
                                   aria-label={`Delete lot ${idx + 1}`}
@@ -647,7 +792,7 @@ export default function PreviewModal({
                                 </button>
                               </td>
                             </tr>
-                          ))}
+                          );})}
                         </tbody>
                       </table>
                     </div>

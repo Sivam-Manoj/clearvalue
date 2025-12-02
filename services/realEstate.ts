@@ -118,6 +118,8 @@ export interface RealEstatePreviewDataResponse {
     property_type?: string;
     language?: string;
     image_count?: number;
+    imageUrls?: string[];
+    extraImageUrls?: string[];
     decline_reason?: string;
     reportId: string;
   };

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Save, Send, AlertCircle, Building2 } from "lucide-react";
+import { Save, Send, AlertCircle, Building2, Image, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { RealEstateService } from "@/services/realEstate";
 import BottomDrawer from "@/components/BottomDrawer";
@@ -29,6 +29,8 @@ export default function RealEstatePreviewModal({
   const [propertyType, setPropertyType] = useState<string>("");
   const [language, setLanguage] = useState<string>("en");
   const [imageCount, setImageCount] = useState<number>(0);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen && reportId) {
@@ -46,6 +48,7 @@ export default function RealEstatePreviewModal({
       setPropertyType(response.data.property_type || "residential");
       setLanguage(response.data.language || "en");
       setImageCount(response.data.image_count || 0);
+      setImageUrls(response.data.imageUrls || []);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to load preview data");
       onClose();
@@ -151,8 +154,8 @@ export default function RealEstatePreviewModal({
                 <span className="text-emerald-600">🏠</span>
                 Property Details
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="sm:col-span-2 lg:col-span-3">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
                     Address *
                   </label>
@@ -346,7 +349,7 @@ export default function RealEstatePreviewModal({
                 <span className="text-green-600">💰</span>
                 Valuation
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
                     Fair Market Value
@@ -392,7 +395,7 @@ export default function RealEstatePreviewModal({
                 <span className="text-amber-600">👤</span>
                 Inspector Info
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
                     Inspector Name
@@ -546,7 +549,81 @@ export default function RealEstatePreviewModal({
                 </div>
               </div>
             </div>
+
+            {/* Photo Preview Section */}
+            {imageUrls.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mt-6">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Image className="h-5 w-5 text-emerald-600" />
+                  Property Photos ({imageUrls.length})
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {imageUrls.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="relative group cursor-pointer aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-emerald-400 transition-all shadow-sm hover:shadow-md"
+                      onClick={() => setSelectedImageIndex(idx)}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Property Photo ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 text-white text-xs font-medium bg-black/50 px-2 py-1 rounded">
+                          View
+                        </span>
+                      </div>
+                      <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
+                        {idx + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-3">Click any photo to view larger. Photos will appear in the final report.</p>
+              </div>
+            )}
           </div>
+
+          {/* Photo Lightbox Modal */}
+          {selectedImageIndex !== null && (
+            <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setSelectedImageIndex(null)}>
+              <button
+                onClick={() => setSelectedImageIndex(null)}
+                className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+              >
+                <X className="h-8 w-8" />
+              </button>
+              {selectedImageIndex > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(selectedImageIndex - 1); }}
+                  className="absolute left-4 text-white hover:text-gray-300 transition-colors"
+                >
+                  <ChevronLeft className="h-10 w-10" />
+                </button>
+              )}
+              {selectedImageIndex < imageUrls.length - 1 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(selectedImageIndex + 1); }}
+                  className="absolute right-4 text-white hover:text-gray-300 transition-colors"
+                >
+                  <ChevronRight className="h-10 w-10" />
+                </button>
+              )}
+              <div className="max-w-4xl max-h-[80vh] relative" onClick={(e) => e.stopPropagation()}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrls[selectedImageIndex]}
+                  alt={`Property Photo ${selectedImageIndex + 1}`}
+                  className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                />
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-lg text-sm">
+                  Photo {selectedImageIndex + 1} of {imageUrls.length}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-end gap-3 border-t border-gray-200 pt-6">

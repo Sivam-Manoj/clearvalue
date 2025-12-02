@@ -28,6 +28,7 @@ export interface PreviewDataResponse {
     preview_data: any;
     grouping_mode?: string;
     image_count?: number;
+    imageUrls?: string[];
     decline_reason?: string;
     reportId: string;
   };
