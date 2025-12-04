@@ -34,11 +34,15 @@ export default function RealEstateCamera({ open, onClose, onAdd, maxCount = 10, 
     (async () => {
       try {
         setCameraError(null);
+        // Smart camera: Request maximum resolution available on any device
+        // Using very high ideal values - device will use its maximum supported resolution
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: orientation === "landscape" ? 1920 : 1080 },
-            height: { ideal: orientation === "landscape" ? 1080 : 1920 },
+            // Request extremely high resolution - device will fall back to its maximum
+            // Works for: iPhone (up to 4032x3024), Samsung S25 Ultra (up to 4000x3000), etc.
+            width: { ideal: 8000, min: 1920 },
+            height: { ideal: 6000, min: 1080 },
           },
           audio: false,
         });
@@ -47,7 +51,26 @@ export default function RealEstateCamera({ open, onClose, onAdd, maxCount = 10, 
           videoRef.current.srcObject = stream as any;
           await videoRef.current.play().catch(() => {});
         }
-        // Capabilities
+        
+        // Try to maximize resolution after getting stream
+        try {
+          const track = stream.getVideoTracks()[0];
+          if (track) {
+            const capabilities = track.getCapabilities?.() as any;
+            if (capabilities?.width?.max && capabilities?.height?.max) {
+              // Apply maximum resolution the device supports
+              await track.applyConstraints({
+                width: { ideal: capabilities.width.max },
+                height: { ideal: capabilities.height.max },
+              });
+              console.log(`Camera: Using max resolution ${capabilities.width.max}x${capabilities.height.max}`);
+            }
+          }
+        } catch (e) {
+          console.log("Camera: Using default resolution", e);
+        }
+        
+        // Capabilities for torch and zoom
         try {
           const track = stream.getVideoTracks?.()[0] as any;
           const caps = track?.getCapabilities?.() || {};
@@ -140,7 +163,7 @@ export default function RealEstateCamera({ open, onClose, onAdd, maxCount = 10, 
     }
     ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, outW, outH);
     const blob: Blob | null = await new Promise((resolve) =>
-      canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92)
+      canvas.toBlob((b) => resolve(b), "image/jpeg", 1.0) // Maximum quality
     );
     if (!blob) return;
     const safePrefix = (downloadPrefix || 'real-estate').replace(/[^a-zA-Z0-9_-]/g, '-');

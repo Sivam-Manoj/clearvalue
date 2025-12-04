@@ -129,6 +129,19 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
       irrigation: false,
       access_quality: "good",
       distance_to_city_km: undefined,
+      // Direct Comparable Approach fields
+      use_direct_comparable: false,
+      subject_name: "",
+      valuation_date: isoDate(new Date()),
+      notes: "",
+      // Income Capitalization Approach fields
+      use_income_approach: false,
+      market_rent_per_acre: undefined,
+      vacancy_loss_percent: 2,
+      operating_expense_ratio: 20,
+      cap_rate: 5,
+      // Cost Approach (AI-calculated)
+      use_cost_approach: false,
     },
     inspector_info: {
       inspector_name: "",

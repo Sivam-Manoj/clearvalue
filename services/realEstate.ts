@@ -44,6 +44,19 @@ export type RealEstateDetails = {
     irrigation?: boolean;
     access_quality?: "excellent" | "good" | "fair" | "poor";
     distance_to_city_km?: number;
+    // Direct Comparable Approach fields
+    use_direct_comparable?: boolean;
+    subject_name?: string;
+    valuation_date?: string; // ISO date
+    notes?: string;
+    // Income Capitalization Approach fields
+    use_income_approach?: boolean;
+    market_rent_per_acre?: number;
+    vacancy_loss_percent?: number;
+    operating_expense_ratio?: number;
+    cap_rate?: number;
+    // Cost Approach (AI-calculated)
+    use_cost_approach?: boolean;
   };
   inspector_info: {
     inspector_name: string;
