@@ -477,17 +477,43 @@ export default function MixedSection({
           window.matchMedia("(orientation: landscape)").matches;
         setOrientation(isLandscape ? "landscape" : "portrait");
       } catch {}
+      // Smart camera: Request maximum resolution available on any device
+      // Using very high ideal values - device will use its maximum supported resolution
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
+          // Request extremely high resolution - device will fall back to its maximum
+          // Works for: iPhone (up to 4032x3024), Samsung S25 Ultra (up to 4000x3000), etc.
+          width: { ideal: 8000, min: 1920 },
+          height: { ideal: 6000, min: 1080 },
         },
         audio: true,
       });
       streamRef.current = stream;
+      
+      // Try to maximize resolution after getting stream
+      try {
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          const capabilities = track.getCapabilities?.() as any;
+          if (capabilities?.width?.max && capabilities?.height?.max) {
+            // Apply maximum resolution the device supports
+            await track.applyConstraints({
+              width: { ideal: capabilities.width.max },
+              height: { ideal: capabilities.height.max },
+            });
+            console.log(`Camera: Using max resolution ${capabilities.width.max}x${capabilities.height.max}`);
+          }
+        }
+      } catch (e) {
+        console.log("Camera: Using default resolution", e);
+      }
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream as any;
         await videoRef.current.play().catch(() => {});
       }
+      
       // Torch/zoom capabilities
       try {
         const track = (stream.getVideoTracks?.() || [])[0] as any;
@@ -1196,7 +1222,7 @@ export default function MixedSection({
       ctx.restore();
     }
     const blob: Blob | null = await new Promise((resolve) =>
-      canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92)
+      canvas.toBlob((b) => resolve(b), "image/jpeg", 1.0) // Maximum quality
     );
     if (!blob) return;
     const safePrefix = (downloadPrefix || "asset").replace(
