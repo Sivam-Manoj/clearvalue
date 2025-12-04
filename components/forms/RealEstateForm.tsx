@@ -186,6 +186,20 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
     setStepStates(deriveStepStates(progressPercent));
   }, [progressPercent, progressPhase]);
 
+  // Sync property type from RealEstateSection to details
+  useEffect(() => {
+    if (property?.propertyType && property.propertyType !== details.property_type) {
+      setDetails((prev) => ({
+        ...prev,
+        property_type: property.propertyType as "agricultural" | "commercial" | "residential",
+        property_details: {
+          ...prev.property_details,
+          property_type: property.propertyType,
+        },
+      }));
+    }
+  }, [property?.propertyType]);
+
   function handleChange<
     K1 extends keyof RealEstateDetails,
     K2 extends keyof RealEstateDetails[K1] & string
