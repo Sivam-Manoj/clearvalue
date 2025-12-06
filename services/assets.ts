@@ -103,3 +103,53 @@ export const getAssetReports = async (): Promise<{ message: string; data: AssetR
   const { data } = await API.get<{ message: string; data: AssetReport[] }>(`/asset`);
   return data;
 };
+
+/**
+ * Get submitted reports (pending_approval and approved)
+ */
+export const getSubmittedReports = async (): Promise<{ message: string; data: AssetReport[] }> => {
+  const { data } = await API.get<{ message: string; data: AssetReport[] }>(`/asset/submitted`);
+  return data;
+};
+
+export interface SubmittedPreviewDataResponse {
+  message: string;
+  data: {
+    status: ReportStatus;
+    preview_data: any;
+    preview_files?: {
+      docx?: string;
+      xlsx?: string;
+      images?: string;
+    };
+    grouping_mode?: string;
+    image_count?: number;
+    imageUrls?: string[];
+    reportId: string;
+    createdAt: string;
+    preview_submitted_at?: string;
+    approval_requested_at?: string;
+  };
+}
+
+/**
+ * Get preview data for submitted reports (pending/approved)
+ */
+export const getSubmittedPreviewData = async (reportId: string): Promise<SubmittedPreviewDataResponse> => {
+  const { data } = await API.get<SubmittedPreviewDataResponse>(`/asset/${reportId}/submitted-preview`);
+  return data;
+};
+
+/**
+ * Resubmit report - edit and regenerate files for approved/pending reports
+ */
+export const resubmitReport = async (
+  reportId: string,
+  previewData?: any
+): Promise<{ message: string; data: any }> => {
+  const { data } = await API.post<{ message: string; data: any }>(
+    `/asset/${reportId}/resubmit`,
+    previewData ? { preview_data: previewData } : {}
+  );
+  return data;
+};

@@ -9,8 +9,13 @@ import {
   Loader2,
   Building2,
   Package,
+  RefreshCw,
+  Clock,
+  CheckCircle,
+  FileText,
+  Download,
 } from "lucide-react";
-import { getAssetReports, type AssetReport } from "@/services/assets";
+import { getAssetReports, getSubmittedReports, resubmitReport, type AssetReport } from "@/services/assets";
 import {
   RealEstateService,
   type RealEstateReport,
@@ -24,47 +29,63 @@ type CombinedReport =
   | (AssetReport & { reportType: "asset" })
   | (RealEstateReport & { reportType: "realEstate" });
 
+type TabType = "new" | "submitted";
+
 export default function PreviewsPage() {
-  const [reports, setReports] = useState<CombinedReport[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>("new");
+  const [newReports, setNewReports] = useState<CombinedReport[]>([]);
+  const [submittedReports, setSubmittedReports] = useState<CombinedReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resubmitting, setResubmitting] = useState<string | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [realEstateModalOpen, setRealEstateModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [isResubmitMode, setIsResubmitMode] = useState(false);
 
-  // Load both asset and real estate reports
+  // Load all reports
   const loadReports = async () => {
     try {
       setLoading(true);
 
-      // Fetch both in parallel
-      const [assetResponse, realEstateResponse] = await Promise.all([
+      // Fetch all in parallel
+      const [assetResponse, realEstateResponse, submittedAssetResponse] = await Promise.all([
         getAssetReports().catch(() => ({ data: [] })),
         RealEstateService.getReports().catch(() => ({ data: [] })),
+        getSubmittedReports().catch(() => ({ data: [] })),
       ]);
 
-      // Filter only preview and declined reports
+      // Filter preview and declined reports for "New" tab
       const assetPreviews: CombinedReport[] = (assetResponse.data || [])
         .filter((r) => r.status === "preview" || r.status === "declined")
         .map((r) => ({ ...r, reportType: "asset" as const }));
 
-      const realEstatePreviews: CombinedReport[] = (
-        realEstateResponse.data || []
-      )
+      const realEstatePreviews: CombinedReport[] = (realEstateResponse.data || [])
         .filter((r) => r.status === "preview" || r.status === "declined")
         .map((r) => ({ ...r, reportType: "realEstate" as const }));
 
-      // Combine and sort by date (newest first)
-      const combined = [...assetPreviews, ...realEstatePreviews].sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      // Combine new previews
+      const combinedNew = [...assetPreviews, ...realEstatePreviews].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
-      setReports(combined);
-    } catch (err: any) {
-      console.error("Failed to load preview reports:", err);
-      toast.error(
-        err.response?.data?.message || "Failed to load preview reports"
+      // Submitted reports (pending_approval and approved)
+      const submittedAssets: CombinedReport[] = (submittedAssetResponse.data || [])
+        .map((r) => ({ ...r, reportType: "asset" as const }));
+
+      // Also include real estate submitted reports
+      const realEstateSubmitted: CombinedReport[] = (realEstateResponse.data || [])
+        .filter((r) => r.status === "pending_approval" || r.status === "approved")
+        .map((r) => ({ ...r, reportType: "realEstate" as const }));
+
+      const combinedSubmitted = [...submittedAssets, ...realEstateSubmitted].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
+
+      setNewReports(combinedNew);
+      setSubmittedReports(combinedSubmitted);
+    } catch (err: any) {
+      console.error("Failed to load reports:", err);
+      toast.error(err.response?.data?.message || "Failed to load reports");
     } finally {
       setLoading(false);
     }
@@ -74,8 +95,9 @@ export default function PreviewsPage() {
     loadReports();
   }, []);
 
-  const handleOpenPreview = (report: CombinedReport) => {
+  const handleOpenPreview = (report: CombinedReport, resubmitMode = false) => {
     setSelectedReportId(report._id);
+    setIsResubmitMode(resubmitMode);
     if (report.reportType === "realEstate") {
       setRealEstateModalOpen(true);
     } else {
@@ -87,13 +109,28 @@ export default function PreviewsPage() {
     setPreviewModalOpen(false);
     setRealEstateModalOpen(false);
     setSelectedReportId(null);
+    setIsResubmitMode(false);
   };
 
   const handleSuccess = () => {
-    // Reload reports after successful submission
     loadReports();
     toast.success("Report submitted for approval!");
   };
+
+  const handleQuickResubmit = async (reportId: string) => {
+    try {
+      setResubmitting(reportId);
+      await resubmitReport(reportId);
+      toast.success("Report resubmitted! Files are being regenerated.");
+      loadReports();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to resubmit report");
+    } finally {
+      setResubmitting(null);
+    }
+  };
+
+  const reports = activeTab === "new" ? newReports : submittedReports;
 
   if (loading) {
     return (
@@ -105,7 +142,7 @@ export default function PreviewsPage() {
       </div>
     );
   }
-  //AI
+
   return (
     <div className="relative isolate">
       <div
@@ -119,26 +156,82 @@ export default function PreviewsPage() {
             Report Previews
           </h1>
           <p className="mt-2 text-sm sm:text-base text-slate-600">
-            Review data and submit for approval
+            Review, edit, and manage your reports
           </p>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex gap-6">
+            <button
+              onClick={() => setActiveTab("new")}
+              className={`flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === "new"
+                  ? "border-rose-500 text-rose-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              <Eye className="h-4 w-4" />
+              New Previews
+              {newReports.length > 0 && (
+                <span className={`ml-1 px-2 py-0.5 text-xs rounded-full ${
+                  activeTab === "new" ? "bg-rose-100 text-rose-600" : "bg-gray-100 text-gray-600"
+                }`}>
+                  {newReports.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("submitted")}
+              className={`flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === "submitted"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              <Send className="h-4 w-4" />
+              Submitted Previews
+              {submittedReports.length > 0 && (
+                <span className={`ml-1 px-2 py-0.5 text-xs rounded-full ${
+                  activeTab === "submitted" ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"
+                }`}>
+                  {submittedReports.length}
+                </span>
+              )}
+            </button>
+          </nav>
         </div>
 
         {/* Empty State */}
         {reports.length === 0 && (
           <div className="mt-12 text-center p-12 bg-white rounded-2xl border-2 border-dashed border-gray-300">
-            <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No Previews Available
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Submit a new asset report to see previews here.
-            </p>
-            <a
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg hover:from-rose-600 hover:to-pink-700 font-medium shadow-lg transition-all"
-            >
-              Create New Report
-            </a>
+            {activeTab === "new" ? (
+              <>
+                <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No New Previews
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Submit a new report to see previews here.
+                </p>
+                <a
+                  href="/dashboard"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg hover:from-rose-600 hover:to-pink-700 font-medium shadow-lg transition-all"
+                >
+                  Create New Report
+                </a>
+              </>
+            ) : (
+              <>
+                <Send className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No Submitted Reports
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Submit a preview for approval to see it here.
+                </p>
+              </>
+            )}
           </div>
         )}
 
@@ -347,8 +440,9 @@ export default function PreviewsPage() {
                         )}
                       </div>
 
-                      {/* Action Button */}
-                      <div className="flex-shrink-0">
+                      {/* Action Buttons */}
+                      <div className="flex-shrink-0 flex flex-col gap-2">
+                        {/* New Preview Actions */}
                         {report.status === "preview" && (
                           <button
                             onClick={() => handleOpenPreview(report)}
@@ -371,16 +465,69 @@ export default function PreviewsPage() {
                             Edit & Resubmit
                           </button>
                         )}
+
+                        {/* Submitted Report Actions */}
+                        {(report.status === "pending_approval" || report.status === "approved") && (
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={() => handleOpenPreview(report, true)}
+                              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 font-semibold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit & Resubmit
+                            </button>
+                            <button
+                              onClick={() => handleQuickResubmit(report._id)}
+                              disabled={resubmitting === report._id}
+                              className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-indigo-300 text-indigo-700 rounded-xl hover:bg-indigo-50 font-medium transition-all disabled:opacity-50"
+                            >
+                              {resubmitting === report._id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-4 w-4" />
+                              )}
+                              Quick Resubmit
+                            </button>
+                            {/* Download Links for submitted reports */}
+                            {(report as any).preview_files?.docx && (
+                              <a
+                                href={(report as any).preview_files.docx}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-5 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                              >
+                                <Download className="h-4 w-4" />
+                                Download DOCX
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Progress Bar (if preview) */}
+                  {/* Status Footer */}
                   {report.status === "preview" && (
                     <div className="px-6 pb-4">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Send className="h-4 w-4" />
                         <span>Ready to submit for admin approval</span>
+                      </div>
+                    </div>
+                  )}
+                  {report.status === "pending_approval" && (
+                    <div className="px-6 pb-4">
+                      <div className="flex items-center gap-2 text-sm text-amber-600">
+                        <Clock className="h-4 w-4" />
+                        <span>Awaiting admin approval</span>
+                      </div>
+                    </div>
+                  )}
+                  {report.status === "approved" && (
+                    <div className="px-6 pb-4">
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Approved - You can still edit and resubmit if needed</span>
                       </div>
                     </div>
                   )}
@@ -398,6 +545,7 @@ export default function PreviewsPage() {
           isOpen={previewModalOpen}
           onClose={handleModalClose}
           onSuccess={handleSuccess}
+          isResubmitMode={isResubmitMode}
         />
       )}
 

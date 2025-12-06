@@ -1,9 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Save, Send, AlertCircle, Image, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Save, Send, AlertCircle, Image, ChevronLeft, ChevronRight, X, RefreshCw } from "lucide-react";
 import { toast } from "react-toastify";
-import { getPreviewData, updatePreviewData, submitForApproval } from "@/services/assets";
+import { 
+  getPreviewData, 
+  updatePreviewData, 
+  submitForApproval,
+  getSubmittedPreviewData,
+  resubmitReport,
+} from "@/services/assets";
 import BottomDrawer from "@/components/BottomDrawer";
 
 interface PreviewModalProps {
@@ -11,6 +17,7 @@ interface PreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  isResubmitMode?: boolean; // If true, this is for editing/resubmitting an already submitted report
 }
 
 
@@ -19,6 +26,7 @@ export default function PreviewModal({
   isOpen,
   onClose,
   onSuccess,
+  isResubmitMode = false,
 }: PreviewModalProps) {
   // Single-page layout (tabs removed)
   const [loading, setLoading] = useState(true);
@@ -44,9 +52,12 @@ export default function PreviewModal({
   const loadPreviewData = async () => {
     try {
       setLoading(true);
-      const response = await getPreviewData(reportId);
+      // Use different endpoint based on mode
+      const response = isResubmitMode 
+        ? await getSubmittedPreviewData(reportId)
+        : await getPreviewData(reportId);
       setStatus(response.data.status);
-      setDeclineReason(response.data.decline_reason || "");
+      setDeclineReason((response.data as any).decline_reason || "");
       setPreviewData(response.data.preview_data);
       setGroupingMode(response.data.grouping_mode);
       setImageCount(response.data.image_count);
@@ -78,15 +89,24 @@ export default function PreviewModal({
       return;
     }
 
-    if (hasChanges) {
-      toast.warning("Please save your changes before submitting");
-      return;
-    }
-
     try {
       setSubmitting(true);
-      await submitForApproval(reportId);
-      toast.success("Report submitted for approval successfully!");
+      
+      if (isResubmitMode) {
+        // For resubmit mode: save changes and resubmit in one call
+        await resubmitReport(reportId, hasChanges ? previewData : undefined);
+        toast.success("Report resubmitted! Files are being regenerated.");
+      } else {
+        // For normal mode: must save changes first
+        if (hasChanges) {
+          toast.warning("Please save your changes before submitting");
+          setSubmitting(false);
+          return;
+        }
+        await submitForApproval(reportId);
+        toast.success("Report submitted for approval successfully!");
+      }
+      
       if (onSuccess) onSuccess();
       onClose();
     } catch (error: any) {
@@ -1038,13 +1058,25 @@ export default function PreviewModal({
               </button>
               <button
                 onClick={handleSubmitForApproval}
-                disabled={hasChanges || submitting || loading}
-                aria-label="Submit for approval"
-                className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg hover:from-rose-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg shadow-rose-500/30 transition-all hover:shadow-xl text-sm sm:text-base"
+                disabled={(!isResubmitMode && hasChanges) || submitting || loading}
+                aria-label={isResubmitMode ? "Resubmit report" : "Submit for approval"}
+                className={`flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg transition-all hover:shadow-xl text-sm sm:text-base ${
+                  isResubmitMode 
+                    ? "bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 shadow-indigo-500/30"
+                    : "bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 shadow-rose-500/30"
+                }`}
               >
-                <Send className="h-4 w-4" />
-                <span className="hidden sm:inline">{submitting ? "Submitting..." : "Submit for Approval"}</span>
-                <span className="sm:hidden">{submitting ? "Submit..." : "Submit"}</span>
+                {isResubmitMode ? <RefreshCw className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+                <span className="hidden sm:inline">
+                  {submitting 
+                    ? (isResubmitMode ? "Resubmitting..." : "Submitting...") 
+                    : (isResubmitMode ? "Save & Resubmit" : "Submit for Approval")}
+                </span>
+                <span className="sm:hidden">
+                  {submitting 
+                    ? (isResubmitMode ? "Resubmit..." : "Submit...") 
+                    : (isResubmitMode ? "Resubmit" : "Submit")}
+                </span>
               </button>
             </div>
           </div>
