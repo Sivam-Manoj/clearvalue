@@ -477,36 +477,71 @@ export default function MixedSection({
           window.matchMedia("(orientation: landscape)").matches;
         setOrientation(isLandscape ? "landscape" : "portrait");
       } catch {}
-      // Smart camera: Request maximum resolution available on any device
-      // Using very high ideal values - device will use its maximum supported resolution
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          // Request extremely high resolution - device will fall back to its maximum
-          // Works for: iPhone (up to 4032x3024), Samsung S25 Ultra (up to 4000x3000), etc.
-          width: { ideal: 8000, min: 1920 },
-          height: { ideal: 6000, min: 1080 },
-        },
-        audio: true,
-      });
+      // Smart camera: Request maximum resolution with NO zoom
+      // Critical for Samsung/Android: avoid cropped/zoomed modes
+      let stream: MediaStream;
+      
+      // Try to get the widest, highest quality camera
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { exact: "environment" },
+            // Request high resolution without min constraints (avoids fallback issues)
+            width: { ideal: 4032 },
+            height: { ideal: 3024 },
+          } as MediaTrackConstraints,
+          audio: true,
+        });
+      } catch {
+        // Fallback: try with ideal facingMode if exact fails
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 4032 },
+            height: { ideal: 3024 },
+          },
+          audio: true,
+        });
+      }
       streamRef.current = stream;
       
-      // Try to maximize resolution after getting stream
+      // CRITICAL: Reset zoom to 1x and maximize resolution for Samsung/Android
       try {
         const track = stream.getVideoTracks()[0];
         if (track) {
           const capabilities = track.getCapabilities?.() as any;
+          const settings = track.getSettings?.() as any;
+          
+          // Build constraints to apply
+          const newConstraints: any = { advanced: [] };
+          
+          // Force zoom to minimum (1x) - fixes Samsung zoom issue
+          if (capabilities?.zoom) {
+            const minZoom = capabilities.zoom.min || 1;
+            newConstraints.advanced.push({ zoom: minZoom });
+            console.log(`Camera: Setting zoom to ${minZoom}x (min)`);
+          }
+          
+          // Apply maximum resolution
           if (capabilities?.width?.max && capabilities?.height?.max) {
-            // Apply maximum resolution the device supports
             await track.applyConstraints({
               width: { ideal: capabilities.width.max },
               height: { ideal: capabilities.height.max },
             });
-            console.log(`Camera: Using max resolution ${capabilities.width.max}x${capabilities.height.max}`);
+            console.log(`Camera: Max resolution ${capabilities.width.max}x${capabilities.height.max}`);
           }
+          
+          // Apply zoom constraint
+          if (newConstraints.advanced.length > 0) {
+            await track.applyConstraints(newConstraints);
+          }
+          
+          // Log actual settings for debugging
+          const finalSettings = track.getSettings?.();
+          console.log("Camera settings:", finalSettings);
         }
       } catch (e) {
-        console.log("Camera: Using default resolution", e);
+        console.log("Camera: Could not optimize settings", e);
       }
       
       if (videoRef.current) {
@@ -514,19 +549,12 @@ export default function MixedSection({
         await videoRef.current.play().catch(() => {});
       }
       
-      // Torch/zoom capabilities
+      // Torch capabilities (zoom already handled above)
       try {
         const track = (stream.getVideoTracks?.() || [])[0] as any;
         const caps = track?.getCapabilities?.() || {};
         const torchSupported = !!caps?.torch;
         setIsTorchSupported(torchSupported);
-        // Reset lens zoom to 1x if supported
-        const zoomSupported =
-          typeof (caps as any).zoom !== "undefined" ||
-          typeof (caps as any)?.zoom?.min !== "undefined";
-        if (zoomSupported) {
-          await track?.applyConstraints?.({ advanced: [{ zoom: 1 }] });
-        }
         if (flashOn && torchSupported) {
           await track?.applyConstraints?.({ advanced: [{ torch: true }] });
         }
