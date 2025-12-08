@@ -24,6 +24,12 @@ import JSZip from "jszip";
 import ImageAnnotator, { AnnBox } from "./ImageAnnotator";
 
 export type MixedMode = "single_lot" | "per_item" | "per_photo";
+export type CameraLens = { 
+  id: string; 
+  label: string; 
+  type: "ultrawide" | "main" | "telephoto"; 
+  zoom: number;
+};
 export type MixedLot = {
   id: string;
   files: File[]; // Main images for AI processing (first 50 analyzed, rest included in report)
@@ -73,6 +79,9 @@ export default function MixedSection({
   );
   const [isTorchSupported, setIsTorchSupported] = useState<boolean>(false);
   const [isSimulatingFlash, setIsSimulatingFlash] = useState<boolean>(false);
+  // Camera lens selection (ultra-wide 0.5x, main 1x, telephoto 2x+)
+  const [availableLenses, setAvailableLenses] = useState<CameraLens[]>([]);
+  const [selectedLens, setSelectedLens] = useState<string>(""); // deviceId
   const [focusOn, setFocusOn] = useState<boolean>(false);
   const FOCUS_BOX_FRACTION = 0.62; // fraction of min(image width/height)
   const [focusBoxFrac, setFocusBoxFrac] = useState<number>(0.62);
@@ -477,71 +486,181 @@ export default function MixedSection({
           window.matchMedia("(orientation: landscape)").matches;
         setOrientation(isLandscape ? "landscape" : "portrait");
       } catch {}
-      // Smart camera: Request maximum resolution with NO zoom
-      // Critical for Samsung/Android: avoid cropped/zoomed modes
-      let stream: MediaStream;
+      // MULTI-LENS CAMERA SUPPORT: Detect ultra-wide (0.5x), main (1x), telephoto (2x+)
+      let stream: MediaStream | null = null;
+      const detectedLenses: CameraLens[] = [];
       
-      // Try to get the widest, highest quality camera
+      // Enumerate all cameras and categorize them
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { exact: "environment" },
-            // Request high resolution without min constraints (avoids fallback issues)
-            width: { ideal: 4032 },
-            height: { ideal: 3024 },
-          } as MediaTrackConstraints,
-          audio: true,
+        // First get temporary stream to access device labels (required on some browsers)
+        const tempStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "environment" }, 
+          audio: true 
         });
-      } catch {
-        // Fallback: try with ideal facingMode if exact fails
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 4032 },
-            height: { ideal: 3024 },
-          },
-          audio: true,
-        });
+        tempStream.getTracks().forEach(t => t.stop());
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === "videoinput");
+        console.log("Camera: Found devices:", videoDevices.map(d => d.label));
+        
+        // Categorize back-facing cameras
+        for (const device of videoDevices) {
+          const label = (device.label || "").toLowerCase();
+          
+          // Skip front cameras
+          if (label.includes("front") || label.includes("selfie") || label.includes("user")) {
+            continue;
+          }
+          
+          // Skip if no label and not back-facing
+          if (!label && !label.includes("back") && !label.includes("rear") && !label.includes("0")) {
+            continue;
+          }
+          
+          // Detect lens type from label
+          let lensType: "ultrawide" | "main" | "telephoto" = "main";
+          let zoomLevel = 1;
+          let displayLabel = "1x";
+          
+          // Ultra-wide detection (0.5x, 0.6x, ultra, wide-angle)
+          if (label.includes("ultra") || label.includes("0.5") || label.includes("0.6") ||
+              (label.includes("wide") && !label.includes("main"))) {
+            lensType = "ultrawide";
+            zoomLevel = 0.5;
+            displayLabel = "0.5x";
+          }
+          // Telephoto detection (2x, 3x, 5x, 10x, tele, periscope, zoom)
+          else if (label.includes("tele") || label.includes("periscope") ||
+                   label.match(/[2-9]x/) || label.match(/10x/) || label.includes("zoom")) {
+            lensType = "telephoto";
+            const match = label.match(/(\d+)x/);
+            zoomLevel = match ? parseInt(match[1]) : 2;
+            displayLabel = `${zoomLevel}x`;
+          }
+          // Main camera (1x, main, back, rear, wide but not ultra-wide)
+          else if (label.includes("back") || label.includes("rear") || label.includes("main") ||
+                   label.includes("camera 0") || label.includes("camera0") || !label) {
+            lensType = "main";
+            zoomLevel = 1;
+            displayLabel = "1x";
+          }
+          
+          detectedLenses.push({
+            id: device.deviceId,
+            label: displayLabel,
+            type: lensType,
+            zoom: zoomLevel,
+          });
+        }
+        
+        // Sort: ultra-wide first, then main, then telephoto
+        detectedLenses.sort((a, b) => a.zoom - b.zoom);
+        
+        // Remove duplicates (some devices list same camera multiple times)
+        const uniqueLenses = detectedLenses.filter((lens, idx, arr) => 
+          arr.findIndex(l => l.type === lens.type) === idx
+        );
+        
+        console.log("Camera: Detected lenses:", uniqueLenses);
+        setAvailableLenses(uniqueLenses);
+        
+        // Select main (1x) camera by default, or first available
+        const mainLens = uniqueLenses.find(l => l.type === "main") || uniqueLenses[0];
+        if (mainLens) {
+          setSelectedLens(mainLens.id);
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              deviceId: { exact: mainLens.id },
+              width: { ideal: 12000 }, // Request max possible
+              height: { ideal: 9000 },
+            },
+            audio: true,
+          });
+          console.log(`Camera: Using ${mainLens.label} lens`);
+        }
+      } catch (e) {
+        console.log("Camera: Lens detection failed", e);
       }
+      
+      // Fallback if lens detection failed
+      if (!stream) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "environment",
+              width: { ideal: 4032 },
+              height: { ideal: 3024 },
+            },
+            audio: true,
+          });
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+            audio: true,
+          });
+        }
+      }
+      
+      if (!stream) throw new Error("Could not access camera");
       streamRef.current = stream;
       
-      // CRITICAL: Reset zoom to 1x and maximize resolution for Samsung/Android
+      // MAXIMIZE QUALITY: Full sensor resolution, no zoom, continuous focus
       try {
         const track = stream.getVideoTracks()[0];
         if (track) {
           const capabilities = track.getCapabilities?.() as any;
-          const settings = track.getSettings?.() as any;
+          console.log("Camera capabilities:", capabilities);
           
-          // Build constraints to apply
-          const newConstraints: any = { advanced: [] };
-          
-          // Force zoom to minimum (1x) - fixes Samsung zoom issue
+          // Force zoom to MINIMUM (1x for main, 0.5x for ultra-wide)
           if (capabilities?.zoom) {
             const minZoom = capabilities.zoom.min || 1;
-            newConstraints.advanced.push({ zoom: minZoom });
-            console.log(`Camera: Setting zoom to ${minZoom}x (min)`);
+            try {
+              await track.applyConstraints({ 
+                advanced: [{ zoom: minZoom } as any] 
+              });
+              console.log(`Camera: Zoom set to ${minZoom}x (minimum)`);
+            } catch (e) {
+              console.log("Camera: Could not set zoom", e);
+            }
           }
           
-          // Apply maximum resolution
+          // Apply MAXIMUM sensor resolution for best quality
           if (capabilities?.width?.max && capabilities?.height?.max) {
-            await track.applyConstraints({
-              width: { ideal: capabilities.width.max },
-              height: { ideal: capabilities.height.max },
-            });
-            console.log(`Camera: Max resolution ${capabilities.width.max}x${capabilities.height.max}`);
+            try {
+              await track.applyConstraints({
+                width: { exact: capabilities.width.max },
+                height: { exact: capabilities.height.max },
+              });
+              console.log(`Camera: Full resolution ${capabilities.width.max}x${capabilities.height.max}`);
+            } catch {
+              // Try ideal if exact fails
+              try {
+                await track.applyConstraints({
+                  width: { ideal: capabilities.width.max },
+                  height: { ideal: capabilities.height.max },
+                });
+              } catch {}
+            }
           }
           
-          // Apply zoom constraint
-          if (newConstraints.advanced.length > 0) {
-            await track.applyConstraints(newConstraints);
+          // Enable continuous autofocus
+          if (capabilities?.focusMode?.includes?.("continuous")) {
+            try {
+              await track.applyConstraints({
+                advanced: [{ focusMode: "continuous" } as any]
+              });
+            } catch {}
           }
           
-          // Log actual settings for debugging
-          const finalSettings = track.getSettings?.();
-          console.log("Camera settings:", finalSettings);
+          // Log final settings
+          const finalSettings = track.getSettings?.() as any;
+          console.log("Camera final:", {
+            resolution: `${finalSettings?.width}x${finalSettings?.height}`,
+            zoom: finalSettings?.zoom,
+          });
         }
       } catch (e) {
-        console.log("Camera: Could not optimize settings", e);
+        console.log("Camera: Optimization error", e);
       }
       
       if (videoRef.current) {
@@ -576,12 +695,90 @@ export default function MixedSection({
 
   function closeCamera() {
     setCameraOpen(false);
+    setAvailableLenses([]);
+    setSelectedLens("");
     try {
       const tracks = streamRef.current?.getTracks();
       tracks?.forEach((t) => t.stop());
       streamRef.current = null;
       if (videoRef.current) (videoRef.current as any).srcObject = null;
     } catch {}
+  }
+
+  // Switch to a different camera lens (ultra-wide, main, telephoto)
+  async function switchLens(lens: CameraLens) {
+    if (lens.id === selectedLens) return;
+    
+    try {
+      // Stop current stream
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      
+      // Start new stream with selected lens
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          deviceId: { exact: lens.id },
+          width: { ideal: 12000 },
+          height: { ideal: 9000 },
+        },
+        audio: true,
+      });
+      
+      streamRef.current = newStream;
+      setSelectedLens(lens.id);
+      
+      // Optimize the new stream
+      const track = newStream.getVideoTracks()[0];
+      if (track) {
+        const capabilities = track.getCapabilities?.() as any;
+        
+        // Force minimum zoom
+        if (capabilities?.zoom) {
+          const minZoom = capabilities.zoom.min || 1;
+          await track.applyConstraints({ 
+            advanced: [{ zoom: minZoom } as any] 
+          }).catch(() => {});
+        }
+        
+        // Apply max resolution
+        if (capabilities?.width?.max && capabilities?.height?.max) {
+          await track.applyConstraints({
+            width: { ideal: capabilities.width.max },
+            height: { ideal: capabilities.height.max },
+          }).catch(() => {});
+        }
+        
+        // Continuous focus
+        if (capabilities?.focusMode?.includes?.("continuous")) {
+          await track.applyConstraints({
+            advanced: [{ focusMode: "continuous" } as any]
+          }).catch(() => {});
+        }
+        
+        const settings = track.getSettings?.() as any;
+        console.log(`Camera: Switched to ${lens.label}`, {
+          resolution: `${settings?.width}x${settings?.height}`,
+          zoom: settings?.zoom,
+        });
+      }
+      
+      // Update video element
+      if (videoRef.current) {
+        videoRef.current.srcObject = newStream;
+        await videoRef.current.play().catch(() => {});
+      }
+      
+      // Check torch support on new camera
+      const newTrack = newStream.getVideoTracks()[0];
+      const caps = newTrack?.getCapabilities?.() as any;
+      setIsTorchSupported(!!caps?.torch);
+      
+      // Reset digital zoom
+      setZoom(1);
+      
+    } catch (e) {
+      console.error("Camera: Failed to switch lens", e);
+      toast.error("Failed to switch camera lens");
+    }
   }
 
   async function finishAndClose() {
@@ -2448,7 +2645,27 @@ export default function MixedSection({
                         "calc(100vh - env(safe-area-inset-top) - max(env(safe-area-inset-bottom), 4px) - 45px)",
                     }}
                   >
-                    {/* Zoom controls at top */}
+                    {/* Lens switcher (0.5x, 1x, 2x, etc.) */}
+                    {availableLenses.length > 1 && (
+                      <div className="flex items-center gap-0.5 rounded-lg bg-black/50 p-0.5 ring-1 ring-white/20 backdrop-blur flex-shrink-0">
+                        {availableLenses.map((lens) => (
+                          <button
+                            key={lens.id}
+                            type="button"
+                            onClick={() => switchLens(lens)}
+                            className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${
+                              selectedLens === lens.id
+                                ? "bg-yellow-500 text-black shadow-lg"
+                                : "bg-white/10 text-white hover:bg-white/20"
+                            }`}
+                          >
+                            {lens.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Digital zoom slider */}
                     <div className="flex items-center gap-1 rounded-lg bg-black/40 px-1.5 py-0.5 ring-1 ring-white/10 backdrop-blur flex-shrink-0">
                       <ZoomOut className="h-3 w-3 text-white/90" />
                       <input
@@ -2605,7 +2822,27 @@ export default function MixedSection({
                     }}
                   >
                     <div className="mx-auto w-full max-w-[560px] sm:max-w-[780px]">
-                      {/* Portrait: zoom above controls */}
+                      {/* Lens switcher (0.5x, 1x, 2x, etc.) */}
+                      {availableLenses.length > 1 && (
+                        <div className="mb-1 flex items-center justify-center gap-1 rounded-lg bg-black/50 px-2 py-1.5 ring-1 ring-white/20 backdrop-blur">
+                          {availableLenses.map((lens) => (
+                            <button
+                              key={lens.id}
+                              type="button"
+                              onClick={() => switchLens(lens)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                selectedLens === lens.id
+                                  ? "bg-yellow-500 text-black shadow-lg scale-110"
+                                  : "bg-white/15 text-white hover:bg-white/25"
+                              }`}
+                            >
+                              {lens.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Portrait: digital zoom slider */}
                       <div className="mb-1 flex items-center gap-2 rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/15 backdrop-blur">
                         <ZoomOut className="h-3.5 w-3.5 text-white/90" />
                         <input
