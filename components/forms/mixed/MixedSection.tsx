@@ -138,6 +138,36 @@ export default function MixedSection({
   const getFileKey = (f: File) =>
     `${f.name}|${f.size}|${(f as any).lastModified || 0}`;
 
+  // Format file size helper
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  // Calculate total size of all files
+  const getTotalSize = (): number => {
+    return lots.reduce((total, lot) => {
+      const mainSize = lot.files.reduce((s, f) => s + f.size, 0);
+      const extraSize = (lot.extraFiles || []).reduce((s, f) => s + f.size, 0);
+      const videoSize = (lot.videoFiles || []).reduce((s, f) => s + f.size, 0);
+      return total + mainSize + extraSize + videoSize;
+    }, 0);
+  };
+
+  // Estimate upload time based on file size (assuming ~500KB/s average mobile upload speed)
+  const getEstimatedUploadTime = (bytes: number): string => {
+    const UPLOAD_SPEED = 500 * 1024; // 500 KB/s conservative estimate
+    const seconds = Math.ceil(bytes / UPLOAD_SPEED);
+    if (seconds < 60) return `~${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSecs = seconds % 60;
+    if (minutes < 60) return `~${minutes}m ${remainingSecs}s`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMins = minutes % 60;
+    return `~${hours}h ${remainingMins}m`;
+  };
+
   useEffect(() => setLots(value || []), [value]);
   useEffect(() => onChange(lots), [lots]);
 
@@ -1571,8 +1601,20 @@ export default function MixedSection({
           className="sr-only"
           onChange={(e) => onManualUploadVideo(e.target.files)}
         />
-        <div className="text-xs text-gray-600">
-          Total: {totalImages} image(s)
+        <div className="text-xs text-gray-600 flex flex-col sm:flex-row sm:gap-3">
+          <span>Total: {totalImages} image(s)</span>
+          {totalImages > 0 && (
+            <>
+              <span className="hidden sm:inline">•</span>
+              <span className="font-medium text-rose-600">
+                Size: {formatFileSize(getTotalSize())}
+              </span>
+              <span className="hidden sm:inline">•</span>
+              <span className="text-amber-600">
+                Est. upload: {getEstimatedUploadTime(getTotalSize())}
+              </span>
+            </>
+          )}
         </div>
         {actionButtons && (
           <>
@@ -1701,6 +1743,10 @@ export default function MixedSection({
                         className="h-28 w-full object-cover"
                         onLoad={() => URL.revokeObjectURL(url)}
                       />
+                      {/* File size badge */}
+                      <div className="absolute right-1 bottom-10 rounded bg-black/70 px-1.5 py-0.5 text-[9px] text-white shadow">
+                        {formatFileSize(f.size)}
+                      </div>
                       {isCover && (
                         <div className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white shadow">
                           Cover
@@ -1766,6 +1812,10 @@ export default function MixedSection({
                           />
                           <div className="absolute left-1 top-1 rounded bg-blue-600/80 px-1.5 py-0.5 text-[10px] text-white shadow">
                             Extra
+                          </div>
+                          {/* File size badge */}
+                          <div className="absolute right-1 bottom-10 rounded bg-black/70 px-1.5 py-0.5 text-[9px] text-white shadow">
+                            {formatFileSize(f.size)}
                           </div>
                           <div className="absolute inset-x-0 bottom-1 flex justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
                             <button

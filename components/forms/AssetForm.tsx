@@ -172,6 +172,34 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
   const pollIntervalRef = useRef<any>(null);
   const pollStartedRef = useRef(false);
   const jobIdRef = useRef<string | null>(null);
+  
+  // Upload stats for progress modal
+  const [uploadStats, setUploadStats] = useState<{
+    totalFiles: number;
+    totalSize: number;
+    uploadedBytes: number;
+    startTime: number;
+  } | null>(null);
+
+  // Helper to format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  // Calculate estimated time remaining
+  const getTimeRemaining = (): string => {
+    if (!uploadStats || uploadStats.uploadedBytes === 0) return "Calculating...";
+    const elapsed = (Date.now() - uploadStats.startTime) / 1000;
+    const speed = uploadStats.uploadedBytes / elapsed; // bytes per second
+    const remaining = uploadStats.totalSize - uploadStats.uploadedBytes;
+    const secondsLeft = Math.ceil(remaining / speed);
+    if (secondsLeft < 60) return `~${secondsLeft}s remaining`;
+    const minutes = Math.floor(secondsLeft / 60);
+    const secs = secondsLeft % 60;
+    return `~${minutes}m ${secs}s remaining`;
+  };
 
   // Threshold-based step state updates driven by progressPercent
   useEffect(() => {
@@ -299,6 +327,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
       setStepStates(
         () => Object.fromEntries(STEPS.map((s) => [s.key, "pending"])) as any
       );
+      setUploadStats(null);
       jobIdRef.current = null;
       pollStartedRef.current = false;
       if (pollIntervalRef.current) {
@@ -670,6 +699,16 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
       }));
       pollStartedRef.current = false;
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      
+      // Calculate total size for upload stats
+      const totalSize = filesToSend.reduce((s, f) => s + f.size, 0) + 
+        (videosToSend?.reduce((s, f) => s + f.size, 0) || 0);
+      setUploadStats({
+        totalFiles: filesToSend.length + (videosToSend?.length || 0),
+        totalSize,
+        uploadedBytes: 0,
+        startTime: Date.now(),
+      });
 
       // Generate a job/progress id for server-side tracking
       const jobId =
@@ -759,6 +798,11 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
             const weighted = pct * PROG_WEIGHTS.client_upload * 100;
             setProgressPhase("upload");
             setProgressPercent((prev) => (weighted > prev ? weighted : prev));
+            // Update uploaded bytes for time estimation
+            setUploadStats((prev) => prev ? {
+              ...prev,
+              uploadedBytes: Math.floor(pct * prev.totalSize),
+            } : null);
           },
         }
       );
@@ -866,6 +910,30 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                     ? "Finalizing..."
                     : "Starting..."}
                 </div>
+                
+                {/* Upload stats during upload phase */}
+                {progressPhase === "upload" && uploadStats && (
+                  <div className="mt-3 p-2 rounded-lg bg-gray-50 border border-gray-200">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-gray-500">Files:</span>{" "}
+                        <span className="font-medium text-gray-900">{uploadStats.totalFiles}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Total Size:</span>{" "}
+                        <span className="font-medium text-rose-600">{formatFileSize(uploadStats.totalSize)}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Uploaded:</span>{" "}
+                        <span className="font-medium text-green-600">{formatFileSize(uploadStats.uploadedBytes)}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Time:</span>{" "}
+                        <span className="font-medium text-amber-600">{getTimeRemaining()}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
