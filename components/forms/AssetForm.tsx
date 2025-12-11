@@ -46,8 +46,21 @@ export type AssetFormHandle = {
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
-// Removed localStorage draft keys - now using server-side sync for cross-device support
-// AI analysis limited to 50 images per lot on backend
+// Hybrid draft storage: localStorage (fast) + server (cross-device)
+const DRAFT_KEY = "cv_asset_draft";
+const DRAFT_IMAGES_KEY = "cv_asset_draft_images";
+const DEVICE_ID_KEY = "cv_device_id";
+
+// Get or create device ID for same-device detection
+const getDeviceId = (): string => {
+  if (typeof window === "undefined") return "";
+  let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+  if (!deviceId) {
+    deviceId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    localStorage.setItem(DEVICE_ID_KEY, deviceId);
+  }
+  return deviceId;
+};
 
 // Type for serialized lot data (without File objects)
 type SerializedLot = {
@@ -59,7 +72,16 @@ type SerializedLot = {
   videoFileCount: number;
 };
 
-// DraftImageData is now imported from savedInputs service
+// Type for localStorage image data (base64)
+type LocalDraftImage = {
+  lotId: string;
+  type: "main" | "extra" | "video";
+  name: string;
+  dataUrl: string;
+  mimeType: string;
+};
+
+// DraftImageData is imported from savedInputs service (URL-based for server)
 
 // const GROUPING_OPTIONS: {
 //   value: AssetGroupingMode;
@@ -261,19 +283,41 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
     };
   }, []);
 
-  // Fetch file from URL and convert to File object
+  // Convert File to base64 data URL for localStorage
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Convert base64 data URL back to File
+  const dataUrlToFile = async (dataUrl: string, name: string, mimeType: string): Promise<File> => {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], name, { type: mimeType || blob.type });
+  };
+
+  // Fetch file from URL and convert to File object (for server)
   const urlToFile = async (url: string, name: string, mimeType: string): Promise<File> => {
     const res = await fetch(url);
     const blob = await res.blob();
     return new File([blob], name, { type: mimeType || blob.type });
   };
 
-  // Auto-save draft to server (fast file upload, no base64)
+  // Hybrid auto-save: localStorage (instant) + server (cross-device)
   const autoSaveDraft = async () => {
-    if (submitting) return;
+    if (submitting || mixedLots.length === 0) return;
+    
+    // Check if any lot has images
+    const hasImages = mixedLots.some(lot => lot.files.length > 0 || (lot.extraFiles?.length || 0) > 0);
+    if (!hasImages) return;
     
     try {
       setDraftSaving(true);
+      const deviceId = getDeviceId();
       
       // Prepare form data
       const formData = {
@@ -294,6 +338,8 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         factorsAgeCondition,
         factorsQuality,
         factorsAnalysis,
+        deviceId,
+        savedAt: new Date().toISOString(),
         lots: mixedLots.map(lot => ({
           id: lot.id,
           coverIndex: lot.coverIndex,
@@ -304,43 +350,77 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         })),
       };
       
-      // Upload images as files (fast, parallel uploads per lot)
-      const allDraftImages: DraftImageData[] = [];
+      // === 1. Save to localStorage (fast, for same device) ===
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+        
+        // Convert images to base64 for localStorage
+        const localImages: LocalDraftImage[] = [];
+        for (const lot of mixedLots) {
+          for (const file of lot.files) {
+            try {
+              const dataUrl = await fileToDataUrl(file);
+              localImages.push({
+                lotId: lot.id,
+                type: "main",
+                name: file.name,
+                dataUrl,
+                mimeType: file.type,
+              });
+            } catch (e) {
+              console.warn("Failed to convert image:", file.name);
+            }
+          }
+          for (const file of lot.extraFiles || []) {
+            try {
+              const dataUrl = await fileToDataUrl(file);
+              localImages.push({
+                lotId: lot.id,
+                type: "extra",
+                name: file.name,
+                dataUrl,
+                mimeType: file.type,
+              });
+            } catch (e) {
+              console.warn("Failed to convert extra image:", file.name);
+            }
+          }
+        }
+        localStorage.setItem(DRAFT_IMAGES_KEY, JSON.stringify(localImages));
+        console.log(`[Draft] Saved ${localImages.length} images to localStorage`);
+      } catch (e) {
+        console.warn("[Draft] localStorage save failed:", e);
+      }
       
-      for (const lot of mixedLots) {
-        // Upload main images
-        if (lot.files.length > 0) {
-          try {
+      // === 2. Upload to server (for cross-device sync) ===
+      try {
+        const allDraftImages: DraftImageData[] = [];
+        
+        for (const lot of mixedLots) {
+          if (lot.files.length > 0) {
             const uploaded = await SavedInputService.uploadDraftImages(lot.files, lot.id, "main");
             allDraftImages.push(...uploaded);
-          } catch (e) {
-            console.warn("Failed to upload main images for lot:", lot.id);
+          }
+          if (lot.extraFiles && lot.extraFiles.length > 0) {
+            const uploaded = await SavedInputService.uploadDraftImages(lot.extraFiles, lot.id, "extra");
+            allDraftImages.push(...uploaded);
           }
         }
         
-        // Upload extra images
-        if (lot.extraFiles && lot.extraFiles.length > 0) {
-          try {
-            const uploaded = await SavedInputService.uploadDraftImages(lot.extraFiles, lot.id, "extra");
-            allDraftImages.push(...uploaded);
-          } catch (e) {
-            console.warn("Failed to upload extra images for lot:", lot.id);
-          }
-        }
+        await SavedInputService.saveDraft({
+          formType: "asset",
+          formData,
+          draftImages: allDraftImages,
+        });
+        console.log(`[Draft] Synced ${allDraftImages.length} images to server`);
+      } catch (e) {
+        console.warn("[Draft] Server sync failed (localStorage still saved):", e);
       }
-      
-      // Save draft metadata with image URLs to server
-      await SavedInputService.saveDraft({
-        formType: "asset",
-        formData,
-        draftImages: allDraftImages,
-      });
       
       setHasDraft(true);
       setLastAutoSave(new Date());
-      console.log(`[Draft] Synced ${allDraftImages.length} images to server`);
     } catch (e) {
-      console.error("[Draft] Server sync failed:", e);
+      console.error("[Draft] Auto-save failed:", e);
     } finally {
       setDraftSaving(false);
     }
@@ -356,8 +436,91 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
     }, 2000); // 2 second debounce
   };
 
-  // Restore draft from server (cross-device sync)
-  const restoreDraft = async () => {
+  // Restore form fields helper
+  const restoreFormFields = (formData: any) => {
+    if (formData.clientName) setClientName(formData.clientName);
+    if (formData.effectiveDate) setEffectiveDate(formData.effectiveDate);
+    if (formData.appraisalPurpose) setAppraisalPurpose(formData.appraisalPurpose);
+    if (formData.ownerName) setOwnerName(formData.ownerName);
+    if (formData.appraiser) setAppraiser(formData.appraiser);
+    if (formData.appraisalCompany) setAppraisalCompany(formData.appraisalCompany);
+    if (formData.industry) setIndustry(formData.industry);
+    if (formData.inspectionDate) setInspectionDate(formData.inspectionDate);
+    if (formData.contractNo) setContractNo(formData.contractNo);
+    if (formData.language) setLanguage(formData.language);
+    if (formData.currency) setCurrency(formData.currency);
+    if (typeof formData.includeValuationTable === "boolean") setIncludeValuationTable(formData.includeValuationTable);
+    if (formData.selectedValuationMethods) setSelectedValuationMethods(formData.selectedValuationMethods);
+    if (formData.preparedFor) setPreparedFor(formData.preparedFor);
+    if (formData.factorsAgeCondition) setFactorsAgeCondition(formData.factorsAgeCondition);
+    if (formData.factorsQuality) setFactorsQuality(formData.factorsQuality);
+    if (formData.factorsAnalysis) setFactorsAnalysis(formData.factorsAnalysis);
+  };
+
+  // Restore from localStorage (fast, same device)
+  const restoreFromLocalStorage = async (): Promise<boolean> => {
+    try {
+      const savedData = localStorage.getItem(DRAFT_KEY);
+      const savedImages = localStorage.getItem(DRAFT_IMAGES_KEY);
+      
+      if (!savedData || !savedImages) return false;
+      
+      const formData = JSON.parse(savedData);
+      const imageData: LocalDraftImage[] = JSON.parse(savedImages);
+      
+      if (imageData.length === 0) return false;
+      
+      // Restore form fields
+      restoreFormFields(formData);
+      
+      // Restore lots with images
+      const lotsData = formData.lots || [];
+      const restoredLots: typeof mixedLots = [];
+      
+      for (const lotMeta of lotsData) {
+        const lotImages = imageData.filter(img => img.lotId === lotMeta.id);
+        const mainFiles: File[] = [];
+        const extraFiles: File[] = [];
+        
+        for (const img of lotImages) {
+          try {
+            const file = await dataUrlToFile(img.dataUrl, img.name, img.mimeType);
+            if (img.type === "main") {
+              mainFiles.push(file);
+            } else if (img.type === "extra") {
+              extraFiles.push(file);
+            }
+          } catch (e) {
+            console.warn("Failed to restore image from localStorage:", img.name);
+          }
+        }
+        
+        if (mainFiles.length > 0 || extraFiles.length > 0) {
+          restoredLots.push({
+            id: lotMeta.id,
+            files: mainFiles,
+            extraFiles,
+            videoFiles: [],
+            coverIndex: lotMeta.coverIndex || 0,
+            mode: lotMeta.mode,
+          });
+        }
+      }
+      
+      if (restoredLots.length > 0) {
+        setMixedLots(restoredLots);
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      console.error("[Draft] localStorage restore failed:", e);
+      return false;
+    }
+  };
+
+  // Restore from server (cross-device)
+  const restoreFromServer = async (): Promise<boolean> => {
     try {
       const draft = await SavedInputService.getDraft("asset");
       
@@ -366,27 +529,10 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
       const formData = draft.formData as any;
       const imageData: DraftImageData[] = draft.draftImages || [];
       
-      // Check if draft has any images
       if (imageData.length === 0) return false;
       
       // Restore form fields
-      if (formData.clientName) setClientName(formData.clientName);
-      if (formData.effectiveDate) setEffectiveDate(formData.effectiveDate);
-      if (formData.appraisalPurpose) setAppraisalPurpose(formData.appraisalPurpose);
-      if (formData.ownerName) setOwnerName(formData.ownerName);
-      if (formData.appraiser) setAppraiser(formData.appraiser);
-      if (formData.appraisalCompany) setAppraisalCompany(formData.appraisalCompany);
-      if (formData.industry) setIndustry(formData.industry);
-      if (formData.inspectionDate) setInspectionDate(formData.inspectionDate);
-      if (formData.contractNo) setContractNo(formData.contractNo);
-      if (formData.language) setLanguage(formData.language);
-      if (formData.currency) setCurrency(formData.currency);
-      if (typeof formData.includeValuationTable === "boolean") setIncludeValuationTable(formData.includeValuationTable);
-      if (formData.selectedValuationMethods) setSelectedValuationMethods(formData.selectedValuationMethods);
-      if (formData.preparedFor) setPreparedFor(formData.preparedFor);
-      if (formData.factorsAgeCondition) setFactorsAgeCondition(formData.factorsAgeCondition);
-      if (formData.factorsQuality) setFactorsQuality(formData.factorsQuality);
-      if (formData.factorsAnalysis) setFactorsAnalysis(formData.factorsAnalysis);
+      restoreFormFields(formData);
       
       // Restore lots with images
       const lotsData = formData.lots || [];
@@ -406,24 +552,64 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
               extraFiles.push(file);
             }
           } catch (e) {
-            console.warn("Failed to restore image:", img.name);
+            console.warn("Failed to restore image from server:", img.name);
           }
         }
         
-        restoredLots.push({
-          id: lotMeta.id,
-          files: mainFiles,
-          extraFiles,
-          videoFiles: [],
-          coverIndex: lotMeta.coverIndex || 0,
-          mode: lotMeta.mode,
-        });
+        if (mainFiles.length > 0 || extraFiles.length > 0) {
+          restoredLots.push({
+            id: lotMeta.id,
+            files: mainFiles,
+            extraFiles,
+            videoFiles: [],
+            coverIndex: lotMeta.coverIndex || 0,
+            mode: lotMeta.mode,
+          });
+        }
       }
       
       if (restoredLots.length > 0) {
         setMixedLots(restoredLots);
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      console.error("[Draft] Server restore failed:", e);
+      return false;
+    }
+  };
+
+  // Hybrid restore: localStorage first (fast), fallback to server (cross-device)
+  const restoreDraft = async () => {
+    try {
+      const currentDeviceId = getDeviceId();
+      
+      // Check localStorage first
+      const savedData = localStorage.getItem(DRAFT_KEY);
+      if (savedData) {
+        const formData = JSON.parse(savedData);
+        const savedDeviceId = formData.deviceId;
+        
+        // Same device - use localStorage (instant)
+        if (savedDeviceId === currentDeviceId) {
+          console.log("[Draft] Same device detected, restoring from localStorage");
+          const restored = await restoreFromLocalStorage();
+          if (restored) {
+            setHasDraft(true);
+            const imageCount = JSON.parse(localStorage.getItem(DRAFT_IMAGES_KEY) || "[]").length;
+            toast.info(`Draft restored: ${imageCount} images (from this device)`);
+            return true;
+          }
+        }
+      }
+      
+      // Different device or localStorage empty - use server
+      console.log("[Draft] Restoring from server (cross-device)");
+      const restored = await restoreFromServer();
+      if (restored) {
         setHasDraft(true);
-        toast.info(`Draft restored: ${imageData.length} images synced from server`);
+        toast.info("Draft restored from server (synced from another device)");
         return true;
       }
       
@@ -434,13 +620,21 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
     }
   };
 
-  // Clear draft from server (including uploaded images)
+  // Clear draft from both localStorage and server
   const clearDraft = async () => {
     try {
-      // Delete uploaded images first
-      await SavedInputService.deleteDraftImages();
-      // Delete draft metadata
-      await SavedInputService.deleteDraft("asset");
+      // Clear localStorage
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(DRAFT_IMAGES_KEY);
+      
+      // Clear server
+      try {
+        await SavedInputService.deleteDraftImages();
+        await SavedInputService.deleteDraft("asset");
+      } catch (e) {
+        console.warn("[Draft] Server clear failed:", e);
+      }
+      
       setHasDraft(false);
       setLastAutoSave(null);
     } catch (e) {
@@ -448,10 +642,22 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
     }
   };
 
-  // Check for existing draft on mount (from server)
+  // Check for existing draft on mount (localStorage or server)
   useEffect(() => {
     const checkDraft = async () => {
       try {
+        // Check localStorage first
+        const localData = localStorage.getItem(DRAFT_KEY);
+        const localImages = localStorage.getItem(DRAFT_IMAGES_KEY);
+        if (localData && localImages) {
+          const images = JSON.parse(localImages);
+          if (images.length > 0) {
+            setHasDraft(true);
+            return;
+          }
+        }
+        
+        // Check server
         const draft = await SavedInputService.getDraft("asset");
         if (draft && draft.draftImages && draft.draftImages.length > 0) {
           setHasDraft(true);
