@@ -23,6 +23,7 @@ import {
 import { Check, Save } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuthContext } from "@/context/AuthContext";
+import { SERVER_BASE } from "@/lib/config";
 
 // // Code-split the CatalogueSection for camera-based lot capture (disabled for Mixed-only)
 // const CatalogueSection = dynamic(() => import("./catalogue/CatalogueSection"), {
@@ -545,7 +546,9 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         
         for (const img of lotImages) {
           try {
-            const file = await urlToFile(img.url, img.name, img.mimeType);
+            // Prepend SERVER_BASE to relative URLs from server
+            const fullUrl = img.url.startsWith("http") ? img.url : `${SERVER_BASE}${img.url}`;
+            const file = await urlToFile(fullUrl, img.name, img.mimeType);
             if (img.type === "main") {
               mainFiles.push(file);
             } else if (img.type === "extra") {
