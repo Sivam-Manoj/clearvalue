@@ -546,8 +546,15 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         
         for (const img of lotImages) {
           try {
-            // Prepend SERVER_BASE to relative URLs from server
-            const fullUrl = img.url.startsWith("http") ? img.url : `${SERVER_BASE}${img.url}`;
+            // Handle URL - could be relative, old localhost URL, or proper absolute URL
+            let fullUrl = img.url;
+            if (fullUrl.startsWith("/")) {
+              // Relative URL - prepend SERVER_BASE
+              fullUrl = `${SERVER_BASE}${fullUrl}`;
+            } else if (fullUrl.includes("localhost:4000") || fullUrl.includes("localhost:5000")) {
+              // Old localhost URL - replace with SERVER_BASE
+              fullUrl = fullUrl.replace(/http:\/\/localhost:\d+/, SERVER_BASE);
+            }
             const file = await urlToFile(fullUrl, img.name, img.mimeType);
             if (img.type === "main") {
               mainFiles.push(file);
