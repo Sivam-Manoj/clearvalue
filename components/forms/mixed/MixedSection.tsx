@@ -48,6 +48,7 @@ type Props = {
   maxTotalImages?: number; // No limit
   downloadPrefix?: string; // optional: used for saving captured images locally
   actionButtons?: React.ReactNode; // Extra action buttons to show in toolbar
+  onImageCapture?: () => void; // Callback when image is captured/added (for auto-save)
 };
 //50
 export default function MixedSection({
@@ -58,6 +59,7 @@ export default function MixedSection({
   maxTotalImages = Number.MAX_SAFE_INTEGER, // Unlimited
   downloadPrefix,
   actionButtons,
+  onImageCapture,
 }: Props) {
   const [lots, setLots] = useState<MixedLot[]>(value || []);
   const [activeIdx, setActiveIdx] = useState<number>(
@@ -342,12 +344,13 @@ export default function MixedSection({
       if (!lot) return prev;
 
       if (isExtra) {
-        // Add to extra files (no mode check needed, no limits)
         const current = out[idx];
         out[idx] = {
           ...current,
           extraFiles: [...current.extraFiles, ...incoming],
         };
+        // Trigger auto-save callback
+        setTimeout(() => onImageCapture?.(), 0);
         return out;
       }
 
@@ -365,6 +368,8 @@ export default function MixedSection({
       // Note: First 50 images per lot will be analyzed by AI
       const current = out[idx];
       out[idx] = { ...current, files: [...current.files, ...incoming] };
+      // Trigger auto-save callback
+      setTimeout(() => onImageCapture?.(), 0);
       return out;
     });
   }

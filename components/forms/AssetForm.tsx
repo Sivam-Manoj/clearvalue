@@ -18,6 +18,7 @@ import {
   SavedInputService,
   type SavedInput,
   type AssetFormData,
+  type DraftImageData,
 } from "@/services/savedInputs";
 import { Check, Save } from "lucide-react";
 import { toast } from "react-toastify";
@@ -45,9 +46,20 @@ export type AssetFormHandle = {
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
-const DRAFT_KEY = "cv_asset_draft";
-// Removed MAX_NON_CAT_IMAGES - no limits on image uploads
+// Removed localStorage draft keys - now using server-side sync for cross-device support
 // AI analysis limited to 50 images per lot on backend
+
+// Type for serialized lot data (without File objects)
+type SerializedLot = {
+  id: string;
+  coverIndex: number;
+  mode?: "single_lot" | "per_item" | "per_photo";
+  fileCount: number;
+  extraFileCount: number;
+  videoFileCount: number;
+};
+
+// DraftImageData is now imported from savedInputs service
 
 // const GROUPING_OPTIONS: {
 //   value: AssetGroupingMode;
@@ -113,6 +125,12 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
   const [factorsAgeCondition, setFactorsAgeCondition] = useState("");
   const [factorsQuality, setFactorsQuality] = useState("");
   const [factorsAnalysis, setFactorsAnalysis] = useState("");
+
+  // Draft state
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const clearError = (k: string) =>
@@ -239,7 +257,208 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
   useEffect(() => {
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
     };
+  }, []);
+
+  // Fetch file from URL and convert to File object
+  const urlToFile = async (url: string, name: string, mimeType: string): Promise<File> => {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new File([blob], name, { type: mimeType || blob.type });
+  };
+
+  // Auto-save draft to server (fast file upload, no base64)
+  const autoSaveDraft = async () => {
+    if (submitting) return;
+    
+    try {
+      setDraftSaving(true);
+      
+      // Prepare form data
+      const formData = {
+        clientName,
+        effectiveDate,
+        appraisalPurpose,
+        ownerName,
+        appraiser,
+        appraisalCompany,
+        industry,
+        inspectionDate,
+        contractNo,
+        language,
+        currency,
+        includeValuationTable,
+        selectedValuationMethods,
+        preparedFor,
+        factorsAgeCondition,
+        factorsQuality,
+        factorsAnalysis,
+        lots: mixedLots.map(lot => ({
+          id: lot.id,
+          coverIndex: lot.coverIndex,
+          mode: lot.mode,
+          fileCount: lot.files.length,
+          extraFileCount: (lot.extraFiles || []).length,
+          videoFileCount: (lot.videoFiles || []).length,
+        })),
+      };
+      
+      // Upload images as files (fast, parallel uploads per lot)
+      const allDraftImages: DraftImageData[] = [];
+      
+      for (const lot of mixedLots) {
+        // Upload main images
+        if (lot.files.length > 0) {
+          try {
+            const uploaded = await SavedInputService.uploadDraftImages(lot.files, lot.id, "main");
+            allDraftImages.push(...uploaded);
+          } catch (e) {
+            console.warn("Failed to upload main images for lot:", lot.id);
+          }
+        }
+        
+        // Upload extra images
+        if (lot.extraFiles && lot.extraFiles.length > 0) {
+          try {
+            const uploaded = await SavedInputService.uploadDraftImages(lot.extraFiles, lot.id, "extra");
+            allDraftImages.push(...uploaded);
+          } catch (e) {
+            console.warn("Failed to upload extra images for lot:", lot.id);
+          }
+        }
+      }
+      
+      // Save draft metadata with image URLs to server
+      await SavedInputService.saveDraft({
+        formType: "asset",
+        formData,
+        draftImages: allDraftImages,
+      });
+      
+      setHasDraft(true);
+      setLastAutoSave(new Date());
+      console.log(`[Draft] Synced ${allDraftImages.length} images to server`);
+    } catch (e) {
+      console.error("[Draft] Server sync failed:", e);
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
+  // Debounced auto-save trigger
+  const triggerAutoSave = () => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      autoSaveDraft();
+    }, 2000); // 2 second debounce
+  };
+
+  // Restore draft from server (cross-device sync)
+  const restoreDraft = async () => {
+    try {
+      const draft = await SavedInputService.getDraft("asset");
+      
+      if (!draft) return false;
+      
+      const formData = draft.formData as any;
+      const imageData: DraftImageData[] = draft.draftImages || [];
+      
+      // Check if draft has any images
+      if (imageData.length === 0) return false;
+      
+      // Restore form fields
+      if (formData.clientName) setClientName(formData.clientName);
+      if (formData.effectiveDate) setEffectiveDate(formData.effectiveDate);
+      if (formData.appraisalPurpose) setAppraisalPurpose(formData.appraisalPurpose);
+      if (formData.ownerName) setOwnerName(formData.ownerName);
+      if (formData.appraiser) setAppraiser(formData.appraiser);
+      if (formData.appraisalCompany) setAppraisalCompany(formData.appraisalCompany);
+      if (formData.industry) setIndustry(formData.industry);
+      if (formData.inspectionDate) setInspectionDate(formData.inspectionDate);
+      if (formData.contractNo) setContractNo(formData.contractNo);
+      if (formData.language) setLanguage(formData.language);
+      if (formData.currency) setCurrency(formData.currency);
+      if (typeof formData.includeValuationTable === "boolean") setIncludeValuationTable(formData.includeValuationTable);
+      if (formData.selectedValuationMethods) setSelectedValuationMethods(formData.selectedValuationMethods);
+      if (formData.preparedFor) setPreparedFor(formData.preparedFor);
+      if (formData.factorsAgeCondition) setFactorsAgeCondition(formData.factorsAgeCondition);
+      if (formData.factorsQuality) setFactorsQuality(formData.factorsQuality);
+      if (formData.factorsAnalysis) setFactorsAnalysis(formData.factorsAnalysis);
+      
+      // Restore lots with images
+      const lotsData = formData.lots || [];
+      const restoredLots: typeof mixedLots = [];
+      
+      for (const lotMeta of lotsData) {
+        const lotImages = imageData.filter(img => img.lotId === lotMeta.id);
+        const mainFiles: File[] = [];
+        const extraFiles: File[] = [];
+        
+        for (const img of lotImages) {
+          try {
+            const file = await urlToFile(img.url, img.name, img.mimeType);
+            if (img.type === "main") {
+              mainFiles.push(file);
+            } else if (img.type === "extra") {
+              extraFiles.push(file);
+            }
+          } catch (e) {
+            console.warn("Failed to restore image:", img.name);
+          }
+        }
+        
+        restoredLots.push({
+          id: lotMeta.id,
+          files: mainFiles,
+          extraFiles,
+          videoFiles: [],
+          coverIndex: lotMeta.coverIndex || 0,
+          mode: lotMeta.mode,
+        });
+      }
+      
+      if (restoredLots.length > 0) {
+        setMixedLots(restoredLots);
+        setHasDraft(true);
+        toast.info(`Draft restored: ${imageData.length} images synced from server`);
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      console.error("[Draft] Restore failed:", e);
+      return false;
+    }
+  };
+
+  // Clear draft from server (including uploaded images)
+  const clearDraft = async () => {
+    try {
+      // Delete uploaded images first
+      await SavedInputService.deleteDraftImages();
+      // Delete draft metadata
+      await SavedInputService.deleteDraft("asset");
+      setHasDraft(false);
+      setLastAutoSave(null);
+    } catch (e) {
+      console.error("[Draft] Clear failed:", e);
+    }
+  };
+
+  // Check for existing draft on mount (from server)
+  useEffect(() => {
+    const checkDraft = async () => {
+      try {
+        const draft = await SavedInputService.getDraft("asset");
+        if (draft && draft.draftImages && draft.draftImages.length > 0) {
+          setHasDraft(true);
+        }
+      } catch (e) {}
+    };
+    checkDraft();
   }, []);
 
   // Mixed-only: no direct single-bucket images picker/preview
@@ -813,11 +1032,8 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         res?.message ||
         "Your report is being processed. You will receive an email when it's ready.";
       toast.info(msg);
-      try {
-        if (typeof localStorage !== "undefined") {
-          localStorage.removeItem(DRAFT_KEY);
-        }
-      } catch {}
+      // Clear draft after successful submission
+      clearDraft();
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("cv:report-created"));
       }
@@ -844,6 +1060,56 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         {!submitting && error && (
           <div className="rounded-xl border border-red-200/70 bg-red-50/80 p-3 text-sm text-red-700 shadow ring-1 ring-black/5 backdrop-blur">
             {error}
+          </div>
+        )}
+
+        {/* Draft indicator and restore banner */}
+        {!submitting && hasDraft && mixedLots.length === 0 && (
+          <div className="mb-3 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-3 shadow-sm">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-sm font-medium text-amber-800">
+                  Draft Available
+                </span>
+                <span className="text-xs text-amber-600">
+                  You have unsaved images from a previous session
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={restoreDraft}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition"
+                >
+                  Restore Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={clearDraft}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-100 transition"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Auto-save indicator when images exist */}
+        {!submitting && mixedLots.some(l => l.files.length > 0) && (
+          <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
+            {draftSaving ? (
+              <>
+                <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>Saving draft...</span>
+              </>
+            ) : lastAutoSave ? (
+              <>
+                <div className="h-2 w-2 rounded-full bg-green-500" />
+                <span>Draft saved at {lastAutoSave.toLocaleTimeString()}</span>
+              </>
+            ) : null}
           </div>
         )}
 
@@ -1407,6 +1673,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                   /[^a-zA-Z0-9_-]/g,
                   "-"
                 )}
+                onImageCapture={triggerAutoSave}
                 actionButtons={
                   <>
                     <button

@@ -88,6 +88,32 @@ export type UpdateSavedInputPayload = {
   formData?: SavedInputFormData;
 };
 
+// Draft image data type for cross-device sync (URL-based, not base64)
+export type DraftImageData = {
+  lotId: string;
+  type: "main" | "extra" | "video";
+  name: string;
+  url: string; // Server file URL
+  mimeType: string;
+};
+
+export type SaveDraftPayload = {
+  formType?: FormType;
+  formData: SavedInputFormData & { lots?: any[] };
+  draftImages?: DraftImageData[];
+};
+
+export type DraftResponse = SavedInput & {
+  isDraft: boolean;
+  draftImages?: DraftImageData[];
+};
+
+// Upload response type
+export type DraftUploadResponse = {
+  message: string;
+  data: DraftImageData[];
+};
+
 export const SavedInputService = {
   async create(payload: CreateSavedInputPayload): Promise<SavedInput> {
     const { data } = await API.post<{ message: string; data: SavedInput }>(
@@ -122,5 +148,64 @@ export const SavedInputService = {
 
   async delete(id: string): Promise<void> {
     await API.delete(`/saved-inputs/${id}`);
+  },
+
+  // Draft methods for cross-device sync
+  async saveDraft(payload: SaveDraftPayload): Promise<DraftResponse> {
+    const { data } = await API.post<{ message: string; data: DraftResponse }>(
+      "/saved-inputs/draft",
+      payload
+    );
+    return data.data;
+  },
+
+  async getDraft(formType?: FormType): Promise<DraftResponse | null> {
+    try {
+      const params = formType ? `?formType=${formType}` : "";
+      const { data } = await API.get<{ message: string; data: DraftResponse }>(
+        `/saved-inputs/draft${params}`
+      );
+      return data.data;
+    } catch (error: any) {
+      // 404 means no draft exists, which is fine
+      if (error?.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  async deleteDraft(formType?: FormType): Promise<void> {
+    const params = formType ? `?formType=${formType}` : "";
+    await API.delete(`/saved-inputs/draft${params}`);
+  },
+
+  // Upload draft images as files (fast, no base64 conversion)
+  async uploadDraftImages(
+    files: File[],
+    lotId: string,
+    type: "main" | "extra" | "video" = "main"
+  ): Promise<DraftImageData[]> {
+    const formData = new FormData();
+    formData.append("lotId", lotId);
+    formData.append("type", type);
+    
+    for (const file of files) {
+      formData.append("images", file);
+    }
+
+    const { data } = await API.post<DraftUploadResponse>(
+      "/saved-inputs/draft/upload",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+    return data.data;
+  },
+
+  // Delete all draft images for current user
+  async deleteDraftImages(): Promise<void> {
+    await API.delete("/saved-inputs/draft/images");
   },
 };

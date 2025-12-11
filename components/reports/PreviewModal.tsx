@@ -675,9 +675,9 @@ export default function PreviewModal({
                                 <textarea
                                   value={lot.description || ""}
                                   onChange={(e) => updateLot(idx, "description", e.target.value)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[72px]"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-y min-h-[120px]"
                                   placeholder="Short description"
-                                  rows={3}
+                                  rows={5}
                                 />
                               </div>
                               <div>
@@ -685,9 +685,9 @@ export default function PreviewModal({
                                 <textarea
                                   value={lot.details || ""}
                                   onChange={(e) => updateLot(idx, "details", e.target.value)}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[72px]"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-y min-h-[120px]"
                                   placeholder="Specs / notes / attributes"
-                                  rows={3}
+                                  rows={5}
                                 />
                               </div>
                               <div>
@@ -779,18 +779,18 @@ export default function PreviewModal({
                                 <textarea
                                   value={lot.description || ""}
                                   onChange={(e) => updateLot(idx, "description", e.target.value)}
-                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[56px]"
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-y min-h-[100px]"
                                   placeholder="Short description"
-                                  rows={2}
+                                  rows={4}
                                 />
                               </td>
                               <td className="px-3 py-2 align-top">
                                 <textarea
                                   value={lot.details || ""}
                                   onChange={(e) => updateLot(idx, "details", e.target.value)}
-                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-none min-h-[56px]"
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-y min-h-[100px]"
                                   placeholder="Specs / notes / attributes"
-                                  rows={2}
+                                  rows={4}
                                 />
                               </td>
                               <td className="px-3 py-2 align-top">
