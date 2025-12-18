@@ -207,4 +207,12 @@ export const RealEstateService = {
     );
     return data;
   },
+
+  /** Delete a real estate report */
+  async deleteReport(reportId: string): Promise<{ message: string; data: { reportId: string } }> {
+    const { data } = await API.delete<{ message: string; data: { reportId: string } }>(
+      `/real-estate/${reportId}`
+    );
+    return data;
+  },
 };

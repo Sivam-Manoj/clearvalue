@@ -153,3 +153,15 @@ export const resubmitReport = async (
   );
   return data;
 };
+
+/**
+ * Delete an asset report
+ */
+export const deleteAssetReport = async (
+  reportId: string
+): Promise<{ message: string; data: { reportId: string } }> => {
+  const { data } = await API.delete<{ message: string; data: { reportId: string } }>(
+    `/asset/${reportId}`
+  );
+  return data;
+};

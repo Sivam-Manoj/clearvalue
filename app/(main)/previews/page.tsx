@@ -14,8 +14,10 @@ import {
   CheckCircle,
   FileText,
   Download,
+  Trash2,
+  MoreVertical,
 } from "lucide-react";
-import { getAssetReports, getSubmittedReports, resubmitReport, type AssetReport } from "@/services/assets";
+import { getAssetReports, getSubmittedReports, resubmitReport, deleteAssetReport, type AssetReport } from "@/services/assets";
 import {
   RealEstateService,
   type RealEstateReport,
@@ -37,10 +39,12 @@ export default function PreviewsPage() {
   const [submittedReports, setSubmittedReports] = useState<CombinedReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [resubmitting, setResubmitting] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [realEstateModalOpen, setRealEstateModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [isResubmitMode, setIsResubmitMode] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Load all reports
   const loadReports = async () => {
@@ -127,6 +131,24 @@ export default function PreviewsPage() {
       toast.error(err.response?.data?.message || "Failed to resubmit report");
     } finally {
       setResubmitting(null);
+    }
+  };
+
+  const handleDeleteReport = async (reportId: string, reportType: string) => {
+    try {
+      setDeleting(reportId);
+      if (reportType === "asset") {
+        await deleteAssetReport(reportId);
+      } else {
+        await RealEstateService.deleteReport(reportId);
+      }
+      toast.success("Report deleted successfully");
+      setDeleteConfirmId(null);
+      loadReports();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to delete report");
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -247,36 +269,38 @@ export default function PreviewsPage() {
                 : (report as any).client_name || "Asset Report";
               const typeLabel = isRealEstate ? "Real Estate" : "Asset";
               const typeIcon = isRealEstate ? (
-                <Building2 className="h-5 w-5 text-emerald-600" />
+                <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
               ) : (
-                <Package className="h-5 w-5 text-blue-600" />
+                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               );
 
               return (
                 <div
                   key={report._id}
-                  className={`bg-white rounded-2xl border transition-all shadow-sm hover:shadow-md overflow-hidden ${
+                  className={`bg-white rounded-xl sm:rounded-2xl border transition-all shadow-sm hover:shadow-md overflow-hidden ${
                     isRealEstate
                       ? "border-emerald-200 hover:border-emerald-400"
                       : "border-gray-200 hover:border-blue-300"
                   }`}
                 >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between gap-4">
+                  <div className="p-4 sm:p-6">
+                    {/* Mobile: Stack layout / Desktop: Row layout */}
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       {/* Report Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gray-100 text-xs font-medium text-gray-700">
+                        {/* Header with type, title, status */}
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
+                          <span className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg bg-gray-100 text-xs font-medium text-gray-700">
                             {typeIcon}
-                            {typeLabel}
+                            <span className="hidden xs:inline">{typeLabel}</span>
                           </span>
-                          <h3 className="text-xl font-bold text-gray-900 truncate">
+                          <h3 className="text-base sm:text-xl font-bold text-gray-900 truncate max-w-[200px] sm:max-w-none">
                             {title}
                           </h3>
                           <StatusBadge status={report.status} />
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
                           {isRealEstate ? (
                             <>
                               <div>
@@ -376,9 +400,9 @@ export default function PreviewsPage() {
                             </div>
                           )}
 
-                        {/* Preview Data Summary */}
+                        {/* Preview Data Summary - Hidden on very small screens */}
                         {report.preview_data && (
-                          <div className={`grid gap-3 p-3 rounded-lg ${isRealEstate ? 'grid-cols-2 md:grid-cols-4 bg-emerald-50' : 'grid-cols-2 bg-gray-50'}`}>
+                          <div className={`hidden sm:grid gap-3 p-3 rounded-lg ${isRealEstate ? 'grid-cols-2 lg:grid-cols-4 bg-emerald-50' : 'grid-cols-2 bg-gray-50'}`}>
                             <div>
                               <p className="text-xs text-gray-500">
                                 {isRealEstate ? "Owner" : "Client"}
@@ -440,68 +464,108 @@ export default function PreviewsPage() {
                         )}
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex-shrink-0 flex flex-col gap-2">
-                        {/* New Preview Actions */}
-                        {report.status === "preview" && (
-                          <button
-                            onClick={() => handleOpenPreview(report)}
-                            className={`flex items-center gap-2 px-6 py-3 text-white rounded-xl font-semibold shadow-lg transition-all hover:scale-105 ${
-                              isRealEstate
-                                ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/30"
-                                : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/30"
-                            }`}
-                          >
-                            <Eye className="h-5 w-5" />
-                            Review & Submit
-                          </button>
-                        )}
-                        {report.status === "declined" && (
-                          <button
-                            onClick={() => handleOpenPreview(report)}
-                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-xl hover:from-rose-600 hover:to-rose-700 font-semibold shadow-lg shadow-rose-500/30 transition-all hover:scale-105"
-                          >
-                            <Edit className="h-5 w-5" />
-                            Edit & Resubmit
-                          </button>
-                        )}
+                      {/* Action Buttons - Responsive grid on mobile */}
+                      <div className="flex-shrink-0">
+                        <div className="flex flex-wrap gap-2 lg:flex-col">
+                          {/* New Preview Actions */}
+                          {report.status === "preview" && (
+                            <button
+                              onClick={() => handleOpenPreview(report)}
+                              className={`flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg sm:rounded-xl font-semibold shadow-lg transition-all hover:scale-105 text-sm sm:text-base flex-1 lg:flex-none ${
+                                isRealEstate
+                                  ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/30"
+                                  : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/30"
+                              }`}
+                            >
+                              <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                              <span className="hidden sm:inline">Review & Submit</span>
+                              <span className="sm:hidden">Review</span>
+                            </button>
+                          )}
+                          {report.status === "declined" && (
+                            <button
+                              onClick={() => handleOpenPreview(report)}
+                              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-lg sm:rounded-xl hover:from-rose-600 hover:to-rose-700 font-semibold shadow-lg shadow-rose-500/30 transition-all hover:scale-105 text-sm sm:text-base flex-1 lg:flex-none"
+                            >
+                              <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
+                              <span className="hidden sm:inline">Edit & Resubmit</span>
+                              <span className="sm:hidden">Edit</span>
+                            </button>
+                          )}
 
-                        {/* Submitted Report Actions */}
-                        {(report.status === "pending_approval" || report.status === "approved") && (
-                          <div className="flex flex-col gap-2">
-                            <button
-                              onClick={() => handleOpenPreview(report, true)}
-                              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 font-semibold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105"
-                            >
-                              <Edit className="h-4 w-4" />
-                              Edit & Resubmit
-                            </button>
-                            <button
-                              onClick={() => handleQuickResubmit(report._id)}
-                              disabled={resubmitting === report._id}
-                              className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-indigo-300 text-indigo-700 rounded-xl hover:bg-indigo-50 font-medium transition-all disabled:opacity-50"
-                            >
-                              {resubmitting === report._id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <RefreshCw className="h-4 w-4" />
-                              )}
-                              Quick Resubmit
-                            </button>
-                            {/* Download Links for submitted reports */}
-                            {(report as any).preview_files?.docx && (
-                              <a
-                                href={(report as any).preview_files.docx}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-5 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                          {/* Submitted Report Actions */}
+                          {(report.status === "pending_approval" || report.status === "approved") && (
+                            <>
+                              <button
+                                onClick={() => handleOpenPreview(report, true)}
+                                className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-indigo-600 hover:to-indigo-700 font-semibold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 text-sm flex-1 lg:flex-none"
                               >
-                                <Download className="h-4 w-4" />
-                                Download DOCX
-                              </a>
-                            )}
-                          </div>
-                        )}
+                                <Edit className="h-4 w-4" />
+                                <span className="hidden sm:inline">Edit & Resubmit</span>
+                                <span className="sm:hidden">Edit</span>
+                              </button>
+                              <button
+                                onClick={() => handleQuickResubmit(report._id)}
+                                disabled={resubmitting === report._id}
+                                className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-white border-2 border-indigo-300 text-indigo-700 rounded-lg sm:rounded-xl hover:bg-indigo-50 font-medium transition-all disabled:opacity-50 text-sm flex-1 lg:flex-none"
+                              >
+                                {resubmitting === report._id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="h-4 w-4" />
+                                )}
+                                <span className="hidden sm:inline">Quick Resubmit</span>
+                                <span className="sm:hidden">Resubmit</span>
+                              </button>
+                              {/* Download Links for submitted reports */}
+                              {(report as any).preview_files?.docx && (
+                                <a
+                                  href={(report as any).preview_files.docx}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                                >
+                                  <Download className="h-4 w-4" />
+                                  <span className="hidden sm:inline">Download DOCX</span>
+                                  <span className="sm:hidden">DOCX</span>
+                                </a>
+                              )}
+                            </>
+                          )}
+
+                          {/* Delete Button */}
+                          {deleteConfirmId === report._id ? (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleDeleteReport(report._id, report.reportType)}
+                                disabled={deleting === report._id}
+                                className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                              >
+                                {deleting === report._id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                                Confirm
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirmId(null)}
+                                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setDeleteConfirmId(report._id)}
+                              className="flex items-center justify-center gap-2 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm"
+                              title="Delete report"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="hidden sm:inline">Delete</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
