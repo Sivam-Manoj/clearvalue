@@ -291,7 +291,7 @@ export default function DashboardPage() {
 
           {/* Quick actions */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {/* Real Estate (emerald) */}
+            {/* Real Estate (green - matching mobile) */}
             <button
               type="button"
               onClick={() => {
@@ -299,7 +299,7 @@ export default function DashboardPage() {
                 setDrawerOpen(true);
               }}
               aria-label="Create Real Estate report"
-              className="group flex items-center justify-between rounded-2xl border border-emerald-800 bg-gradient-to-b from-emerald-500 to-emerald-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
+              className="group flex items-center justify-between rounded-2xl border border-green-800 bg-gradient-to-b from-green-500 to-green-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
             >
               <div>
                 <p className="text-xl font-bold text-white">Real Estate</p>
@@ -307,12 +307,12 @@ export default function DashboardPage() {
                   Create a new property record
                 </p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 text-white ring-2 ring-white/30 shadow-lg shadow-emerald-500/50 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl group-hover:shadow-emerald-500/60">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-green-400 via-green-500 to-green-600 text-white ring-2 ring-white/30 shadow-lg shadow-green-500/50 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl group-hover:shadow-green-500/60">
                 <Building2 className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
               </div>
             </button>
 
-            {/* Salvage (amber) */}
+            {/* Salvage (blue - matching mobile) */}
             <button
               type="button"
               onClick={() => {
@@ -320,7 +320,7 @@ export default function DashboardPage() {
                 setDrawerOpen(true);
               }}
               aria-label="Create Salvage report"
-              className="group flex items-center justify-between rounded-2xl border border-amber-800 bg-gradient-to-b from-amber-500 to-amber-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
+              className="group flex items-center justify-between rounded-2xl border border-blue-800 bg-gradient-to-b from-blue-500 to-blue-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
             >
               <div>
                 <p className="text-xl font-bold text-white">Salvage</p>
@@ -328,12 +328,12 @@ export default function DashboardPage() {
                   Start a new salvage entry
                 </p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-600 text-white ring-2 ring-white/30 shadow-lg shadow-amber-500/50 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-xl group-hover:shadow-amber-500/60">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white ring-2 ring-white/30 shadow-lg shadow-blue-500/50 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-xl group-hover:shadow-blue-500/60">
                 <Car className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
               </div>
             </button>
 
-            {/* Asset (sky) */}
+            {/* Asset (red/rose - matching mobile) */}
             <button
               type="button"
               onClick={() => {
@@ -341,13 +341,13 @@ export default function DashboardPage() {
                 setDrawerOpen(true);
               }}
               aria-label="Create Asset report"
-              className="group flex items-center justify-between rounded-2xl border border-sky-800 bg-gradient-to-b from-sky-500 to-sky-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
+              className="group flex items-center justify-between rounded-2xl border border-rose-800 bg-gradient-to-b from-rose-500 to-rose-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
             >
               <div>
                 <p className="text-xl font-bold text-white">Asset</p>
                 <p className="text-xs text-white/90">Add a general asset</p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 text-white ring-2 ring-white/30 shadow-lg shadow-sky-500/50 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl group-hover:shadow-sky-500/60">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 via-rose-500 to-rose-600 text-white ring-2 ring-white/30 shadow-lg shadow-rose-500/50 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl group-hover:shadow-rose-500/60">
                 <Package className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
               </div>
             </button>
