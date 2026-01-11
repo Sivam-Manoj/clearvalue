@@ -16,8 +16,10 @@ import {
   Download,
   Trash2,
   MoreVertical,
+  ListOrdered,
 } from "lucide-react";
 import { getAssetReports, getSubmittedReports, resubmitReport, deleteAssetReport, type AssetReport } from "@/services/assets";
+import { getLotListings, getSubmittedLotListings, resubmitLotListing, deleteLotListing, type LotListing } from "@/services/lotListing";
 import {
   RealEstateService,
   type RealEstateReport,
@@ -29,7 +31,8 @@ import RealEstatePreviewModal from "@/components/reports/RealEstatePreviewModal"
 
 type CombinedReport =
   | (AssetReport & { reportType: "asset" })
-  | (RealEstateReport & { reportType: "realEstate" });
+  | (RealEstateReport & { reportType: "realEstate" })
+  | (LotListing & { reportType: "lotListing" });
 
 type TabType = "new" | "submitted";
 
@@ -52,10 +55,11 @@ export default function PreviewsPage() {
       setLoading(true);
 
       // Fetch all in parallel
-      const [assetResponse, realEstateResponse, submittedAssetResponse] = await Promise.all([
+      const [assetResponse, realEstateResponse, submittedAssetResponse, lotListingResponse] = await Promise.all([
         getAssetReports().catch(() => ({ data: [] })),
         RealEstateService.getReports().catch(() => ({ data: [] })),
         getSubmittedReports().catch(() => ({ data: [] })),
+        getLotListings().catch(() => ({ data: [] })),
       ]);
 
       // Filter preview and declined reports for "New" tab
@@ -67,8 +71,12 @@ export default function PreviewsPage() {
         .filter((r) => r.status === "preview" || r.status === "declined")
         .map((r) => ({ ...r, reportType: "realEstate" as const }));
 
+      const lotListingPreviews: CombinedReport[] = (lotListingResponse.data || [])
+        .filter((r: LotListing) => r.status === "preview" || r.status === "declined")
+        .map((r: LotListing) => ({ ...r, reportType: "lotListing" as const }));
+
       // Combine new previews
-      const combinedNew = [...assetPreviews, ...realEstatePreviews].sort(
+      const combinedNew = [...assetPreviews, ...realEstatePreviews, ...lotListingPreviews].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
@@ -81,7 +89,12 @@ export default function PreviewsPage() {
         .filter((r) => r.status === "pending_approval" || r.status === "approved")
         .map((r) => ({ ...r, reportType: "realEstate" as const }));
 
-      const combinedSubmitted = [...submittedAssets, ...realEstateSubmitted].sort(
+      // Also include lot listing submitted reports
+      const lotListingSubmitted: CombinedReport[] = (lotListingResponse.data || [])
+        .filter((r: LotListing) => r.status === "pending_approval" || r.status === "approved")
+        .map((r: LotListing) => ({ ...r, reportType: "lotListing" as const }));
+
+      const combinedSubmitted = [...submittedAssets, ...realEstateSubmitted, ...lotListingSubmitted].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
@@ -121,10 +134,14 @@ export default function PreviewsPage() {
     toast.success("Report submitted for approval!");
   };
 
-  const handleQuickResubmit = async (reportId: string) => {
+  const handleQuickResubmit = async (reportId: string, reportType: string) => {
     try {
       setResubmitting(reportId);
-      await resubmitReport(reportId);
+      if (reportType === "lotListing") {
+        await resubmitLotListing(reportId);
+      } else {
+        await resubmitReport(reportId);
+      }
       toast.success("Report resubmitted! Files are being regenerated.");
       loadReports();
     } catch (err: any) {
@@ -139,6 +156,8 @@ export default function PreviewsPage() {
       setDeleting(reportId);
       if (reportType === "asset") {
         await deleteAssetReport(reportId);
+      } else if (reportType === "lotListing") {
+        await deleteLotListing(reportId);
       } else {
         await RealEstateService.deleteReport(reportId);
       }
@@ -262,14 +281,21 @@ export default function PreviewsPage() {
           <div className="space-y-4">
             {reports.map((report) => {
               const isRealEstate = report.reportType === "realEstate";
+              const isLotListing = report.reportType === "lotListing";
               const title = isRealEstate
                 ? (report as any).property_details?.address ||
                   (report as any).preview_data?.property_details?.address ||
                   "Real Estate Report"
+                : isLotListing
+                ? (report as any).details?.contract_no ||
+                  (report as any).preview_data?.contract_no ||
+                  "Lot Listing"
                 : (report as any).client_name || "Asset Report";
-              const typeLabel = isRealEstate ? "Real Estate" : "Asset";
+              const typeLabel = isRealEstate ? "Real Estate" : isLotListing ? "Lot Listing" : "Asset";
               const typeIcon = isRealEstate ? (
                 <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+              ) : isLotListing ? (
+                <ListOrdered className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
               ) : (
                 <Package className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               );
@@ -280,6 +306,8 @@ export default function PreviewsPage() {
                   className={`bg-white rounded-xl sm:rounded-2xl border transition-all shadow-sm hover:shadow-md overflow-hidden ${
                     isRealEstate
                       ? "border-emerald-200 hover:border-emerald-400"
+                      : isLotListing
+                      ? "border-purple-200 hover:border-purple-400"
                       : "border-gray-200 hover:border-blue-300"
                   }`}
                 >
@@ -474,6 +502,8 @@ export default function PreviewsPage() {
                               className={`flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg sm:rounded-xl font-semibold shadow-lg transition-all hover:scale-105 text-sm sm:text-base flex-1 lg:flex-none ${
                                 isRealEstate
                                   ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/30"
+                                  : isLotListing
+                                  ? "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-purple-500/30"
                                   : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/30"
                               }`}
                             >
@@ -505,7 +535,7 @@ export default function PreviewsPage() {
                                 <span className="sm:hidden">Edit</span>
                               </button>
                               <button
-                                onClick={() => handleQuickResubmit(report._id)}
+                                onClick={() => handleQuickResubmit(report._id, report.reportType)}
                                 disabled={resubmitting === report._id}
                                 className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-white border-2 border-indigo-300 text-indigo-700 rounded-lg sm:rounded-xl hover:bg-indigo-50 font-medium transition-all disabled:opacity-50 text-sm flex-1 lg:flex-none"
                               >

@@ -18,6 +18,7 @@ import {
   TrendingUp,
   PieChart,
   BarChart3,
+  ListOrdered,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -58,17 +59,19 @@ export default function DashboardPage() {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerType, setDrawerType] = useState<
-    "real-estate" | "salvage" | "asset" | null
+    "real-estate" | "salvage" | "asset" | "lot-listing" | null
   >(null);
   const titles: Record<NonNullable<typeof drawerType>, string> = {
     "real-estate": "Real Estate",
     salvage: "Salvage",
     asset: "Asset",
+    "lot-listing": "Lot Listing",
   };
   const placeholders: Record<NonNullable<typeof drawerType>, string> = {
     "real-estate": "Enter property address",
     salvage: "Enter VIN or ID",
     asset: "Enter asset name",
+    "lot-listing": "Enter contract number",
   };
 
   const [stats, setStats] = useState<ReportStats | null>(null);
@@ -349,6 +352,25 @@ export default function DashboardPage() {
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 via-rose-500 to-rose-600 text-white ring-2 ring-white/30 shadow-lg shadow-rose-500/50 transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl group-hover:shadow-rose-500/60">
                 <Package className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
+              </div>
+            </button>
+
+            {/* Lot Listing (purple - for auction listings) */}
+            <button
+              type="button"
+              onClick={() => {
+                setDrawerType("lot-listing");
+                setDrawerOpen(true);
+              }}
+              aria-label="Create Lot Listing"
+              className="group flex items-center justify-between rounded-2xl border border-purple-800 bg-gradient-to-b from-purple-500 to-purple-700 px-4 py-3 text-left shadow-md ring-1 ring-black/5 transition cursor-pointer active:translate-y-[1px]"
+            >
+              <div>
+                <p className="text-xl font-bold text-white">Lot Listing</p>
+                <p className="text-xs text-white/90">Create auction lot list</p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 text-white ring-2 ring-white/30 shadow-lg shadow-purple-500/50 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-xl group-hover:shadow-purple-500/60">
+                <ListOrdered className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
               </div>
             </button>
           </div>
@@ -671,6 +693,19 @@ export default function DashboardPage() {
                 onSuccess={() => setDrawerOpen(false)}
                 onCancel={() => setDrawerOpen(false)}
               />
+            ) : drawerType === "lot-listing" ? (
+              <div className="p-6 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-100 text-purple-600 mx-auto mb-4">
+                  <ListOrdered className="h-8 w-8" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Lot Listing</h3>
+                <p className="text-gray-600 mb-4">
+                  Create lot listings using the mobile app for the best experience with image capture and lot management.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Your lot listings will appear in the Previews and Reports pages once created.
+                </p>
+              </div>
             ) : null}
           </BottomDrawer>
         </div>

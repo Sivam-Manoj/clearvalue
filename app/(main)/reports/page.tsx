@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Download, Trash2 } from "lucide-react";
+import { FileText, Download, Trash2, ListOrdered } from "lucide-react";
 import { ReportsService, type PdfReport } from "@/services/reports";
 import { getAssetReports, type AssetReport } from "@/services/assets";
+import { getLotListings, type LotListing } from "@/services/lotListing";
 import { RealEstateService, type RealEstateReport } from "@/services/realEstate";
 import { toast } from "react-toastify";
 import StatusBadge from "@/components/reports/StatusBadge";
@@ -29,6 +30,10 @@ export default function ReportsPage() {
   // Real Estate reports state (approved and pending approval)
   const [realEstateReports, setRealEstateReports] = useState<RealEstateReport[]>([]);
   const [realEstateReportsLoading, setRealEstateReportsLoading] = useState(true);
+
+  // Lot Listing reports state (approved and pending approval)
+  const [lotListingReports, setLotListingReports] = useState<LotListing[]>([]);
+  const [lotListingReportsLoading, setLotListingReportsLoading] = useState(true);
 
   // Load asset reports (approved and pending)
   useEffect(() => {
@@ -83,11 +88,38 @@ export default function ReportsPage() {
     };
   }, []);
 
+  // Load lot listing reports (approved and pending)
+  useEffect(() => {
+    let cancelled = false;
+    setLotListingReportsLoading(true);
+    getLotListings()
+      .then((response) => {
+        if (!cancelled) {
+          const visibleReports = response.data.filter(
+            (report) =>
+              report.status === "approved" ||
+              report.status === "pending_approval"
+          );
+          setLotListingReports(visibleReports);
+        }
+      })
+      .catch((err: any) => {
+        console.error("Failed to load lot listing reports:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setLotListingReportsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     const handler = () => {
       setLoading(true);
       setAssetReportsLoading(true);
       setRealEstateReportsLoading(true);
+      setLotListingReportsLoading(true);
       Promise.allSettled([
         ReportsService.getMyReports().then((data) => setReports(data)),
         getAssetReports().then((response) => {
@@ -102,10 +134,17 @@ export default function ReportsPage() {
           );
           setRealEstateReports(visible);
         }),
+        getLotListings().then((response) => {
+          const visible = response.data.filter(
+            (report) => report.status === "approved" || report.status === "pending_approval"
+          );
+          setLotListingReports(visible);
+        }),
       ]).finally(() => {
         setLoading(false);
         setAssetReportsLoading(false);
         setRealEstateReportsLoading(false);
+        setLotListingReportsLoading(false);
       });
     };
     if (typeof window !== "undefined") {
@@ -380,8 +419,98 @@ export default function ReportsPage() {
       map.set(key, merged);
     }
 
+    // Add/merge lot listing reports to the list
+    for (const ll of lotListingReports) {
+      const status = ll.status as string;
+      const statusText =
+        ll.status === "pending_approval"
+          ? "Pending Approval"
+          : status === "approved"
+          ? "Approved"
+          : "";
+      const key = ll._id;
+      const existing = map.get(key);
+
+      // Compute total value from lots
+      const currency = String(
+        (ll as any)?.details?.currency || (ll as any)?.preview_data?.currency || "CAD"
+      ).toUpperCase();
+      const lots: any[] = Array.isArray((ll as any)?.preview_data?.lots)
+        ? ((ll as any).preview_data.lots as any[])
+        : Array.isArray((ll as any)?.lots)
+        ? ((ll as any).lots as any[])
+        : [];
+      const sumFromLots = (lots || []).reduce((acc: number, lot: any) => {
+        const raw = typeof lot?.estimated_value === "string" ? lot.estimated_value : "";
+        const num = parseFloat(String(raw).replace(/[^0-9.-]+/g, ""));
+        return acc + (Number.isFinite(num) ? num : 0);
+      }, 0);
+      const fmvStr = sumFromLots > 0
+        ? new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(sumFromLots)
+        : `${currency} 0.00`;
+
+      const addressBase = (ll as any).details?.contract_no || 
+        (ll as any).preview_data?.contract_no || 
+        "Lot Listing";
+      
+      // Extract preview_files URLs and create pseudo-reports for download functionality
+      const previewFiles = (ll as any).preview_files || {};
+      const createPseudoReport = (url: string, fileType: string): PdfReport => ({
+        _id: `${ll._id}-${fileType}`,
+        filename: `${addressBase}.${fileType}`,
+        fileType,
+        url,
+        address: addressBase,
+        fairMarketValue: fmvStr,
+        createdAt: ll.createdAt,
+        approvalStatus: (ll as any).status === "approved" ? "approved" : "pending",
+      } as PdfReport);
+      
+      const variants: ReportGroup["variants"] = {};
+      if (previewFiles.excel) variants.xlsx = createPseudoReport(previewFiles.excel, "xlsx");
+      if (previewFiles.images) variants.images = createPseudoReport(previewFiles.images, "zip");
+      
+      let merged: ReportGroup;
+      if (existing) {
+        merged = {
+          ...existing,
+          address: `${addressBase} ${statusText ? `(${statusText})` : ""}`,
+          filename: existing.filename || `${addressBase}.xlsx`,
+          contract_no:
+            existing.contract_no ||
+            (ll as any).details?.contract_no ||
+            (ll as any).preview_data?.contract_no,
+          approvalStatus:
+            (ll as any).status === "approved"
+              ? "approved"
+              : existing.approvalStatus || "pending",
+          type: existing.type || "LotListing",
+          fairMarketValue: existing.fairMarketValue || fmvStr || currency,
+          variants: {
+            ...existing.variants,
+            ...variants,
+          },
+        };
+      } else {
+        merged = {
+          key,
+          address: `${addressBase} ${statusText ? `(${statusText})` : ""}`,
+          filename: `${addressBase}.xlsx`,
+          fairMarketValue: fmvStr || currency,
+          createdAt: ll.createdAt,
+          contract_no:
+            (ll as any).details?.contract_no || (ll as any).preview_data?.contract_no,
+          approvalStatus:
+            (ll as any).status === "approved" ? "approved" : "pending",
+          type: "LotListing",
+          variants,
+        };
+      }
+      map.set(key, merged);
+    }
+
     return Array.from(map.values());
-  }, [reports, assetReports, realEstateReports]);
+  }, [reports, assetReports, realEstateReports, lotListingReports]);
 
   const filteredGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -453,11 +582,12 @@ export default function ReportsPage() {
       const t = (r as any)?.type;
       if (t) s.add(String(t));
     }
-    // Add types from asset and real estate reports
+    // Add types from asset, real estate, and lot listing reports
     if (assetReports.length > 0) s.add("Asset");
     if (realEstateReports.length > 0) s.add("RealEstate");
+    if (lotListingReports.length > 0) s.add("LotListing");
     return Array.from(s);
-  }, [reports, assetReports, realEstateReports]);
+  }, [reports, assetReports, realEstateReports, lotListingReports]);
 
   // Accent helpers for per-type theming (keeps classes explicit for Tailwind JIT)
   type Accent = {
@@ -492,6 +622,17 @@ export default function ReportsPage() {
         pillText: "text-amber-700",
         pillRing: "ring-amber-200",
         rowHover: "hover:bg-amber-50/40",
+      };
+    }
+    if (type.includes("lotlisting") || type.includes("lot")) {
+      return {
+        iconBg: "bg-purple-50",
+        iconText: "text-purple-600",
+        iconRing: "ring-purple-100",
+        pillBg: "bg-purple-50",
+        pillText: "text-purple-700",
+        pillRing: "ring-purple-200",
+        rowHover: "hover:bg-purple-50/40",
       };
     }
     if (type.includes("asset") || type.includes("catalog")) {

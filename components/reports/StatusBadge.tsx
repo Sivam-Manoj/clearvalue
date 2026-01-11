@@ -1,6 +1,6 @@
 import React from "react";
 
-export type ReportStatus = 'draft' | 'preview' | 'pending_approval' | 'approved' | 'declined';
+export type ReportStatus = 'draft' | 'processing' | 'preview' | 'pending_approval' | 'approved' | 'declined';
 
 interface StatusBadgeProps {
   status: ReportStatus;
@@ -14,6 +14,13 @@ const statusConfig = {
     textColor: "text-gray-700",
     borderColor: "border-gray-300",
     icon: "📝",
+  },
+  processing: {
+    label: "Processing",
+    bgColor: "bg-slate-50",
+    textColor: "text-slate-700",
+    borderColor: "border-slate-300",
+    icon: "⚙️",
   },
   preview: {
     label: "Ready for Review",
