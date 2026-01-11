@@ -54,6 +54,15 @@ const AssetForm = dynamic(() => import("@/components/forms/AssetForm"), {
   ),
 });
 
+const LotListingForm = dynamic(() => import("@/components/forms/LotListingForm"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-8 min-h-[220px]">
+      <Loading message="Loading form..." height={140} width={140} />
+    </div>
+  ),
+});
+
 export default function DashboardPage() {
   const { user } = useAuthContext();
   const router = useRouter();
@@ -292,8 +301,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Quick actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Quick actions - 4 buttons in same line on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Real Estate (green - matching mobile) */}
             <button
               type="button"
@@ -694,18 +703,10 @@ export default function DashboardPage() {
                 onCancel={() => setDrawerOpen(false)}
               />
             ) : drawerType === "lot-listing" ? (
-              <div className="p-6 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-100 text-purple-600 mx-auto mb-4">
-                  <ListOrdered className="h-8 w-8" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Lot Listing</h3>
-                <p className="text-gray-600 mb-4">
-                  Create lot listings using the mobile app for the best experience with image capture and lot management.
-                </p>
-                <p className="text-sm text-gray-500">
-                  Your lot listings will appear in the Previews and Reports pages once created.
-                </p>
-              </div>
+              <LotListingForm
+                onSuccess={() => setDrawerOpen(false)}
+                onCancel={() => setDrawerOpen(false)}
+              />
             ) : null}
           </BottomDrawer>
         </div>

@@ -28,6 +28,7 @@ import { toast } from "react-toastify";
 import StatusBadge from "@/components/reports/StatusBadge";
 import PreviewModal from "@/components/reports/PreviewModal";
 import RealEstatePreviewModal from "@/components/reports/RealEstatePreviewModal";
+import LotListingPreviewModal from "@/components/reports/LotListingPreviewModal";
 
 type CombinedReport =
   | (AssetReport & { reportType: "asset" })
@@ -45,6 +46,7 @@ export default function PreviewsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [realEstateModalOpen, setRealEstateModalOpen] = useState(false);
+  const [lotListingModalOpen, setLotListingModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [isResubmitMode, setIsResubmitMode] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -117,6 +119,8 @@ export default function PreviewsPage() {
     setIsResubmitMode(resubmitMode);
     if (report.reportType === "realEstate") {
       setRealEstateModalOpen(true);
+    } else if (report.reportType === "lotListing") {
+      setLotListingModalOpen(true);
     } else {
       setPreviewModalOpen(true);
     }
@@ -125,6 +129,7 @@ export default function PreviewsPage() {
   const handleModalClose = () => {
     setPreviewModalOpen(false);
     setRealEstateModalOpen(false);
+    setLotListingModalOpen(false);
     setSelectedReportId(null);
     setIsResubmitMode(false);
   };
@@ -650,6 +655,17 @@ export default function PreviewsPage() {
           isOpen={realEstateModalOpen}
           onClose={handleModalClose}
           onSuccess={handleSuccess}
+        />
+      )}
+
+      {/* Lot Listing Preview Modal */}
+      {selectedReportId && lotListingModalOpen && (
+        <LotListingPreviewModal
+          reportId={selectedReportId}
+          isOpen={lotListingModalOpen}
+          onClose={handleModalClose}
+          onSuccess={handleSuccess}
+          isResubmitMode={isResubmitMode}
         />
       )}
     </div>
