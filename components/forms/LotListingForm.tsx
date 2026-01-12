@@ -247,7 +247,7 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = setInterval(async () => {
           try {
-            const res = await API.get(`/lot-listings/progress/${jobIdRef.current}`);
+            const res = await API.get(`/lot-listing/progress/${jobIdRef.current}`);
             const rec = res.data;
             const clientW = PROG_WEIGHTS.client_upload;
             const server01 = Math.max(0, Math.min(1, rec?.serverProgress01 ?? 0));
@@ -266,7 +266,7 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
         }, 800);
       };
 
-      const res = await API.post("/lot-listings", formData, {
+      const res = await API.post("/lot-listing", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent: any) => {
           const pct = progressEvent.total

@@ -71,25 +71,25 @@ export interface LotListingProgress {
 
 // Get all lot listings for current user
 export async function getLotListings(): Promise<{ data: LotListing[] }> {
-  const response = await API.get<LotListing[]>("/lot-listings");
+  const response = await API.get<LotListing[]>("/lot-listing");
   return { data: response.data };
 }
 
 // Get lot listing by ID
 export async function getLotListingById(id: string): Promise<LotListing> {
-  const response = await API.get<LotListing>(`/lot-listings/${id}`);
+  const response = await API.get<LotListing>(`/lot-listing/${id}`);
   return response.data;
 }
 
 // Get lot listing progress
 export async function getLotListingProgress(id: string): Promise<LotListingProgress> {
-  const response = await API.get<LotListingProgress>(`/lot-listings/progress/${id}`);
+  const response = await API.get<LotListingProgress>(`/lot-listing/progress/${id}`);
   return response.data;
 }
 
 // Get lot listing preview
 export async function getLotListingPreview(id: string): Promise<LotListing> {
-  const response = await API.get<LotListing>(`/lot-listings/${id}/preview`);
+  const response = await API.get<LotListing>(`/lot-listing/${id}/preview`);
   return response.data;
 }
 
@@ -98,30 +98,30 @@ export async function updateLotListingPreview(
   id: string,
   data: { lots?: LotListingLot[]; details?: LotListing["details"] }
 ): Promise<LotListing> {
-  const response = await API.put<LotListing>(`/lot-listings/${id}/preview`, data);
+  const response = await API.put<LotListing>(`/lot-listing/${id}/preview`, data);
   return response.data;
 }
 
 // Submit lot listing for approval
 export async function submitLotListingForApproval(id: string): Promise<LotListing> {
-  const response = await API.post<LotListing>(`/lot-listings/${id}/submit-approval`);
+  const response = await API.post<LotListing>(`/lot-listing/${id}/submit-approval`);
   return response.data;
 }
 
 // Resubmit lot listing (regenerate files)
 export async function resubmitLotListing(id: string): Promise<LotListing> {
-  const response = await API.post<LotListing>(`/lot-listings/${id}/resubmit`);
+  const response = await API.post<LotListing>(`/lot-listing/${id}/resubmit`);
   return response.data;
 }
 
 // Delete lot listing
 export async function deleteLotListing(id: string): Promise<void> {
-  await API.delete(`/lot-listings/${id}`);
+  await API.delete(`/lot-listing/${id}`);
 }
 
 // Get submitted lot listings (pending_approval and approved)
 export async function getSubmittedLotListings(): Promise<{ data: LotListing[] }> {
-  const response = await API.get<LotListing[]>("/lot-listings");
+  const response = await API.get<LotListing[]>("/lot-listing");
   const submitted = response.data.filter(
     (r) => r.status === "pending_approval" || r.status === "approved"
   );
