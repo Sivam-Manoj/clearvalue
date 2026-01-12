@@ -71,8 +71,10 @@ export interface LotListingProgress {
 
 // Get all lot listings for current user
 export async function getLotListings(): Promise<{ data: LotListing[] }> {
-  const response = await API.get<LotListing[]>("/lot-listing");
-  return { data: response.data };
+  const response = await API.get<{ data: LotListing[]; message?: string }>("/lot-listing");
+  // Server returns { message, data }, so extract the data array
+  const listings = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+  return { data: listings };
 }
 
 // Get lot listing by ID
@@ -121,8 +123,10 @@ export async function deleteLotListing(id: string): Promise<void> {
 
 // Get submitted lot listings (pending_approval and approved)
 export async function getSubmittedLotListings(): Promise<{ data: LotListing[] }> {
-  const response = await API.get<LotListing[]>("/lot-listing");
-  const submitted = response.data.filter(
+  const response = await API.get<{ data: LotListing[]; message?: string }>("/lot-listing");
+  // Server returns { message, data }, so extract the data array
+  const listings = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+  const submitted = listings.filter(
     (r) => r.status === "pending_approval" || r.status === "approved"
   );
   return { data: submitted };
