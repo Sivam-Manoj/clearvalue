@@ -975,6 +975,8 @@ export default function ReportsPage() {
                                         ? "Real Estate"
                                         : t === "salvage"
                                         ? "Salvage"
+                                        : t === "lotlisting"
+                                        ? "Lot Listing"
                                         : "Asset";
                                     return g.contract_no
                                       ? `${base} - ${g.contract_no}`
@@ -984,14 +986,8 @@ export default function ReportsPage() {
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 {/* PDF button hidden - not needed anymore */}
-                                {/* <button
-                                  onClick={() => g.variants.pdf && handleDownload(g.variants.pdf._id)}
-                                  disabled={!g.variants.pdf || downloadingId === g.variants.pdf?._id || (!!g.variants.pdf?.approvalStatus && g.variants.pdf?.approvalStatus !== 'approved')}
-                                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white shadow hover:bg-blue-500 disabled:opacity-60 cursor-pointer"
-                                  title="Download PDF"
-                                >
-                                  PDF
-                                </button> */}
+                                {/* DOCX button - hidden for lot listings */}
+                                {String((g as any).type || "").toLowerCase() !== "lotlisting" && (
                                 <button
                                   onClick={() =>
                                     g.variants.docx &&
@@ -1009,6 +1005,7 @@ export default function ReportsPage() {
                                 >
                                   DOCX
                                 </button>
+                                )}
                                 <button
                                   onClick={() =>
                                     g.variants.xlsx &&
@@ -1132,6 +1129,8 @@ export default function ReportsPage() {
                                                 ? "Real Estate"
                                                 : t === "salvage"
                                                 ? "Salvage"
+                                                : t === "lotlisting"
+                                                ? "Lot Listing"
                                                 : "Asset";
                                             return g.contract_no
                                               ? `${base} - ${g.contract_no}`
@@ -1191,6 +1190,8 @@ export default function ReportsPage() {
                                     >
                                       PDF
                                     </button> */}
+                                      {/* DOCX button - hidden for lot listings */}
+                                      {String((g as any).type || "").toLowerCase() !== "lotlisting" && (
                                       <button
                                         onClick={() =>
                                           g.variants.docx &&
@@ -1209,6 +1210,7 @@ export default function ReportsPage() {
                                       >
                                         DOCX
                                       </button>
+                                      )}
                                       <button
                                         onClick={() =>
                                           g.variants.xlsx &&
