@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "react-toastify";
-import { Check } from "lucide-react";
+import { Check, RotateCcw } from "lucide-react";
 import API from "@/lib/api";
 
 const MixedSection = dynamic(() => import("./mixed/MixedSection"), {
@@ -25,6 +25,20 @@ type Props = {
 };
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+
+// Auto-save draft storage keys
+const DRAFT_KEY = "cv_lotlisting_draft";
+const DRAFT_IMAGES_KEY = "cv_lotlisting_draft_images";
+
+// Type for localStorage image data (base64)
+type LocalDraftImage = {
+  lotId: string;
+  type: "main" | "extra";
+  index: number;
+  dataUrl: string;
+  name: string;
+  mimeType: string;
+};
 
 export default function LotListingForm({ onSuccess, onCancel }: Props) {
   const [mixedLots, setMixedLots] = useState<MixedLot[]>([]);
@@ -70,6 +84,208 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
     uploadedBytes: number;
     startTime: number;
   } | null>(null);
+
+  // Draft auto-save state
+  const [hasDraft, setHasDraft] = useState(false);
+  const autoSaveTimeoutRef = useRef<any>(null);
+
+  // Convert File to base64 data URL for localStorage
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Convert base64 data URL back to File
+  const dataUrlToFile = async (dataUrl: string, name: string, mimeType: string): Promise<File> => {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], name, { type: mimeType || blob.type });
+  };
+
+  // Auto-save draft to localStorage
+  const autoSaveDraft = useCallback(async () => {
+    if (submitting || mixedLots.length === 0) return;
+
+    try {
+      // Save form data
+      const formData = {
+        contractNo,
+        salesDate,
+        location,
+        language,
+        currency,
+        lots: mixedLots.map((lot) => ({
+          id: lot.id,
+          coverIndex: lot.coverIndex,
+          mode: lot.mode,
+          fileCount: lot.files.length,
+          extraFileCount: lot.extraFiles.length,
+        })),
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+
+      // Convert images to base64 for localStorage
+      const localImages: LocalDraftImage[] = [];
+      for (const lot of mixedLots) {
+        for (let i = 0; i < lot.files.length; i++) {
+          const file = lot.files[i];
+          try {
+            const dataUrl = await fileToDataUrl(file);
+            localImages.push({
+              lotId: lot.id,
+              type: "main",
+              index: i,
+              dataUrl,
+              name: file.name,
+              mimeType: file.type,
+            });
+          } catch (e) {
+            console.warn("Failed to convert file to base64:", file.name);
+          }
+        }
+        for (let i = 0; i < lot.extraFiles.length; i++) {
+          const file = lot.extraFiles[i];
+          try {
+            const dataUrl = await fileToDataUrl(file);
+            localImages.push({
+              lotId: lot.id,
+              type: "extra",
+              index: i,
+              dataUrl,
+              name: file.name,
+              mimeType: file.type,
+            });
+          } catch (e) {
+            console.warn("Failed to convert extra file to base64:", file.name);
+          }
+        }
+      }
+      localStorage.setItem(DRAFT_IMAGES_KEY, JSON.stringify(localImages));
+      setHasDraft(true);
+      console.log(`[LotListing Draft] Saved ${localImages.length} images`);
+    } catch (e) {
+      console.warn("[LotListing Draft] Save failed:", e);
+    }
+  }, [submitting, mixedLots, contractNo, salesDate, location, language, currency]);
+
+  // Restore draft from localStorage
+  const restoreDraft = useCallback(async () => {
+    try {
+      const savedData = localStorage.getItem(DRAFT_KEY);
+      const savedImages = localStorage.getItem(DRAFT_IMAGES_KEY);
+
+      if (!savedData || !savedImages) return false;
+
+      const formData = JSON.parse(savedData);
+      const images: LocalDraftImage[] = JSON.parse(savedImages);
+
+      if (images.length === 0) return false;
+
+      // Restore form fields
+      if (formData.contractNo) setContractNo(formData.contractNo);
+      if (formData.salesDate) setSalesDate(formData.salesDate);
+      if (formData.location) setLocation(formData.location);
+      if (formData.language) setLanguage(formData.language);
+      if (formData.currency) setCurrency(formData.currency);
+
+      // Reconstruct lots with files
+      const restoredLots: MixedLot[] = [];
+      for (const lotData of formData.lots || []) {
+        const mainFiles: File[] = [];
+        const extraFiles: File[] = [];
+
+        // Restore main files
+        const mainImages = images.filter((img) => img.lotId === lotData.id && img.type === "main");
+        for (const img of mainImages.sort((a, b) => a.index - b.index)) {
+          try {
+            const file = await dataUrlToFile(img.dataUrl, img.name, img.mimeType);
+            mainFiles.push(file);
+          } catch (e) {
+            console.warn("Failed to restore image:", img.name);
+          }
+        }
+
+        // Restore extra files
+        const extraImages = images.filter((img) => img.lotId === lotData.id && img.type === "extra");
+        for (const img of extraImages.sort((a, b) => a.index - b.index)) {
+          try {
+            const file = await dataUrlToFile(img.dataUrl, img.name, img.mimeType);
+            extraFiles.push(file);
+          } catch (e) {
+            console.warn("Failed to restore extra image:", img.name);
+          }
+        }
+
+        if (mainFiles.length > 0 || extraFiles.length > 0) {
+          restoredLots.push({
+            id: lotData.id,
+            files: mainFiles,
+            extraFiles,
+            coverIndex: lotData.coverIndex || 0,
+            mode: lotData.mode,
+          });
+        }
+      }
+
+      if (restoredLots.length > 0) {
+        setMixedLots(restoredLots);
+        setHasDraft(true);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error("[LotListing Draft] Restore failed:", e);
+      return false;
+    }
+  }, []);
+
+  // Clear draft from localStorage
+  const clearDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(DRAFT_IMAGES_KEY);
+      setHasDraft(false);
+      console.log("[LotListing Draft] Cleared");
+    } catch (e) {
+      console.warn("[LotListing Draft] Clear failed:", e);
+    }
+  }, []);
+
+  // Check for existing draft on mount
+  useEffect(() => {
+    const checkDraft = async () => {
+      try {
+        const localData = localStorage.getItem(DRAFT_KEY);
+        const localImages = localStorage.getItem(DRAFT_IMAGES_KEY);
+        if (localData && localImages) {
+          const images = JSON.parse(localImages);
+          if (images.length > 0) {
+            setHasDraft(true);
+          }
+        }
+      } catch (e) {
+        console.warn("[LotListing Draft] Check failed:", e);
+      }
+    };
+    checkDraft();
+  }, []);
+
+  // Auto-save when lots or form data changes (debounced)
+  useEffect(() => {
+    if (mixedLots.length === 0) return;
+    if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      autoSaveDraft();
+    }, 2000);
+    return () => {
+      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+    };
+  }, [mixedLots, contractNo, salesDate, location, language, currency, autoSaveDraft]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -166,8 +382,22 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
     }
+    clearDraft();
     toast.info("Form cleared.");
   }
+
+  // Handle restore draft button click
+  const handleRestoreDraft = async () => {
+    const restored = await restoreDraft();
+    if (restored) {
+      const savedData = localStorage.getItem(DRAFT_KEY);
+      const savedImages = localStorage.getItem(DRAFT_IMAGES_KEY);
+      const imageCount = savedImages ? JSON.parse(savedImages).length : 0;
+      toast.success(`Draft restored: ${imageCount} images`);
+    } else {
+      toast.error("Failed to restore draft");
+    }
+  };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -412,6 +642,36 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
 
         {!submitting && (
           <>
+            {/* Restore Draft Banner */}
+            {hasDraft && mixedLots.length === 0 && (
+              <div className="mb-4 rounded-xl border border-purple-200 bg-purple-50/80 p-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <RotateCcw className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm text-purple-800">
+                      You have a saved draft with images
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleRestoreDraft}
+                      className="px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition shadow-sm"
+                    >
+                      Restore Draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearDraft}
+                      className="px-3 py-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 hover:bg-purple-100 rounded-lg transition"
+                    >
+                      Discard
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Listing Details */}
             <section className="space-y-3">
               <h3 className="text-sm font-medium text-gray-900">Listing Details</h3>
