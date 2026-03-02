@@ -127,7 +127,7 @@ export default function SettingsPage() {
         data: needsPassword ? { password: deletePassword } : undefined,
       });
       await logout();
-      router.replace("/login");
+      router.replace("/welcome");
     } catch (e: any) {
       setError(
         e?.response?.data?.message || e?.message || "Failed to delete account"
@@ -140,7 +140,7 @@ export default function SettingsPage() {
     try {
       setLoggingOut(true);
       await logout();
-      router.replace("/login");
+      router.replace("/welcome");
     } catch (e) {
       setLoggingOut(false);
     }

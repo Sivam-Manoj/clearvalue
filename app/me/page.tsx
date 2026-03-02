@@ -9,7 +9,7 @@ export default function Page() {
 
   const onLogout = async () => {
     await logout();
-    router.replace("/login");
+    router.replace("/welcome");
   };
 
   return (
