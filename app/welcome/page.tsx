@@ -101,14 +101,14 @@ const valuationMethods = [
 
 export default function WelcomePage() {
   return (
-    <div className="relative -mx-4 -my-6 sm:-mx-6 lg:-mx-8 overflow-hidden bg-gradient-to-b from-rose-50 via-red-50 to-white text-slate-900">
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-rose-50 via-red-50 to-white text-slate-900">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(244,63,94,0.18),transparent_28%),radial-gradient(circle_at_85%_15%,rgba(225,29,72,0.15),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(244,63,94,0.12),transparent_30%)]"
         aria-hidden
       />
 
       <div className="relative mx-auto flex w-full max-w-7xl flex-col px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-        <motion.div
+        <motion.header
           initial="hidden"
           animate="visible"
           variants={reveal}
@@ -117,17 +117,24 @@ export default function WelcomePage() {
         >
           <div className="inline-flex items-center gap-3 rounded-full border border-rose-200 bg-white/80 px-3 py-1.5 shadow-sm backdrop-blur">
             <Image src="/clearvalueIcon.png" alt="ClearValue" width={28} height={28} />
-            <span className="text-sm font-semibold text-rose-800">Welcome to ClearValue</span>
+            <span className="text-sm font-semibold text-rose-800">ClearValue Platform</span>
           </div>
 
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-rose-600 to-red-700 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition hover:from-rose-500 hover:to-red-600"
-          >
-            Go to Dashboard
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </motion.div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/login"
+              className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-800 transition hover:border-rose-300 hover:bg-rose-50"
+            >
+              Login
+            </Link>
+            <Link
+              href="/signup"
+              className="rounded-full bg-gradient-to-r from-rose-600 to-red-700 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition hover:from-rose-500 hover:to-red-600"
+            >
+              Start Free
+            </Link>
+          </div>
+        </motion.header>
 
         <section className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <motion.div
@@ -157,17 +164,17 @@ export default function WelcomePage() {
 
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/dashboard"
+                href="/signup"
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 px-5 py-3 text-sm font-bold text-white shadow-xl shadow-rose-500/30 transition hover:translate-y-[-1px]"
               >
-                Open Dashboard
+                Create Account
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/reports"
+                href="/login"
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
-                View Reports
+                Sign In
               </Link>
             </div>
 
@@ -374,28 +381,29 @@ export default function WelcomePage() {
           className="mt-16 rounded-3xl border border-rose-200 bg-white p-6 text-center shadow-[0_18px_65px_rgba(244,63,94,0.13)] sm:p-8"
         >
           <h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-            Ready to get started?
+            Ready to modernize your valuation workflow?
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
-            Head to your dashboard to create reports, manage CRM tasks, and keep your team on track.
+            Start with ClearValue and bring your reports, CRM operations, and team delivery into one
+            powerful platform.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/dashboard"
+              href="/signup"
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-rose-500/30"
             >
-              Open Dashboard
+              Create Your Account
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/reports"
+              href="/login"
               className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
             >
-              View Reports
+              Sign In
             </Link>
           </div>
         </motion.section>
       </div>
-    </div>
+    </main>
   );
 }

@@ -31,7 +31,7 @@ export default function LoginForm() {
     try {
       await login({ email, password });
       const next = search.get("next");
-      router.replace(next || "/");
+      router.replace(next || "/dashboard");
     } catch (err: any) {
       setError(err?.message || "Failed to login");
     } finally {
