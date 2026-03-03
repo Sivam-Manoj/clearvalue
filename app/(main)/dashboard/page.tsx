@@ -9,6 +9,10 @@ import {
 } from "@/services/reports";
 import { useAuthContext } from "@/context/AuthContext";
 import {
+  OutlookService,
+  type OutlookCalendarStatus,
+} from "@/services/outlook";
+import {
   FileBarChart2,
   Building2,
   Car,
@@ -19,6 +23,11 @@ import {
   PieChart,
   BarChart3,
   ListOrdered,
+  Calendar,
+  RefreshCw,
+  Loader2,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -94,6 +103,67 @@ export default function DashboardPage() {
   // Live date/time for header card
   const [now, setNow] = useState<Date>(new Date());
   const [mounted, setMounted] = useState(false);
+
+  // Outlook Calendar integration
+  const [outlookStatus, setOutlookStatus] = useState<OutlookCalendarStatus>({
+    connected: false,
+    configured: false,
+  });
+  const [outlookLoading, setOutlookLoading] = useState(true);
+  const [outlookBusy, setOutlookBusy] = useState(false);
+
+  // Fetch Outlook calendar status on mount
+  const fetchOutlookStatus = useCallback(async () => {
+    try {
+      setOutlookLoading(true);
+      const status = await OutlookService.getStatus();
+      setOutlookStatus(status);
+    } catch {
+      // silently ignore — user may not be a CRM agent
+    } finally {
+      setOutlookLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOutlookStatus();
+  }, [fetchOutlookStatus]);
+
+  const connectOutlook = async () => {
+    if (outlookBusy) return;
+    try {
+      setOutlookBusy(true);
+      const authUrl = await OutlookService.getAuthUrl();
+      if (!authUrl) return;
+      window.open(authUrl, "_blank", "noopener");
+    } catch (err: any) {
+      alert(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to start Outlook connection."
+      );
+    } finally {
+      setOutlookBusy(false);
+    }
+  };
+
+  const disconnectOutlook = async () => {
+    if (outlookBusy) return;
+    if (!confirm("Disconnect your Outlook calendar from this account?")) return;
+    try {
+      setOutlookBusy(true);
+      await OutlookService.disconnect();
+      await fetchOutlookStatus();
+    } catch (err: any) {
+      alert(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to disconnect Outlook calendar."
+      );
+    } finally {
+      setOutlookBusy(false);
+    }
+  };
 
   // Listen for load-saved-input event to open asset drawer
   useEffect(() => {
@@ -382,6 +452,76 @@ export default function DashboardPage() {
                 <ListOrdered className="h-7 w-7 drop-shadow-md" strokeWidth={2.5} />
               </div>
             </button>
+          </div>
+
+          {/* Outlook Calendar Integration */}
+          <div className="relative overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-br from-white via-sky-50/30 to-blue-50/50 p-5 sm:p-6 shadow-lg ring-1 ring-black/5 backdrop-blur">
+            <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-gradient-to-br from-sky-400/15 to-blue-500/15 blur-2xl" />
+            <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/30">
+                  <Calendar className="h-6 w-6" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Outlook Calendar</h3>
+                  {outlookLoading ? (
+                    <p className="text-xs text-gray-400">Checking connection...</p>
+                  ) : outlookStatus.connected ? (
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                      <p className="text-xs text-emerald-700 font-medium">
+                        Connected{outlookStatus.email ? ` — ${outlookStatus.email}` : ""}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <XCircle className="h-3.5 w-3.5 text-gray-400" />
+                      <p className="text-xs text-gray-500">Not connected</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fetchOutlookStatus()}
+                  disabled={outlookLoading || outlookBusy}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition-all hover:bg-gray-50 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${outlookLoading ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
+
+                {outlookStatus.connected ? (
+                  <button
+                    type="button"
+                    onClick={disconnectOutlook}
+                    disabled={outlookBusy || outlookLoading}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {outlookBusy ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : null}
+                    Disconnect
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={connectOutlook}
+                    disabled={outlookBusy || outlookLoading || !outlookStatus.configured}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-sky-300 bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-md shadow-sky-500/30 transition-all hover:shadow-lg hover:shadow-sky-500/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  >
+                    {outlookBusy ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Calendar className="h-3.5 w-3.5" />
+                    )}
+                    Connect Outlook
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Report stats with valuation breakdown - Professional Design */}
