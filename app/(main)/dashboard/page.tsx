@@ -85,6 +85,7 @@ export default function DashboardPage() {
     asset: "Asset",
     "lot-listing": "Lot Listing",
   };
+
   const placeholders: Record<NonNullable<typeof drawerType>, string> = {
     "real-estate": "Enter property address",
     salvage: "Enter VIN or ID",
@@ -111,15 +112,18 @@ export default function DashboardPage() {
   });
   const [outlookLoading, setOutlookLoading] = useState(true);
   const [outlookBusy, setOutlookBusy] = useState(false);
+  const [outlookPendingReturn, setOutlookPendingReturn] = useState(false);
 
   // Fetch Outlook calendar status on mount
   const fetchOutlookStatus = useCallback(async () => {
     try {
       setOutlookLoading(true);
       const status = await OutlookService.getStatus();
+      console.info("[Outlook][Web] Status loaded", status);
       setOutlookStatus(status);
-    } catch {
-      // silently ignore — user may not be a CRM agent
+    } catch (err) {
+      console.warn("[Outlook][Web] Failed to load status", err);
+      // silently ignore in UI — user may not be a CRM agent
     } finally {
       setOutlookLoading(false);
     }
@@ -135,8 +139,11 @@ export default function DashboardPage() {
       setOutlookBusy(true);
       const authUrl = await OutlookService.getAuthUrl();
       if (!authUrl) return;
+      console.info("[Outlook][Web] Opening OAuth URL", authUrl);
+      setOutlookPendingReturn(true);
       window.open(authUrl, "_blank", "noopener");
     } catch (err: any) {
+      console.warn("[Outlook][Web] Failed to start connect", err);
       alert(
         err?.response?.data?.message ||
           err?.message ||
@@ -147,14 +154,31 @@ export default function DashboardPage() {
     }
   };
 
+  useEffect(() => {
+    if (!outlookPendingReturn) return;
+
+    const onWindowFocus = () => {
+      console.info("[Outlook][Web] Focus returned, refreshing status");
+      void fetchOutlookStatus();
+      setOutlookPendingReturn(false);
+    };
+
+    window.addEventListener("focus", onWindowFocus);
+    return () => {
+      window.removeEventListener("focus", onWindowFocus);
+    };
+  }, [outlookPendingReturn, fetchOutlookStatus]);
+
   const disconnectOutlook = async () => {
     if (outlookBusy) return;
     if (!confirm("Disconnect your Outlook calendar from this account?")) return;
     try {
       setOutlookBusy(true);
       await OutlookService.disconnect();
+      console.info("[Outlook][Web] Disconnect requested");
       await fetchOutlookStatus();
     } catch (err: any) {
+      console.warn("[Outlook][Web] Disconnect failed", err);
       alert(
         err?.response?.data?.message ||
           err?.message ||
