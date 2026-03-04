@@ -116,8 +116,8 @@ export default function WelcomePage() {
           className="mb-8 flex items-center justify-between"
         >
           <div className="inline-flex items-center gap-3 rounded-full border border-rose-200 bg-white/80 px-3 py-1.5 shadow-sm backdrop-blur">
-            <Image src="/clearvalueIcon.png" alt="ClearValue" width={28} height={28} />
-            <span className="text-sm font-semibold text-rose-800">ClearValue Platform</span>
+            <Image src="/clearvalueIcon.png" alt="Asset Insight" width={28} height={28} />
+            <span className="text-sm font-semibold text-rose-800">Asset Insight Platform</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -152,7 +152,7 @@ export default function WelcomePage() {
             <h1 className="text-4xl font-black leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
               Welcome to{" "}
               <span className="bg-gradient-to-r from-rose-600 to-red-500 bg-clip-text text-transparent">
-                ClearValue
+                Asset Insight
               </span>
             </h1>
 
@@ -351,7 +351,7 @@ export default function WelcomePage() {
           >
             <h3 className="text-2xl font-black">Connected experience across web + mobile</h3>
             <p className="mt-3 text-sm text-rose-100">
-              Keep your team aligned whether they are at the desk or on the road. ClearValue syncs
+              Keep your team aligned whether they are at the desk or on the road. Asset Insight syncs
               workflows, status changes, and follow-up actions across your operating tools.
             </p>
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -384,7 +384,7 @@ export default function WelcomePage() {
             Ready to modernize your valuation workflow?
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
-            Start with ClearValue and bring your reports, CRM operations, and team delivery into one
+            Start with Asset Insight and bring your reports, CRM operations, and team delivery into one
             powerful platform.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

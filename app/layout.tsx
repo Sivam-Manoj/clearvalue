@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "ClearValue | Real Estate Valuation & Appraisal Reports",
-    template: "%s | ClearValue",
+    default: "Asset Insight | Real Estate Valuation & Appraisal Reports",
+    template: "%s | Asset Insight",
   },
   description:
     "Generate professional real estate valuation and appraisal reports. Create, manage, and download property reports with fair market value insights.",
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
     "appraisal report",
     "property assessment",
     "real estate analytics",
-    "ClearValue",
+    "Asset Insight",
   ],
-  applicationName: "ClearValue",
+  applicationName: "Asset Insight",
   category: "Real Estate",
   robots: {
     index: true,
@@ -43,22 +43,22 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "ClearValue | Real Estate Valuation & Appraisal Reports",
+    title: "Asset Insight | Real Estate Valuation & Appraisal Reports",
     description:
       "Generate professional real estate valuation and appraisal reports. Create, manage, and download property reports with fair market value insights.",
     url: "/",
-    siteName: "ClearValue",
+    siteName: "Asset Insight",
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ClearValue | Real Estate Valuation & Appraisal Reports",
+    title: "Asset Insight | Real Estate Valuation & Appraisal Reports",
     description:
       "Generate professional real estate valuation and appraisal reports. Create, manage, and download property reports with fair market value insights.",
   },
   other: {
-    tags: "real estate valuation, property appraisal, home valuation, fair market value, FMV report, real estate report, appraisal report, property assessment, real estate analytics, ClearValue",
+    tags: "real estate valuation, property appraisal, home valuation, fair market value, FMV report, real estate report, appraisal report, property assessment, real estate analytics, Asset Insight",
   },
 };
 

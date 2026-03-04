@@ -389,7 +389,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <p className="mt-1 text-sm md:text-base text-gray-600">
-                  Overview of your ClearValue activity and insights.
+                  Overview of your Asset Insight activity and insights.
                 </p>
               </div>
             </div>

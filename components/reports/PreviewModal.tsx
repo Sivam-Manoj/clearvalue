@@ -431,7 +431,7 @@ export default function PreviewModal({
                       value={previewData?.appraisal_company || ""}
                       onChange={(e) => updateField("appraisal_company", e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                      placeholder="e.g., ClearValue Appraisals"
+                      placeholder="e.g., Asset Insight Appraisals"
                     />
                   </div>
                 </div>

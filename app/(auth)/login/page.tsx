@@ -25,7 +25,7 @@ export default function Page() {
           </span>
           <h1 className="mt-3 text-4xl sm:text-5xl font-extrabold tracking-tight">
             <span className="bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent drop-shadow-sm">
-              ClearValue
+              Asset Insight
             </span>
           </h1>
           <p className="mt-2 text-sm sm:text-base text-rose-800/70">

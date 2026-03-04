@@ -94,7 +94,7 @@ export default function Navbar() {
           />
 
           <span className="text-lg font-semibold tracking-tight text-rose-700">
-            ClearValue
+            Asset Insight
           </span>
         </div>
 
@@ -212,7 +212,7 @@ export default function Navbar() {
                 height={100}
               />
               <span className="text-sm font-semibold tracking-tight text-rose-700">
-                ClearValue
+                Asset Insight
               </span>
             </div>
             <button

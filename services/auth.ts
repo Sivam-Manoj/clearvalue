@@ -95,7 +95,15 @@ export const AuthService = {
   },
 
   async logout() {
-    clearTokens();
-    deleteCookie('cv_auth');
+    try {
+      const { getRefreshToken } = await import('@/lib/auth-storage');
+      const refreshToken = getRefreshToken();
+      if (refreshToken) {
+        await API.post('/auth/logout', { token: refreshToken }).catch(() => {});
+      }
+    } finally {
+      clearTokens();
+      deleteCookie('cv_auth');
+    }
   },
 };
