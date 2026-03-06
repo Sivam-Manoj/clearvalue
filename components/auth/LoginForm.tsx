@@ -14,7 +14,7 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@assetinsightvaluator.com";
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@assetinsightvaluation.com";
 
   // Safely read search params after mount to avoid hydration issues
   useEffect(() => {
