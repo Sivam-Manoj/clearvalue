@@ -87,7 +87,7 @@ export default function Navbar() {
         {/* Brand */}
         <div className="flex items-center gap-3">
           <Image
-            src="/assentInsightLogo.jpeg"
+            src="/icon.png"
             alt="Logo"
             width={100}
             height={100}
