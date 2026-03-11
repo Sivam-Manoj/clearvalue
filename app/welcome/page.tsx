@@ -115,9 +115,8 @@ export default function WelcomePage() {
           custom={0}
           className="mb-8 flex items-center justify-between"
         >
-          <div className="inline-flex items-center gap-3 rounded-full border border-rose-200 bg-white/80 px-3 py-1.5 shadow-sm backdrop-blur">
-            <Image src="/clearvalueIcon.png" alt="Asset Insight" width={28} height={28} />
-            <span className="text-sm font-semibold text-rose-800">Asset Insight Platform</span>
+          <div className="inline-flex items-center rounded-full border border-rose-200 bg-white/80 px-3 py-1.5 shadow-sm backdrop-blur">
+            <Image src="/icon.png" alt="Asset Insight" width={96} height={32} className="h-8 w-auto" />
           </div>
 
           <div className="flex items-center gap-2">

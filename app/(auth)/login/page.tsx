@@ -52,8 +52,8 @@ export default function Page() {
               <div className="relative">
                 <div className="mx-auto flex h-40 w-full items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-100 via-rose-50 to-white ring-1 ring-rose-100 shadow-inner sm:h-48">
                   <Image
-                    src="/clearvalueIcon.png"
-                    alt="Logo"
+                    src="/icon.png"
+                    alt="Asset Insight"
                     width={400}
                     height={400}
                   />

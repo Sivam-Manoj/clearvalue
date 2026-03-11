@@ -127,7 +127,7 @@ export default function VerifyEmailForm() {
         onClick={onResend}
         className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
       >
-        Resend Code
+        Didn&apos;t get a verification code? Resend verification code
       </button>
       <div className="text-sm">
         Already have an account?{" "}

@@ -85,17 +85,14 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-rose-100 bg-white shadow-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center">
           <Image
             src="/icon.png"
-            alt="Logo"
-            width={100}
-            height={100}
+            alt="Asset Insight"
+            width={132}
+            height={44}
+            className="h-10 w-auto"
           />
-
-          <span className="text-lg font-semibold tracking-tight text-rose-700">
-            Asset Insight
-          </span>
         </div>
 
         {/* Desktop nav */}
@@ -204,16 +201,14 @@ export default function Navbar() {
           aria-modal="true"
         >
           <div className="px-4 py-3 flex items-center justify-between border-b border-rose-100">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <Image
-                src="/clearvalueIcon.png"
-                alt="Logo"
-                width={100}
-                height={100}
+                src="/icon.png"
+                alt="Asset Insight"
+                width={120}
+                height={40}
+                className="h-9 w-auto"
               />
-              <span className="text-sm font-semibold tracking-tight text-rose-700">
-                Asset Insight
-              </span>
             </div>
             <button
               type="button"
