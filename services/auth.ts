@@ -31,6 +31,12 @@ export type ResetPasswordPayload = {
   password: string;
 };
 
+export type ResetPasswordCodePayload = {
+  email: string;
+  code: string;
+  password: string;
+};
+
 export type AuthUser = {
   _id: string;
   email: string;
@@ -78,7 +84,22 @@ export const AuthService = {
   },
 
   async forgotPassword(payload: ForgotPasswordPayload): Promise<{ message: string }> {
-    const { data } = await API.post<{ message: string }>('/auth/forgot-password', payload);
+    const { data } = await API.post<{ message: string }>('/auth/forgot-password', {
+      ...payload,
+      clientType: 'mobile',
+    });
+    return data;
+  },
+
+  async resetPasswordByCode(payload: ResetPasswordCodePayload): Promise<{ message: string; accessToken?: string; refreshToken?: string }> {
+    const { data } = await API.post<{ message: string; accessToken?: string; refreshToken?: string }>(
+      '/auth/reset-password-code',
+      payload,
+    );
+    if (data.accessToken && data.refreshToken) {
+      setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+      setCookie('cv_auth', '1', 7);
+    }
     return data;
   },
 
