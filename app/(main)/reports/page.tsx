@@ -301,6 +301,7 @@ export default function ReportsPage() {
       } as PdfReport);
       
       const variants: ReportGroup["variants"] = {};
+      if (previewFiles.pdf) variants.pdf = createPseudoReport(previewFiles.pdf, "pdf");
       if (previewFiles.docx) variants.docx = createPseudoReport(previewFiles.docx, "docx");
       if (previewFiles.excel) variants.xlsx = createPseudoReport(previewFiles.excel, "xlsx");
       if (previewFiles.images) variants.images = createPseudoReport(previewFiles.images, "zip");
@@ -382,6 +383,7 @@ export default function ReportsPage() {
       } as PdfReport);
       
       const variants: ReportGroup["variants"] = {};
+      if (previewFiles.pdf) variants.pdf = createPseudoReport(previewFiles.pdf, "pdf");
       if (previewFiles.docx) variants.docx = createPseudoReport(previewFiles.docx, "docx");
       if (previewFiles.excel) variants.xlsx = createPseudoReport(previewFiles.excel, "xlsx");
       if (previewFiles.images) variants.images = createPseudoReport(previewFiles.images, "zip");
@@ -985,7 +987,25 @@ export default function ReportsPage() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
-                                {/* PDF button hidden - not needed anymore */}
+                                {String((g as any).type || "").toLowerCase() !== "lotlisting" && (
+                                <button
+                                  onClick={() =>
+                                    g.variants.pdf &&
+                                    handleDownload(g.variants.pdf._id)
+                                  }
+                                  disabled={
+                                    !g.variants.pdf ||
+                                    downloadingId === g.variants.pdf?._id ||
+                                    (!!g.variants.pdf?.approvalStatus &&
+                                      g.variants.pdf?.approvalStatus !==
+                                        "approved")
+                                  }
+                                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white shadow hover:bg-blue-500 disabled:opacity-60 cursor-pointer"
+                                  title="Download PDF"
+                                >
+                                  PDF
+                                </button>
+                                )}
                                 {/* DOCX button - hidden for lot listings */}
                                 {String((g as any).type || "").toLowerCase() !== "lotlisting" && (
                                 <button
@@ -1181,15 +1201,19 @@ export default function ReportsPage() {
                                   </td>
                                   <td className="px-3 py-2">
                                     <div className="flex justify-end gap-2">
-                                      {/* PDF button hidden - not needed anymore */}
-                                      {/* <button
-                                      onClick={() => g.variants.pdf && handleDownload(g.variants.pdf._id)}
-                                      disabled={!g.variants.pdf || downloadingId === g.variants.pdf?._id || (!!g.variants.pdf?.approvalStatus && g.variants.pdf?.approvalStatus !== 'approved')}
-                                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
-                                      title="Download PDF"
-                                    >
-                                      PDF
-                                    </button> */}
+                                      {String((g as any).type || "").toLowerCase() !== "lotlisting" && (
+                                      <button
+                                        onClick={() =>
+                                          g.variants.pdf &&
+                                          handleDownload(g.variants.pdf._id)
+                                        }
+                                        disabled={!g.variants.pdf || downloadingId === g.variants.pdf?._id || (!!g.variants.pdf?.approvalStatus && g.variants.pdf?.approvalStatus !== 'approved')}
+                                        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-blue-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60 cursor-pointer"
+                                        title="Download PDF"
+                                      >
+                                        PDF
+                                      </button>
+                                      )}
                                       {/* DOCX button - hidden for lot listings */}
                                       {String((g as any).type || "").toLowerCase() !== "lotlisting" && (
                                       <button

@@ -9,6 +9,12 @@ export interface AssetReport {
   imageUrls: string[];
   status: ReportStatus;
   preview_data?: any;
+  preview_files?: {
+    pdf?: string;
+    docx?: string;
+    excel?: string;
+    images?: string;
+  };
   preview_submitted_at?: string;
   approval_requested_at?: string;
   approval_processed_at?: string;
@@ -118,8 +124,9 @@ export interface SubmittedPreviewDataResponse {
     status: ReportStatus;
     preview_data: any;
     preview_files?: {
+      pdf?: string;
       docx?: string;
-      xlsx?: string;
+      excel?: string;
       images?: string;
     };
     grouping_mode?: string;
