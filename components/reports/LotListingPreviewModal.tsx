@@ -5,6 +5,7 @@ import { Save, Send, AlertCircle, Image, ChevronLeft, ChevronRight, X, RefreshCw
 import { toast } from "react-toastify";
 import {
   getLotListingPreview,
+  getLotListingSubmittedPreview,
   updateLotListingPreview,
   submitLotListingForApproval,
   resubmitLotListing,
@@ -47,7 +48,9 @@ export default function LotListingPreviewModal({
   const loadPreviewData = async () => {
     try {
       setLoading(true);
-      const response = await getLotListingPreview(reportId);
+      const response = isResubmitMode
+        ? await getLotListingSubmittedPreview(reportId)
+        : await getLotListingPreview(reportId);
       const data = (response as any).data || response;
       setStatus(data.status);
       setDeclineReason(data.decline_reason || "");

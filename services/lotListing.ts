@@ -95,6 +95,11 @@ export async function getLotListingPreview(id: string): Promise<LotListing> {
   return response.data;
 }
 
+export async function getLotListingSubmittedPreview(id: string): Promise<LotListing> {
+  const response = await API.get<LotListing>(`/lot-listing/${id}/submitted-preview`);
+  return response.data;
+}
+
 // Update lot listing preview
 export async function updateLotListingPreview(
   id: string,
@@ -137,6 +142,7 @@ export const LotListingService = {
   getLotListingById,
   getLotListingProgress,
   getLotListingPreview,
+  getLotListingSubmittedPreview,
   updateLotListingPreview,
   submitLotListingForApproval,
   resubmitLotListing,

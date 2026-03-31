@@ -8,6 +8,8 @@ export interface AssetReport {
   grouping_mode: string;
   imageUrls: string[];
   status: ReportStatus;
+  files_generating?: boolean;
+  files_regenerating?: boolean;
   preview_data?: any;
   preview_files?: {
     pdf?: string;
@@ -31,6 +33,8 @@ export interface PreviewDataResponse {
   message: string;
   data: {
     status: ReportStatus;
+    files_generating?: boolean;
+    files_regenerating?: boolean;
     preview_data: any;
     grouping_mode?: string;
     image_count?: number;
@@ -122,6 +126,8 @@ export interface SubmittedPreviewDataResponse {
   message: string;
   data: {
     status: ReportStatus;
+    files_generating?: boolean;
+    files_regenerating?: boolean;
     preview_data: any;
     preview_files?: {
       pdf?: string;

@@ -34,6 +34,8 @@ export default function PreviewModal({
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [declineReason, setDeclineReason] = useState<string>("");
+  const [filesGenerating, setFilesGenerating] = useState(false);
+  const [filesRegenerating, setFilesRegenerating] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [groupingMode, setGroupingMode] = useState<string | undefined>(undefined);
@@ -52,11 +54,15 @@ export default function PreviewModal({
   const loadPreviewData = async () => {
     try {
       setLoading(true);
+      setFilesGenerating(false);
+      setFilesRegenerating(false);
       // Use different endpoint based on mode
       const response = isResubmitMode 
         ? await getSubmittedPreviewData(reportId)
         : await getPreviewData(reportId);
       setStatus(response.data.status);
+      setFilesGenerating(Boolean((response.data as any).files_generating));
+      setFilesRegenerating(Boolean((response.data as any).files_regenerating));
       setDeclineReason((response.data as any).decline_reason || "");
       setPreviewData(response.data.preview_data);
       setGroupingMode(response.data.grouping_mode);
@@ -71,6 +77,11 @@ export default function PreviewModal({
   };
 
   const handleSaveChanges = async () => {
+    if (filesGenerating || filesRegenerating) {
+      toast.info("This report has already been submitted and is still generating files.");
+      return;
+    }
+
     try {
       setSaving(true);
       await updatePreviewData(reportId, previewData);
@@ -86,6 +97,11 @@ export default function PreviewModal({
   const handleSubmitForApproval = async () => {
     if (!previewData) {
       toast.error("No preview data available");
+      return;
+    }
+
+    if (filesGenerating || filesRegenerating) {
+      toast.info("This report has already been submitted and is still generating files.");
       return;
     }
 
@@ -249,6 +265,8 @@ export default function PreviewModal({
     return { gid, subMode: inferredMode, items };
   });
 
+  const workflowLocked = filesGenerating || filesRegenerating;
+
   return (
     <BottomDrawer open={isOpen} onClose={onClose} title="Preview & Edit Report">
       {status === "declined" && declineReason && (
@@ -257,6 +275,22 @@ export default function PreviewModal({
           <div>
             <p className="font-semibold text-red-900">Report Declined</p>
             <p className="text-sm text-red-700 mt-1">{declineReason}</p>
+          </div>
+        </div>
+      )}
+
+      {workflowLocked && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-blue-900">
+              {filesRegenerating ? "Files are being regenerated" : "Already submitted for approval"}
+            </p>
+            <p className="text-sm text-blue-700 mt-1">
+              {filesRegenerating
+                ? "This report is already in the submitted queue while the new files are being regenerated."
+                : "Your preview has already been submitted. It will appear in Submitted Previews while DOCX, Excel, and Images files are generated."}
+            </p>
           </div>
         </div>
       )}
@@ -1048,7 +1082,7 @@ export default function PreviewModal({
               )}
               <button
                 onClick={handleSaveChanges}
-                disabled={!hasChanges || saving}
+                disabled={!hasChanges || saving || workflowLocked}
                 aria-label="Save changes"
                 className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all shadow-md hover:shadow-lg text-sm sm:text-base"
               >
@@ -1058,7 +1092,7 @@ export default function PreviewModal({
               </button>
               <button
                 onClick={handleSubmitForApproval}
-                disabled={(!isResubmitMode && hasChanges) || submitting || loading}
+                disabled={(!isResubmitMode && hasChanges) || submitting || loading || workflowLocked}
                 aria-label={isResubmitMode ? "Resubmit report" : "Submit for approval"}
                 className={`flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg transition-all hover:shadow-xl text-sm sm:text-base ${
                   isResubmitMode 
@@ -1070,11 +1104,15 @@ export default function PreviewModal({
                 <span className="hidden sm:inline">
                   {submitting 
                     ? (isResubmitMode ? "Resubmitting..." : "Submitting...") 
+                    : workflowLocked
+                    ? (filesRegenerating ? "Regenerating Files..." : "Already Submitted")
                     : (isResubmitMode ? "Save & Resubmit" : "Submit for Approval")}
                 </span>
                 <span className="sm:hidden">
                   {submitting 
                     ? (isResubmitMode ? "Resubmit..." : "Submit...") 
+                    : workflowLocked
+                    ? (filesRegenerating ? "Generating..." : "Submitted")
                     : (isResubmitMode ? "Resubmit" : "Submit")}
                 </span>
               </button>

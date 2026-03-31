@@ -57,16 +57,20 @@ export default function PreviewsPage() {
       setLoading(true);
 
       // Fetch all in parallel
-      const [assetResponse, realEstateResponse, submittedAssetResponse, lotListingResponse] = await Promise.all([
+      const [assetResponse, realEstateResponse, submittedAssetResponse, lotListingResponse, submittedLotListingResponse] = await Promise.all([
         getAssetReports().catch(() => ({ data: [] })),
         RealEstateService.getReports().catch(() => ({ data: [] })),
         getSubmittedReports().catch(() => ({ data: [] })),
         getLotListings().catch(() => ({ data: [] })),
+        getSubmittedLotListings().catch(() => ({ data: [] })),
       ]);
 
       // Filter preview and declined reports for "New" tab
       const assetPreviews: CombinedReport[] = (assetResponse.data || [])
-        .filter((r) => r.status === "preview" || r.status === "declined")
+        .filter((r) => {
+          const generationInProgress = Boolean((r as any).files_generating) || Boolean((r as any).files_regenerating);
+          return (r.status === "preview" || r.status === "declined") && !generationInProgress;
+        })
         .map((r) => ({ ...r, reportType: "asset" as const }));
 
       const realEstatePreviews: CombinedReport[] = (realEstateResponse.data || [])
@@ -92,8 +96,7 @@ export default function PreviewsPage() {
         .map((r) => ({ ...r, reportType: "realEstate" as const }));
 
       // Also include lot listing submitted reports
-      const lotListingSubmitted: CombinedReport[] = (lotListingResponse.data || [])
-        .filter((r: LotListing) => r.status === "pending_approval" || r.status === "approved")
+      const lotListingSubmitted: CombinedReport[] = (submittedLotListingResponse.data || [])
         .map((r: LotListing) => ({ ...r, reportType: "lotListing" as const }));
 
       const combinedSubmitted = [...submittedAssets, ...realEstateSubmitted, ...lotListingSubmitted].sort(
@@ -175,6 +178,10 @@ export default function PreviewsPage() {
       setDeleting(null);
     }
   };
+
+  const isAssetFileGenerationInProgress = (report: CombinedReport) =>
+    report.reportType === "asset" &&
+    (Boolean((report as any).files_generating) || Boolean((report as any).files_regenerating));
 
   const reports = activeTab === "new" ? newReports : submittedReports;
 
@@ -287,6 +294,7 @@ export default function PreviewsPage() {
             {reports.map((report) => {
               const isRealEstate = report.reportType === "realEstate";
               const isLotListing = report.reportType === "lotListing";
+              const assetFilesInProgress = isAssetFileGenerationInProgress(report);
               const title = isRealEstate
                 ? (report as any).property_details?.address ||
                   (report as any).preview_data?.property_details?.address ||
@@ -330,7 +338,7 @@ export default function PreviewsPage() {
                           <h3 className="text-base sm:text-xl font-bold text-gray-900 truncate max-w-[200px] sm:max-w-none">
                             {title}
                           </h3>
-                          <StatusBadge status={report.status} />
+                          <StatusBadge status={assetFilesInProgress ? "processing" : report.status} />
                         </div>
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
@@ -529,31 +537,41 @@ export default function PreviewsPage() {
                           )}
 
                           {/* Submitted Report Actions */}
-                          {(report.status === "pending_approval" || report.status === "approved") && (
+                          {(report.status === "pending_approval" || report.status === "approved" || assetFilesInProgress) && (
                             <>
-                              <button
-                                onClick={() => handleOpenPreview(report, true)}
-                                className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-indigo-600 hover:to-indigo-700 font-semibold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 text-sm flex-1 lg:flex-none"
-                              >
-                                <Edit className="h-4 w-4" />
-                                <span className="hidden sm:inline">Edit & Resubmit</span>
-                                <span className="sm:hidden">Edit</span>
-                              </button>
-                              <button
-                                onClick={() => handleQuickResubmit(report._id, report.reportType)}
-                                disabled={resubmitting === report._id}
-                                className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-white border-2 border-indigo-300 text-indigo-700 rounded-lg sm:rounded-xl hover:bg-indigo-50 font-medium transition-all disabled:opacity-50 text-sm flex-1 lg:flex-none"
-                              >
-                                {resubmitting === report._id ? (
+                              {assetFilesInProgress ? (
+                                <div className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-50 border-2 border-blue-200 text-blue-700 rounded-lg sm:rounded-xl text-sm font-medium flex-1 lg:flex-none">
                                   <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <RefreshCw className="h-4 w-4" />
-                                )}
-                                <span className="hidden sm:inline">Quick Resubmit</span>
-                                <span className="sm:hidden">Resubmit</span>
-                              </button>
+                                  <span className="hidden sm:inline">Generating Files</span>
+                                  <span className="sm:hidden">Generating</span>
+                                </div>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => handleOpenPreview(report, true)}
+                                    className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-indigo-600 hover:to-indigo-700 font-semibold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 text-sm flex-1 lg:flex-none"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Edit & Resubmit</span>
+                                    <span className="sm:hidden">Edit</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickResubmit(report._id, report.reportType)}
+                                    disabled={resubmitting === report._id}
+                                    className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-white border-2 border-indigo-300 text-indigo-700 rounded-lg sm:rounded-xl hover:bg-indigo-50 font-medium transition-all disabled:opacity-50 text-sm flex-1 lg:flex-none"
+                                  >
+                                    {resubmitting === report._id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <RefreshCw className="h-4 w-4" />
+                                    )}
+                                    <span className="hidden sm:inline">Quick Resubmit</span>
+                                    <span className="sm:hidden">Resubmit</span>
+                                  </button>
+                                </>
+                              )}
                               {/* Download Links for submitted reports */}
-                              {(report as any).preview_files?.docx && (
+                              {!assetFilesInProgress && (report as any).preview_files?.docx && (
                                 <a
                                   href={(report as any).preview_files.docx}
                                   target="_blank"
@@ -606,7 +624,19 @@ export default function PreviewsPage() {
                   </div>
 
                   {/* Status Footer */}
-                  {report.status === "preview" && (
+                  {assetFilesInProgress && (
+                    <div className="px-6 pb-4">
+                      <div className="flex items-center gap-2 text-sm text-blue-600">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>
+                          {(report as any).files_regenerating
+                            ? "Files are being regenerated for resubmission"
+                            : "Submitted for approval. Files are being generated now"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {report.status === "preview" && !assetFilesInProgress && (
                     <div className="px-6 pb-4">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Send className="h-4 w-4" />
