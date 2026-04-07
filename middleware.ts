@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const AUTH_COOKIE = "cv_auth";
+const ACCESS_COOKIE = "cv_access_token";
+const REFRESH_COOKIE = "cv_refresh_token";
 
 function isPublicPath(pathname: string) {
-  // Pages accessible without authentication
   return (
+    pathname === "/" ||
     pathname === "/welcome" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
@@ -15,7 +16,6 @@ function isPublicPath(pathname: string) {
 }
 
 function isAuthPath(pathname: string) {
-  // Auth-only pages where logged-in users should be redirected away
   return (
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
@@ -25,32 +25,41 @@ function isAuthPath(pathname: string) {
   );
 }
 
+function getSessionState(request: NextRequest) {
+  const hasAccessToken = Boolean(request.cookies.get(ACCESS_COOKIE)?.value);
+  const hasRefreshToken = Boolean(request.cookies.get(REFRESH_COOKIE)?.value);
+
+  return hasAccessToken || hasRefreshToken;
+}
+
+function getSafeNextPath(request: NextRequest) {
+  const next = request.nextUrl.searchParams.get("next");
+
+  if (!next || !next.startsWith("/") || next.startsWith("//") || isAuthPath(next)) {
+    return "/dashboard";
+  }
+
+  return next;
+}
+
 export function middleware(request: NextRequest) {
-  const { nextUrl, cookies } = request;
+  const { nextUrl } = request;
   const pathname = nextUrl.pathname;
+  const hasSession = getSessionState(request);
 
-  // Allow PNG assets (e.g., from public/) to pass through
-  if (pathname.endsWith(".png")) {
-    return NextResponse.next();
-  }
-
-  const hasSession = Boolean(cookies.get(AUTH_COOKIE)?.value);
-
-  // Protect all non-public pages
   if (!hasSession && !isPublicPath(pathname)) {
-    const url = new URL("/welcome", request.url);
-    return NextResponse.redirect(url);
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", `${pathname}${nextUrl.search}`);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect authenticated users away from auth pages
   if (isAuthPath(pathname) && hasSession) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL(getSafeNextPath(request), request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // run on all app routes except static files and api
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|assets|public|api).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

@@ -1,6 +1,5 @@
 import API from '@/lib/api';
 import { clearTokens, setTokens } from '@/lib/auth-storage';
-import { setCookie, deleteCookie } from '@/lib/cookies';
 
 export type SignupPayload = {
   email: string;
@@ -64,8 +63,6 @@ export const AuthService = {
         payload,
       );
       setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-      // mark session for middleware
-      setCookie('cv_auth', '1', 7);
       return data;
     } catch (err: any) {
       const serverMsg = err?.response?.data?.message || err?.message || 'Failed to login';
@@ -98,7 +95,6 @@ export const AuthService = {
     );
     if (data.accessToken && data.refreshToken) {
       setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-      setCookie('cv_auth', '1', 7);
     }
     return data;
   },
@@ -110,7 +106,6 @@ export const AuthService = {
     );
     if (data.accessToken && data.refreshToken) {
       setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-      setCookie('cv_auth', '1', 7);
     }
     return data;
   },
@@ -124,7 +119,6 @@ export const AuthService = {
       }
     } finally {
       clearTokens();
-      deleteCookie('cv_auth');
     }
   },
 };

@@ -11,8 +11,7 @@ import {
 import type { AuthUser, LoginPayload } from "@/services/auth";
 import { AuthService } from "@/services/auth";
 import { UserService } from "@/services/user";
-import { getAccessToken } from "@/lib/auth-storage";
-import { setCookie, deleteCookie } from "@/lib/cookies";
+import { clearTokens, hasStoredTokens } from "@/lib/auth-storage";
 
 export type AuthContextType = {
   user: AuthUser | null;
@@ -35,36 +34,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const me = await UserService.getMe();
       setUser(me);
-      // ensure cookie exists while authenticated
-      setCookie("cv_auth", "1", 7);
     } catch (err: any) {
       setUser(null);
-      setError(err?.message || null);
-      deleteCookie("cv_auth");
+      setError(
+        err?.response?.data?.message || err?.message || "Unable to load your account"
+      );
+      clearTokens();
     }
   }, []);
 
   const login = useCallback(
     async (payload: LoginPayload) => {
       setError(null);
-      await AuthService.login(payload);
-      setCookie("cv_auth", "1", 7);
-      await refresh();
+      const data = await AuthService.login(payload);
+      setUser(data.user);
     },
-    [refresh]
+    []
   );
 
   const logout = useCallback(async () => {
     await AuthService.logout();
-    deleteCookie("cv_auth");
     setUser(null);
   }, []);
 
   useEffect(() => {
-    // On mount, attempt to fetch user if we have a token
-    if (typeof window !== "undefined" && getAccessToken()) {
+    if (typeof window !== "undefined" && hasStoredTokens()) {
       refresh().finally(() => setLoading(false));
     } else {
+      clearTokens();
+      setUser(null);
       setLoading(false);
     }
   }, [refresh]);

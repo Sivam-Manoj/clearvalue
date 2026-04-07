@@ -6,7 +6,6 @@ import {
   setAccessToken,
   clearTokens,
 } from "./auth-storage";
-import { deleteCookie } from "./cookies";
 
 const API = axios.create({
   baseURL: API_BASE,
@@ -76,9 +75,6 @@ API.interceptors.response.use(
         if (!currentRefreshToken) {
           processQueue(error, null);
           clearTokens();
-          try {
-            deleteCookie("cv_auth");
-          } catch {}
           return Promise.reject(error);
         }
 
@@ -106,9 +102,6 @@ API.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         clearTokens();
-        try {
-          deleteCookie("cv_auth");
-        } catch {}
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
