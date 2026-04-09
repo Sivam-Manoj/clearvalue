@@ -32,12 +32,20 @@ export default function SignupForm() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nativeEvent = e.nativeEvent as SubmitEvent;
+    const submitter = nativeEvent.submitter as HTMLButtonElement | null;
+
     if (step === 1) {
       if (canContinueStepOne) {
         setStep(2);
       }
       return;
     }
+
+    if (submitter?.dataset.signupSubmit !== "true") {
+      return;
+    }
+
     setError(null);
     setMessage(null);
     setLoading(true);
@@ -286,6 +294,7 @@ export default function SignupForm() {
           ) : (
             <button
               type="submit"
+              data-signup-submit="true"
               disabled={loading}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 sm:h-14 sm:px-6"
             >
