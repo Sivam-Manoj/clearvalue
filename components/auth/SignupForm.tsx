@@ -65,14 +65,14 @@ export default function SignupForm() {
     >
       <form
         onSubmit={onSubmit}
-        className="ml-auto w-full max-w-lg rounded-[1.75rem] border border-white/60 bg-white/78 p-4 shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:rounded-[2rem] sm:p-6"
+        className="ml-auto w-full max-w-[34rem] rounded-[1.75rem] border border-white/60 bg-white/78 p-4 shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:rounded-[2rem] sm:p-5 lg:p-6"
       >
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
             Create account
           </p>
           <div className="space-y-1.5">
-            <h2 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-3xl">
+            <h2 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-[2rem]">
               Create your client workspace.
             </h2>
             <p className="hidden max-w-lg text-sm leading-6 text-slate-600 sm:block sm:text-base">
@@ -81,8 +81,8 @@ export default function SignupForm() {
           </div>
         </div>
 
-        <div className="mt-4 rounded-[1.25rem] border border-slate-200/80 bg-white/70 p-2.5 shadow-[0_10px_20px_rgba(15,23,42,0.05)] sm:mt-5 sm:rounded-[1.5rem] sm:p-3">
-          <div className="grid grid-cols-2 gap-2.5">
+        <div className="mt-4 rounded-[1.25rem] border border-slate-200/80 bg-white/70 p-2 shadow-[0_10px_20px_rgba(15,23,42,0.05)] sm:mt-5 sm:rounded-[1.5rem] sm:p-2.5">
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setStep(1)}
