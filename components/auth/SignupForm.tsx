@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthService } from "@/services/auth";
-import { Eye, EyeOff, Mail, Lock, Loader2, User } from "lucide-react";
+import { ArrowRight, Building2, Eye, EyeOff, Lock, Mail, MapPin, Phone, User } from "lucide-react";
+import AuthLightShell from "@/components/auth/AuthLightShell";
+
+const SIGNUP_FEATURES = [
+  "Client onboarding",
+  "Company profile",
+  "Secure verification",
+  "Report access",
+];
 
 export default function SignupForm() {
   const router = useRouter();
@@ -34,10 +42,7 @@ export default function SignupForm() {
         companyAddress: companyAddress || undefined,
         username,
       });
-      setMessage(
-        res.message ||
-          "Signup successful. Check your email for verification code."
-      );
+      setMessage(res.message || "Signup successful. Check your email for verification code.");
       setTimeout(() => {
         router.replace(`/verify-email?email=${encodeURIComponent(email)}`);
       }, 800);
@@ -49,170 +54,175 @@ export default function SignupForm() {
   };
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="mx-auto w-full max-w-xl space-y-5 rounded-2xl ring-1 ring-rose-100 bg-white/90 p-6 sm:p-7 shadow-[0_20px_60px_rgba(244,63,94,0.10)] backdrop-blur"
+    <AuthLightShell
+      eyebrow="Client onboarding"
+      title="Create your Asset Insight account."
+      description="Set up your profile, company details, and contact information to start using the client workspace."
+      features={SIGNUP_FEATURES}
     >
-      <div className="flex justify-center">
-        <div className="rounded-2xl bg-gradient-to-tr from-rose-100 via-rose-50 to-white ring-1 ring-rose-100 shadow-inner p-3">
-          <div
-            dangerouslySetInnerHTML={{
-              __html:
-                '<lottie-player src="/signupAnimation.json" background="transparent" speed="1" style="width: 180px; height: 180px;" loop autoplay></lottie-player>',
-            }}
-          />
-        </div>
-      </div>
-      <div className="space-y-1 text-center">
-        <h1 className="text-2xl font-semibold text-rose-900">Create account</h1>
-        <p className="text-sm text-rose-700/70">Join to get started</p>
-      </div>
-      {error && (
-        <div className="rounded-md ring-1 ring-red-200 bg-red-50 p-2 text-sm text-red-700 shadow-sm">
-          {error}
-        </div>
-      )}
-      {message && (
-        <div className="rounded-md ring-1 ring-green-200 bg-green-50 p-2 text-sm text-green-700 shadow-sm">
-          {message}
-        </div>
-      )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1 sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Username
-          </label>
-          <div className="relative">
-            <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-400" />
-            <input
-              type="text"
-              placeholder="Your username"
-              className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2 pl-10 text-sm text-rose-900 shadow-sm placeholder:text-rose-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="space-y-1 sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Email
-          </label>
-          <div className="relative">
-            <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-400" />
-            <input
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2 pl-10 text-sm text-rose-900 shadow-sm placeholder:text-rose-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-        <div className="space-y-1 sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Password
-          </label>
-          <div className="relative">
-            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-400" />
-            <input
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="••••••••"
-              className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2 pl-10 pr-10 text-sm text-rose-900 shadow-sm placeholder:text-rose-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-rose-500 hover:text-rose-700"
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-          <p className="text-xs text-rose-700/70">Minimum 6 characters.</p>
-        </div>
-        <div className="space-y-1 sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Company Name
-          </label>
-          <input
-            type="text"
-            placeholder="Your company"
-            className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm text-rose-900 shadow-sm placeholder:text-rose-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">
-            Contact Email
-          </label>
-          <input
-            type="email"
-            placeholder="contact@company.com"
-            className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm text-rose-900 shadow-sm placeholder:text-rose-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-            value={contactEmail}
-            onChange={(e) => setContactEmail(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">
-            Contact Phone
-          </label>
-          <input
-            type="tel"
-            placeholder="(555) 123-4567"
-            className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm text-rose-900 shadow-sm placeholder:text-rose-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-            value={contactPhone}
-            onChange={(e) => setContactPhone(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1 sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Company Address
-          </label>
-          <textarea
-            className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm text-rose-900 shadow-sm placeholder:text-rose-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-            rows={3}
-            value={companyAddress}
-            onChange={(e) => setCompanyAddress(e.target.value)}
-          />
-        </div>
-      </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white ring-1 ring-rose-200 shadow-md transition-all hover:bg-rose-500 hover:shadow-lg active:translate-y-[1px] disabled:opacity-60"
+      <form
+        onSubmit={onSubmit}
+        className="ml-auto w-full max-w-2xl rounded-[2rem] border border-white/60 bg-white/78 p-6 shadow-[0_30px_120px_rgba(15,23,42,0.14)] backdrop-blur-2xl sm:p-8"
       >
-        {loading ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" /> Creating...
-          </>
-        ) : (
-          "Sign up"
-        )}
-      </button>
-      <div className="text-sm">
-        Have an account?{" "}
-        <button
-          type="button"
-          className="text-rose-600 hover:underline"
-          onClick={() => router.push("/login")}
-        >
-          Sign in
-        </button>
-      </div>
-    </form>
+        <div className="space-y-3">
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
+            Create account
+          </p>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">
+              Create your client workspace.
+            </h2>
+            <p className="hidden max-w-lg text-sm leading-6 text-slate-600 sm:block sm:text-base">
+              Join the platform with your company details and verify your account to continue.
+            </p>
+          </div>
+        </div>
+
+        {error ? (
+          <div className="mt-6 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        {message ? (
+          <div className="mt-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700">
+            {message}
+          </div>
+        ) : null}
+
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="block space-y-2 sm:col-span-2">
+            <span className="text-sm font-medium text-slate-700">Username</span>
+            <span className="relative block">
+              <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Your username"
+                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </span>
+          </label>
+
+          <label className="block space-y-2 sm:col-span-2">
+            <span className="text-sm font-medium text-slate-700">Email</span>
+            <span className="relative block">
+              <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </span>
+          </label>
+
+          <label className="block space-y-2 sm:col-span-2">
+            <span className="text-sm font-medium text-slate-700">Password</span>
+            <span className="relative block">
+              <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Enter your password"
+                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-14 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-700"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </span>
+            <p className="text-xs text-slate-500">Minimum 6 characters.</p>
+          </label>
+
+          <label className="block space-y-2 sm:col-span-2">
+            <span className="text-sm font-medium text-slate-700">Company name</span>
+            <span className="relative block">
+              <Building2 className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Your company"
+                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+            </span>
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-slate-700">Contact email</span>
+            <span className="relative block">
+              <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="email"
+                placeholder="contact@company.com"
+                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+              />
+            </span>
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-slate-700">Contact phone</span>
+            <span className="relative block">
+              <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="tel"
+                placeholder="(555) 123-4567"
+                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+              />
+            </span>
+          </label>
+
+          <label className="block space-y-2 sm:col-span-2">
+            <span className="text-sm font-medium text-slate-700">Company address</span>
+            <span className="relative block">
+              <MapPin className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-slate-400" />
+              <textarea
+                rows={3}
+                className="w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 pt-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                value={companyAddress}
+                onChange={(e) => setCompanyAddress(e.target.value)}
+              />
+            </span>
+          </label>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            className="text-left text-sm text-slate-600 transition hover:text-blue-600"
+            onClick={() => router.push("/login")}
+          >
+            Already have an account? Sign in
+          </button>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            <span>{loading ? "Creating..." : "Create account"}</span>
+            <ArrowRight className={`h-4 w-4 ${loading ? "animate-pulse" : ""}`} />
+          </button>
+        </div>
+      </form>
+    </AuthLightShell>
   );
 }
