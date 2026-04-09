@@ -32,6 +32,12 @@ export default function SignupForm() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (step === 1) {
+      if (canContinueStepOne) {
+        setStep(2);
+      }
+      return;
+    }
     setError(null);
     setMessage(null);
     setLoading(true);
@@ -65,6 +71,7 @@ export default function SignupForm() {
     >
       <form
         onSubmit={onSubmit}
+        noValidate
         className="ml-auto w-full max-w-[34rem] rounded-[1.75rem] border border-white/60 bg-white/78 p-4 shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:rounded-[2rem] sm:p-5 lg:p-6"
       >
         <div className="space-y-2">
@@ -99,7 +106,9 @@ export default function SignupForm() {
             </button>
             <button
               type="button"
-              onClick={() => setStep(2)}
+              onClick={() => {
+                if (canContinueStepOne) setStep(2);
+              }}
               className={`rounded-xl px-3 py-2.5 text-left transition sm:rounded-2xl sm:px-4 sm:py-3 ${
                 step === 2
                   ? "bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]"
