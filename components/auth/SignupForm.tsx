@@ -65,14 +65,14 @@ export default function SignupForm() {
     >
       <form
         onSubmit={onSubmit}
-        className="ml-auto w-full max-w-xl rounded-[2rem] border border-white/60 bg-white/78 p-6 shadow-[0_30px_120px_rgba(15,23,42,0.14)] backdrop-blur-2xl sm:p-8"
+        className="ml-auto w-full max-w-lg rounded-[1.75rem] border border-white/60 bg-white/78 p-4 shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:rounded-[2rem] sm:p-6"
       >
-        <div className="space-y-3">
+        <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
             Create account
           </p>
-          <div className="space-y-2">
-            <h2 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">
+          <div className="space-y-1.5">
+            <h2 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-3xl">
               Create your client workspace.
             </h2>
             <p className="hidden max-w-lg text-sm leading-6 text-slate-600 sm:block sm:text-base">
@@ -81,33 +81,33 @@ export default function SignupForm() {
           </div>
         </div>
 
-        <div className="mt-6 rounded-[1.5rem] border border-slate-200/80 bg-white/70 p-3 shadow-[0_12px_24px_rgba(15,23,42,0.05)]">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="mt-4 rounded-[1.25rem] border border-slate-200/80 bg-white/70 p-2.5 shadow-[0_10px_20px_rgba(15,23,42,0.05)] sm:mt-5 sm:rounded-[1.5rem] sm:p-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
               onClick={() => setStep(1)}
-              className={`rounded-2xl px-4 py-3 text-left transition ${
+              className={`rounded-xl px-3 py-2.5 text-left transition sm:rounded-2xl sm:px-4 sm:py-3 ${
                 step === 1
                   ? "bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]"
                   : "bg-white/75 text-slate-600 hover:bg-white"
               }`}
             >
               <div className="text-[0.68rem] font-semibold uppercase tracking-[0.28em]">1 Credentials</div>
-              <div className={`mt-1 text-sm ${step === 1 ? "text-slate-200" : "text-slate-500"}`}>
+              <div className={`mt-0.5 text-xs sm:mt-1 sm:text-sm ${step === 1 ? "text-slate-200" : "text-slate-500"}`}>
                 Email and password
               </div>
             </button>
             <button
               type="button"
               onClick={() => setStep(2)}
-              className={`rounded-2xl px-4 py-3 text-left transition ${
+              className={`rounded-xl px-3 py-2.5 text-left transition sm:rounded-2xl sm:px-4 sm:py-3 ${
                 step === 2
                   ? "bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]"
                   : "bg-white/75 text-slate-600 hover:bg-white"
               }`}
             >
               <div className="text-[0.68rem] font-semibold uppercase tracking-[0.28em]">2 Details</div>
-              <div className={`mt-1 text-sm ${step === 2 ? "text-slate-200" : "text-slate-500"}`}>
+              <div className={`mt-0.5 text-xs sm:mt-1 sm:text-sm ${step === 2 ? "text-slate-200" : "text-slate-500"}`}>
                 Profile and company
               </div>
             </button>
@@ -127,7 +127,7 @@ export default function SignupForm() {
         ) : null}
 
         {step === 1 ? (
-          <div className="mt-8 grid grid-cols-1 gap-4">
+          <div className="mt-5 grid grid-cols-1 gap-3">
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">Email</span>
               <span className="relative block">
@@ -137,7 +137,7 @@ export default function SignupForm() {
                   inputMode="email"
                   autoComplete="email"
                   placeholder="you@example.com"
-                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  className="h-13 w-full rounded-[1.15rem] border border-slate-200/80 bg-white/90 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 sm:h-14 sm:rounded-2xl sm:pl-12"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -153,7 +153,7 @@ export default function SignupForm() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   placeholder="Enter your password"
-                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-14 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  className="h-13 w-full rounded-[1.15rem] border border-slate-200/80 bg-white/90 pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 sm:h-14 sm:rounded-2xl sm:pl-12 sm:pr-14"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   minLength={6}
@@ -163,7 +163,7 @@ export default function SignupForm() {
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-700"
+                  className="absolute right-2.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-700 sm:right-3 sm:h-9 sm:w-9"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -172,7 +172,7 @@ export default function SignupForm() {
             </label>
           </div>
         ) : (
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block space-y-2 sm:col-span-2">
               <span className="text-sm font-medium text-slate-700">Username</span>
               <span className="relative block">
@@ -180,7 +180,7 @@ export default function SignupForm() {
                 <input
                   type="text"
                   placeholder="Your username"
-                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  className="h-13 w-full rounded-[1.15rem] border border-slate-200/80 bg-white/90 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 sm:h-14 sm:rounded-2xl sm:pl-12"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -194,7 +194,7 @@ export default function SignupForm() {
                 <input
                   type="text"
                   placeholder="Your company"
-                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  className="h-13 w-full rounded-[1.15rem] border border-slate-200/80 bg-white/90 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 sm:h-14 sm:rounded-2xl sm:pl-12"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                 />
@@ -208,7 +208,7 @@ export default function SignupForm() {
                 <input
                   type="email"
                   placeholder="contact@company.com"
-                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  className="h-13 w-full rounded-[1.15rem] border border-slate-200/80 bg-white/90 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 sm:h-14 sm:rounded-2xl sm:pl-12"
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                 />
@@ -222,7 +222,7 @@ export default function SignupForm() {
                 <input
                   type="tel"
                   placeholder="(555) 123-4567"
-                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  className="h-13 w-full rounded-[1.15rem] border border-slate-200/80 bg-white/90 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 sm:h-14 sm:rounded-2xl sm:pl-12"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
                 />
@@ -235,7 +235,7 @@ export default function SignupForm() {
                 <MapPin className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-slate-400" />
                 <textarea
                   rows={2}
-                  className="w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 pt-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  className="w-full rounded-[1.15rem] border border-slate-200/80 bg-white/90 pl-11 pr-4 pt-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 sm:rounded-2xl sm:pl-12 sm:pt-4"
                   value={companyAddress}
                   onChange={(e) => setCompanyAddress(e.target.value)}
                 />
@@ -244,7 +244,7 @@ export default function SignupForm() {
           </div>
         )}
 
-        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-4">
             <button
               type="button"
@@ -269,7 +269,7 @@ export default function SignupForm() {
               type="button"
               disabled={!canContinueStepOne}
               onClick={() => setStep(2)}
-              className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 sm:h-14 sm:px-6"
             >
               <span>Continue</span>
               <ArrowRight className="h-4 w-4" />
@@ -278,7 +278,7 @@ export default function SignupForm() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 sm:h-14 sm:px-6"
             >
               <span>{loading ? "Creating..." : "Create account"}</span>
               <ArrowRight className={`h-4 w-4 ${loading ? "animate-pulse" : ""}`} />
