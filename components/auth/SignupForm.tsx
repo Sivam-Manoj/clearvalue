@@ -15,6 +15,7 @@ const SIGNUP_FEATURES = [
 
 export default function SignupForm() {
   const router = useRouter();
+  const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -26,6 +27,8 @@ export default function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  const canContinueStepOne = email.trim().length > 0 && password.trim().length >= 6;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +65,7 @@ export default function SignupForm() {
     >
       <form
         onSubmit={onSubmit}
-        className="ml-auto w-full max-w-2xl rounded-[2rem] border border-white/60 bg-white/78 p-6 shadow-[0_30px_120px_rgba(15,23,42,0.14)] backdrop-blur-2xl sm:p-8"
+        className="ml-auto w-full max-w-xl rounded-[2rem] border border-white/60 bg-white/78 p-6 shadow-[0_30px_120px_rgba(15,23,42,0.14)] backdrop-blur-2xl sm:p-8"
       >
         <div className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-500">
@@ -78,6 +81,39 @@ export default function SignupForm() {
           </div>
         </div>
 
+        <div className="mt-6 rounded-[1.5rem] border border-slate-200/80 bg-white/70 p-3 shadow-[0_12px_24px_rgba(15,23,42,0.05)]">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className={`rounded-2xl px-4 py-3 text-left transition ${
+                step === 1
+                  ? "bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]"
+                  : "bg-white/75 text-slate-600 hover:bg-white"
+              }`}
+            >
+              <div className="text-[0.68rem] font-semibold uppercase tracking-[0.28em]">1 Credentials</div>
+              <div className={`mt-1 text-sm ${step === 1 ? "text-slate-200" : "text-slate-500"}`}>
+                Email and password
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              className={`rounded-2xl px-4 py-3 text-left transition ${
+                step === 2
+                  ? "bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]"
+                  : "bg-white/75 text-slate-600 hover:bg-white"
+              }`}
+            >
+              <div className="text-[0.68rem] font-semibold uppercase tracking-[0.28em]">2 Details</div>
+              <div className={`mt-1 text-sm ${step === 2 ? "text-slate-200" : "text-slate-500"}`}>
+                Profile and company
+              </div>
+            </button>
+          </div>
+        </div>
+
         {error ? (
           <div className="mt-6 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-700">
             {error}
@@ -90,137 +126,164 @@ export default function SignupForm() {
           </div>
         ) : null}
 
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="block space-y-2 sm:col-span-2">
-            <span className="text-sm font-medium text-slate-700">Username</span>
-            <span className="relative block">
-              <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Your username"
-                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </span>
-          </label>
+        {step === 1 ? (
+          <div className="mt-8 grid grid-cols-1 gap-4">
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">Email</span>
+              <span className="relative block">
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </span>
+            </label>
 
-          <label className="block space-y-2 sm:col-span-2">
-            <span className="text-sm font-medium text-slate-700">Email</span>
-            <span className="relative block">
-              <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </span>
-          </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">Password</span>
+              <span className="relative block">
+                <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Enter your password"
+                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-14 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={6}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-700"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </span>
+              <p className="text-xs text-slate-500">Minimum 6 characters.</p>
+            </label>
+          </div>
+        ) : (
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="block space-y-2 sm:col-span-2">
+              <span className="text-sm font-medium text-slate-700">Username</span>
+              <span className="relative block">
+                <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Your username"
+                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </span>
+            </label>
 
-          <label className="block space-y-2 sm:col-span-2">
-            <span className="text-sm font-medium text-slate-700">Password</span>
-            <span className="relative block">
-              <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                placeholder="Enter your password"
-                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-14 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                minLength={6}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((s) => !s)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-700"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </span>
-            <p className="text-xs text-slate-500">Minimum 6 characters.</p>
-          </label>
+            <label className="block space-y-2 sm:col-span-2">
+              <span className="text-sm font-medium text-slate-700">Company name</span>
+              <span className="relative block">
+                <Building2 className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Your company"
+                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                />
+              </span>
+            </label>
 
-          <label className="block space-y-2 sm:col-span-2">
-            <span className="text-sm font-medium text-slate-700">Company name</span>
-            <span className="relative block">
-              <Building2 className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Your company"
-                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-              />
-            </span>
-          </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">Contact email</span>
+              <span className="relative block">
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="email"
+                  placeholder="contact@company.com"
+                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                />
+              </span>
+            </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">Contact email</span>
-            <span className="relative block">
-              <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="email"
-                placeholder="contact@company.com"
-                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-              />
-            </span>
-          </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">Contact phone</span>
+              <span className="relative block">
+                <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                />
+              </span>
+            </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-700">Contact phone</span>
-            <span className="relative block">
-              <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="tel"
-                placeholder="(555) 123-4567"
-                className="h-14 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-              />
-            </span>
-          </label>
-
-          <label className="block space-y-2 sm:col-span-2">
-            <span className="text-sm font-medium text-slate-700">Company address</span>
-            <span className="relative block">
-              <MapPin className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-slate-400" />
-              <textarea
-                rows={3}
-                className="w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 pt-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                value={companyAddress}
-                onChange={(e) => setCompanyAddress(e.target.value)}
-              />
-            </span>
-          </label>
-        </div>
+            <label className="block space-y-2 sm:col-span-2">
+              <span className="text-sm font-medium text-slate-700">Company address</span>
+              <span className="relative block">
+                <MapPin className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-slate-400" />
+                <textarea
+                  rows={2}
+                  className="w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-12 pr-4 pt-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  value={companyAddress}
+                  onChange={(e) => setCompanyAddress(e.target.value)}
+                />
+              </span>
+            </label>
+          </div>
+        )}
 
         <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="button"
-            className="text-left text-sm text-slate-600 transition hover:text-blue-600"
-            onClick={() => router.push("/login")}
-          >
-            Already have an account? Sign in
-          </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              className="text-left text-sm text-slate-600 transition hover:text-blue-600"
+              onClick={() => router.push("/login")}
+            >
+              Already have an account? Sign in
+            </button>
+            {step === 2 ? (
+              <button
+                type="button"
+                className="text-sm text-slate-600 transition hover:text-slate-950"
+                onClick={() => setStep(1)}
+              >
+                Back to credentials
+              </button>
+            ) : null}
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            <span>{loading ? "Creating..." : "Create account"}</span>
-            <ArrowRight className={`h-4 w-4 ${loading ? "animate-pulse" : ""}`} />
-          </button>
+          {step === 1 ? (
+            <button
+              type="button"
+              disabled={!canContinueStepOne}
+              onClick={() => setStep(2)}
+              className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <span>Continue</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <span>{loading ? "Creating..." : "Create account"}</span>
+              <ArrowRight className={`h-4 w-4 ${loading ? "animate-pulse" : ""}`} />
+            </button>
+          )}
         </div>
       </form>
     </AuthLightShell>
