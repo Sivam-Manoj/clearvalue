@@ -225,37 +225,39 @@ export default function AuthLightShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-50 overflow-auto bg-slate-100 text-slate-950">
-      <ParticleField />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(220,38,38,0.18),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(37,99,235,0.16),_transparent_26%),linear-gradient(135deg,_rgba(255,255,255,0.96),_rgba(241,245,249,0.84))]" />
+    <div className="relative min-h-screen overflow-x-clip bg-slate-100 text-slate-950">
+      <div className="fixed inset-0 z-0">
+        <ParticleField />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(220,38,38,0.18),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(37,99,235,0.16),_transparent_26%),linear-gradient(135deg,_rgba(255,255,255,0.96),_rgba(241,245,249,0.84))]" />
+      </div>
 
-      <div className="relative z-10 grid min-h-full lg:min-h-screen lg:grid-cols-[1.04fr_0.96fr]">
-        <section className="flex items-center px-6 py-12 sm:px-10 lg:px-16 xl:px-24">
+      <div className="relative z-10 grid min-h-screen lg:grid-cols-[1.04fr_0.96fr]">
+        <section className="flex items-center px-5 py-6 sm:px-8 sm:py-8 lg:px-16 lg:py-12 xl:px-24">
           <div className="max-w-2xl">
-            <div className="mb-10 inline-flex items-center gap-5">
-              <div className="relative h-28 w-28 overflow-hidden rounded-[2rem] bg-white shadow-[0_20px_50px_rgba(15,23,42,0.10)]">
+            <div className="mb-4 inline-flex items-center gap-3 sm:mb-6 sm:gap-4 lg:mb-10 lg:gap-5">
+              <div className="relative h-16 w-16 overflow-hidden rounded-[1.35rem] bg-white shadow-[0_16px_36px_rgba(15,23,42,0.08)] sm:h-20 sm:w-20 sm:rounded-[1.6rem] lg:h-28 lg:w-28 lg:rounded-[2rem] lg:shadow-[0_20px_50px_rgba(15,23,42,0.10)]">
                 <Image src="/assentInsightLogo.jpeg" alt="Asset Insight logo" fill className="object-cover" priority />
               </div>
               <div>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.38em] text-slate-500">
+                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.34em] text-slate-500 sm:text-[0.68rem] lg:text-[0.7rem] lg:tracking-[0.38em]">
                   Asset Insight
                 </p>
                 <p className="text-sm font-medium text-slate-700">{eyebrow}</p>
               </div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-3 sm:space-y-4 lg:space-y-5">
               <h1 className="hidden max-w-lg text-5xl font-semibold leading-none tracking-[-0.05em] sm:block sm:text-6xl">
                 {title}
               </h1>
               <p className="hidden max-w-lg text-base leading-7 text-slate-600 sm:block sm:text-lg">
                 {description}
               </p>
-              <div className="flex max-w-2xl flex-wrap gap-3 pt-2">
+              <div className="flex max-w-2xl flex-wrap gap-2 pt-1 sm:gap-3 sm:pt-2">
                 {features.map((feature) => (
                   <span
                     key={feature}
-                    className="rounded-full border border-white/70 bg-white/55 px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+                    className="rounded-full border border-white/70 bg-white/55 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.07)] backdrop-blur-xl sm:px-4 sm:py-2 sm:text-sm"
                   >
                     {feature}
                   </span>
@@ -265,7 +267,7 @@ export default function AuthLightShell({
           </div>
         </section>
 
-        <section className="flex items-center px-6 pb-12 sm:px-10 lg:px-12 lg:py-12 xl:px-16">
+        <section className="flex items-center px-5 pb-6 sm:px-8 sm:pb-8 lg:px-12 lg:py-12 xl:px-16">
           <div className="w-full">{children}</div>
         </section>
       </div>
