@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type KeyboardEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthService } from "@/services/auth";
 import { ArrowRight, Building2, Eye, EyeOff, Lock, Mail, MapPin, Phone, User } from "lucide-react";
@@ -29,23 +29,17 @@ export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   const canContinueStepOne = email.trim().length > 0 && password.trim().length >= 6;
+  const canSubmitStepTwo = username.trim().length > 0 && companyName.trim().length > 0;
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const nativeEvent = e.nativeEvent as SubmitEvent;
-    const submitter = nativeEvent.submitter as HTMLButtonElement | null;
+  const goToDetailsStep = () => {
+    if (!canContinueStepOne || loading) return;
+    setError(null);
+    setMessage(null);
+    setStep(2);
+  };
 
-    if (step === 1) {
-      if (canContinueStepOne) {
-        setStep(2);
-      }
-      return;
-    }
-
-    if (submitter?.dataset.signupSubmit !== "true") {
-      return;
-    }
-
+  const createAccount = async () => {
+    if (!canContinueStepOne || !canSubmitStepTwo || loading) return;
     setError(null);
     setMessage(null);
     setLoading(true);
@@ -70,6 +64,26 @@ export default function SignupForm() {
     }
   };
 
+  const onFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+  };
+
+  const onStepOneKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Enter") return;
+    const target = e.target as HTMLElement | null;
+    if (target?.tagName === "BUTTON") return;
+    e.preventDefault();
+    goToDetailsStep();
+  };
+
+  const onStepTwoKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Enter") return;
+    const target = e.target as HTMLElement | null;
+    if (target?.tagName === "TEXTAREA" || target?.tagName === "BUTTON") return;
+    e.preventDefault();
+    void createAccount();
+  };
+
   return (
     <AuthLightShell
       eyebrow="Client onboarding"
@@ -78,7 +92,7 @@ export default function SignupForm() {
       features={SIGNUP_FEATURES}
     >
       <form
-        onSubmit={onSubmit}
+        onSubmit={onFormSubmit}
         noValidate
         className="ml-auto w-full max-w-[34rem] rounded-[1.75rem] border border-white/60 bg-white/78 p-4 shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:rounded-[2rem] sm:p-5 lg:p-6"
       >
@@ -144,7 +158,7 @@ export default function SignupForm() {
         ) : null}
 
         {step === 1 ? (
-          <div className="mt-5 grid grid-cols-1 gap-3">
+          <div className="mt-5 grid grid-cols-1 gap-3" onKeyDown={onStepOneKeyDown}>
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">Email</span>
               <span className="relative block">
@@ -189,7 +203,7 @@ export default function SignupForm() {
             </label>
           </div>
         ) : (
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2" onKeyDown={onStepTwoKeyDown}>
             <label className="block space-y-2 sm:col-span-2">
               <span className="text-sm font-medium text-slate-700">Username</span>
               <span className="relative block">
@@ -285,20 +299,20 @@ export default function SignupForm() {
             <button
               type="button"
               disabled={!canContinueStepOne}
-              onClick={() => setStep(2)}
+              onClick={goToDetailsStep}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 sm:h-14 sm:px-6"
             >
-              <span>Continue</span>
+              <span>Next</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           ) : (
             <button
-              type="submit"
-              data-signup-submit="true"
-              disabled={loading}
+              type="button"
+              disabled={loading || !canSubmitStepTwo}
+              onClick={() => void createAccount()}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white transition hover:scale-[1.01] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 sm:h-14 sm:px-6"
             >
-              <span>{loading ? "Creating..." : "Create account"}</span>
+              <span>{loading ? "Creating..." : "Continue"}</span>
               <ArrowRight className={`h-4 w-4 ${loading ? "animate-pulse" : ""}`} />
             </button>
           )}
