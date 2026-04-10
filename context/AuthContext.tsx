@@ -17,6 +17,7 @@ export type AuthContextType = {
   user: AuthUser | null;
   loading: boolean;
   error: string | null;
+  loggingOut: boolean;
   refresh: () => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
@@ -28,12 +29,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const refresh = useCallback(async () => {
     setError(null);
     try {
       const me = await UserService.getMe();
       setUser(me);
+      setLoggingOut(false);
     } catch (err: any) {
       setUser(null);
       setError(
@@ -46,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (payload: LoginPayload) => {
       setError(null);
+      setLoggingOut(false);
       const data = await AuthService.login(payload);
       setUser(data.user);
     },
@@ -53,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    setLoggingOut(true);
     await AuthService.logout();
     setUser(null);
   }, []);
@@ -63,13 +68,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       clearTokens();
       setUser(null);
+      setLoggingOut(false);
       setLoading(false);
     }
   }, [refresh]);
 
   const value = useMemo<AuthContextType>(
-    () => ({ user, loading, error, refresh, login, logout }),
-    [user, loading, error, refresh, login, logout]
+    () => ({ user, loading, error, loggingOut, refresh, login, logout }),
+    [user, loading, error, loggingOut, refresh, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
