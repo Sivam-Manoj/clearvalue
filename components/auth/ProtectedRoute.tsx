@@ -13,11 +13,11 @@ export default function ProtectedRoute({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading } = useAuthContext();
+  const { user, loading, loggingOut } = useAuthContext();
   const hasSession = hasStoredTokens();
 
   useEffect(() => {
-    if (loading || (hasSession && user)) {
+    if (loading || loggingOut || (hasSession && user)) {
       return;
     }
 
@@ -26,12 +26,12 @@ export default function ProtectedRoute({
       : "/login";
 
     router.replace(loginUrl);
-  }, [hasSession, loading, pathname, router, user]);
+  }, [hasSession, loading, loggingOut, pathname, router, user]);
 
-  if (loading) {
+  if (loading || loggingOut) {
     return (
       <Loading
-        message="Checking your session..."
+        message={loggingOut ? "Signing you out..." : "Checking your session..."}
         height={140}
         width={140}
         className="min-h-[50vh]"
