@@ -157,8 +157,8 @@ export default function LotListingPreviewModal({
       ) : (
         <>
           {/* Listing Details */}
-          <div className="space-y-6 max-w-5xl mx-auto">
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+          <div className="space-y-6 max-w-5xl mx-auto pb-28">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-purple-600">📋</span>
                 Listing Details
@@ -317,7 +317,7 @@ export default function LotListingPreviewModal({
                   };
 
                   return (
-                    <div key={idx} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div key={idx} className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur">
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-sm font-semibold text-gray-900">
                           Lot #{lot.lot_number || idx + 1}
@@ -445,7 +445,7 @@ export default function LotListingPreviewModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 pt-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 max-w-5xl mx-auto">
+          <div className="sticky bottom-0 z-10 mt-6 flex max-w-5xl mx-auto flex-wrap items-center justify-between gap-3 border-t border-[var(--app-border)] bg-[var(--app-panel)] pt-4 pb-1 backdrop-blur">
             <div className="flex items-center gap-2">
               {hasChanges && (
                 <span className="text-xs text-amber-600">⚠️ Unsaved changes</span>

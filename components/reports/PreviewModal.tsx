@@ -302,9 +302,9 @@ export default function PreviewModal({
       ) : (
         <>
           {/* Report Details */}
-          <div className="space-y-6 max-w-5xl mx-auto">
+          <div className="space-y-6 max-w-5xl mx-auto pb-28">
             {/* Basic Information Section */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-blue-600">👤</span>
                 Basic Information
@@ -365,7 +365,7 @@ export default function PreviewModal({
             </div>
 
             {/* Dates & Financial Section */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-green-600">📅</span>
                 Dates & Financial
@@ -425,7 +425,7 @@ export default function PreviewModal({
             </div>
 
             {/* Appraisal Details Section */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-purple-600">📋</span>
                 Appraisal Details
@@ -473,7 +473,7 @@ export default function PreviewModal({
             </div>
 
             {/* Additional Report Details */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-amber-600">📝</span>
                 Additional Details
@@ -643,7 +643,7 @@ export default function PreviewModal({
                       </div>
                       <div className="space-y-3">
                         {group.items.map(({ lot, idx }) => (
-                          <div key={idx} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                          <div key={idx} className="rounded-[1.25rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-3 shadow-[var(--app-shadow-card)]">
                             <div className="flex items-center justify-between mb-2">
                               <div className="text-sm font-semibold text-gray-900">Lot {String(lot.lot_id || idx + 1)}</div>
                               <button
@@ -1004,7 +1004,7 @@ export default function PreviewModal({
 
           {/* Summary */}
           <div className="mt-6 space-y-6 max-w-5xl mx-auto">
-            <div className="p-6 bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-xl">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[linear-gradient(135deg,rgba(225,29,72,0.10),rgba(37,99,235,0.06))] p-6 shadow-[var(--app-shadow-card)]">
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 Report Summary
               </h3>
@@ -1054,7 +1054,7 @@ export default function PreviewModal({
               </div>
             </div>
 
-            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="rounded-[1.25rem] border border-[var(--app-border)] bg-[rgba(148,163,184,0.08)] p-4">
               <h4 className="font-semibold text-gray-900 mb-2">Next Steps</h4>
               <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
                 <li>Review the data</li>
@@ -1066,7 +1066,7 @@ export default function PreviewModal({
           </div>
 
           {/* Actions */}
-          <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-gray-200 pt-4">
+          <div className="sticky bottom-0 z-10 mt-6 flex flex-col gap-3 border-t border-[var(--app-border)] bg-[var(--app-panel)] px-1 pt-4 pb-1 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
             <button
               onClick={onClose}
               className="order-2 sm:order-1 px-4 py-2.5 text-gray-700 hover:text-gray-900 font-medium transition-colors hover:bg-white rounded-lg"

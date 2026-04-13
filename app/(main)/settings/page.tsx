@@ -1,12 +1,32 @@
 "use client";
 
-import { useAuthContext } from "@/context/AuthContext";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import {
+  DeleteOutlineRounded,
+  LogoutRounded,
+  PersonRounded,
+  SaveRounded,
+  UploadFileRounded,
+} from "@mui/icons-material";
+import { toast } from "react-toastify";
 import API from "@/lib/api";
 import { UserService } from "@/services/user";
-import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
-import { Trash2, User, Loader2, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useAuthContext } from "@/context/AuthContext";
+import { PageHeader, SectionPanel, SurfaceCard } from "@/components/common/WorkspaceUI";
 
 export default function SettingsPage() {
   const { user, logout, refresh } = useAuthContext();
@@ -39,7 +59,7 @@ export default function SettingsPage() {
         contactPhone: (user as any)?.contactPhone || "",
       });
     }
-  }, [user, isEditing]);
+  }, [isEditing, user]);
 
   const initial = useMemo(() => {
     const source =
@@ -49,37 +69,30 @@ export default function SettingsPage() {
 
   const needsPassword = (user as any)?.authProvider === "email";
   const memberSince = useMemo(() => {
-    const d = (user as any)?.createdAt;
-    return d ? new Date(d).toLocaleDateString() : "-";
+    const value = (user as any)?.createdAt;
+    return value ? new Date(value).toLocaleDateString() : "—";
   }, [user]);
   const lastUpdated = useMemo(() => {
-    const d = (user as any)?.updatedAt;
-    return d ? new Date(d).toLocaleDateString() : "-";
+    const value = (user as any)?.updatedAt;
+    return value ? new Date(value).toLocaleDateString() : "—";
   }, [user]);
 
-  const openDelete = () => {
-    setIsDeleteOpen(true);
-    setConfirmText("");
-    setDeletePassword("");
-    setError(null);
-  };
-
-  const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] || null;
-    if (!f) {
+  const handleCvChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    if (!file) {
       setCvFile(null);
       return;
     }
-    const nameOk = f.name?.toLowerCase().endsWith(".docx");
-    const typeOk =
-      f.type ===
+    const validName = file.name.toLowerCase().endsWith(".docx");
+    const validType =
+      file.type ===
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    if (!nameOk || !typeOk) {
+    if (!validName || !validType) {
       setCvFile(null);
       toast.error("Only .docx files are allowed.");
       return;
     }
-    setCvFile(f);
+    setCvFile(file);
   };
 
   const handleUploadCv = async () => {
@@ -90,8 +103,12 @@ export default function SettingsPage() {
       setCvFile(null);
       toast.success("CV uploaded");
       await refresh();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Failed to upload CV");
+    } catch (uploadError: any) {
+      toast.error(
+        uploadError?.response?.data?.message ||
+          uploadError?.message ||
+          "Failed to upload CV"
+      );
     } finally {
       setUploadingCv(false);
     }
@@ -103,52 +120,15 @@ export default function SettingsPage() {
       await UserService.deleteCv();
       toast.success("CV removed");
       await refresh();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || "Failed to delete CV");
+    } catch (deleteError: any) {
+      toast.error(
+        deleteError?.response?.data?.message ||
+          deleteError?.message ||
+          "Failed to delete CV"
+      );
     } finally {
       setUploadingCv(false);
     }
-  };
-
-  const closeDelete = () => {
-    if (deleting) return;
-    setIsDeleteOpen(false);
-    setConfirmText("");
-    setDeletePassword("");
-    setError(null);
-  };
-
-  const confirmDelete = async () => {
-    if (confirmText !== "DELETE") return;
-    try {
-      setDeleting(true);
-      setError(null);
-      await API.delete("/user", {
-        data: needsPassword ? { password: deletePassword } : undefined,
-      });
-      await logout();
-      router.replace("/welcome");
-    } catch (e: any) {
-      setError(
-        e?.response?.data?.message || e?.message || "Failed to delete account"
-      );
-      setDeleting(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      setLoggingOut(true);
-      await logout();
-      router.replace("/welcome");
-    } catch (e) {
-      setLoggingOut(false);
-    }
-  };
-
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
@@ -164,449 +144,290 @@ export default function SettingsPage() {
       toast.success("Profile updated");
       setIsEditing(false);
       await refresh();
-    } catch (e: any) {
+    } catch (saveError: any) {
       toast.error(
-        e?.response?.data?.message || e?.message || "Failed to update profile"
+        saveError?.response?.data?.message ||
+          saveError?.message ||
+          "Failed to update profile"
       );
     } finally {
       setSaving(false);
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await logout();
+      router.replace("/welcome");
+    } catch {
+      setLoggingOut(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (confirmText !== "DELETE") return;
+    try {
+      setDeleting(true);
+      setError(null);
+      await API.delete("/user", {
+        data: needsPassword ? { password: deletePassword } : undefined,
+      });
+      await logout();
+      router.replace("/welcome");
+    } catch (deleteError: any) {
+      setError(
+        deleteError?.response?.data?.message ||
+          deleteError?.message ||
+          "Failed to delete account"
+      );
+      setDeleting(false);
+    }
+  };
+
+  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setForm((previous) => ({ ...previous, [name]: value }));
+  };
+
   return (
-    <div className="relative isolate">
-      <div
-        className="pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 bg-gradient-to-b from-rose-100/80 to-transparent"
-        aria-hidden
+    <Stack spacing={3}>
+      <PageHeader
+        eyebrow="Account"
+        title="Settings"
+        description="Manage profile information, company details, appraiser CV uploads, session controls, and destructive account actions."
       />
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent drop-shadow-sm">
-            Settings
-          </h1>
-          <p className="mt-1 text-sm sm:text-base text-rose-800/70">
-            Manage your profile and account.
-          </p>
-        </div>
 
-        {/* Profile */}
-        <section className="rounded-2xl bg-white ring-1 ring-rose-100 p-5 shadow-[0_10px_30px_rgba(244,63,94,0.08)]">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-lg font-semibold text-rose-700 ring-1 ring-rose-200 shadow-inner">
-                {initial}
-              </div>
-              <div>
-                <div className="flex items-center gap-2 text-rose-900">
-                  <User className="h-4 w-4 text-rose-500" />
-                  <span className="text-sm font-medium">Profile</span>
-                </div>
-                <p className="text-sm text-rose-700/70">
-                  Your account information
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {isEditing ? (
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white ring-1 ring-red-800 shadow-sm transition-all hover:bg-red-500 hover:shadow-md active:translate-y-[1px]"
-                >
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: { xs: "1fr", xl: "1.15fr 0.85fr" },
+        }}
+      >
+        <SectionPanel
+          title="Profile and company details"
+          subtitle="This is the canonical profile surface for your authenticated workspace."
+          action={
+            isEditing ? (
+              <Stack direction="row" spacing={1}>
+                <Button variant="text" onClick={() => setIsEditing(false)}>
                   Cancel
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="rounded-xl bg-green-600 px-3 py-2 text-sm font-medium text-white ring-1 ring-green-800 shadow-sm transition-all hover:bg-green-500 hover:shadow-md active:translate-y-[1px]"
-                >
-                  Edit Profile
-                </button>
-              )}
-            </div>
-          </div>
-
-          {!isEditing ? (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                  Full Name
-                </p>
-                <p className="mt-1 text-sm text-rose-900">
-                  {(user as any)?.username ?? "-"}
-                </p>
-              </div>
-              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                  Email
-                </p>
-                <p className="mt-1 text-sm text-rose-900">
-                  {user?.email ?? "-"}
-                </p>
-              </div>
-              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                  Company Name
-                </p>
-                <p className="mt-1 text-sm text-rose-900">
-                  {(user as any)?.companyName ?? "-"}
-                </p>
-              </div>
-              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                  Company Address
-                </p>
-                <p className="mt-1 text-sm text-rose-900">
-                  {(user as any)?.companyAddress ?? "-"}
-                </p>
-              </div>
-              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                  Contact Email
-                </p>
-                <p className="mt-1 text-sm text-rose-900">
-                  {(user as any)?.contactEmail ?? "-"}
-                </p>
-              </div>
-              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                  Contact Phone
-                </p>
-                <p className="mt-1 text-sm text-rose-900">
-                  {(user as any)?.contactPhone ?? "-"}
-                </p>
-              </div>
-              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                  Member Since
-                </p>
-                <p className="mt-1 text-sm text-rose-900">{memberSince}</p>
-              </div>
-              <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-                <p className="text-[10px] uppercase tracking-wide text-rose-600">
-                  Last Updated
-                </p>
-                <p className="mt-1 text-sm text-rose-900">{lastUpdated}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-medium text-rose-700">
-                  Username
-                </label>
-                <input
-                  name="username"
-                  value={form.username}
-                  onChange={onChange}
-                  placeholder="Your username"
-                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-rose-700">
-                  Email
-                </label>
-                <input
-                  value={user?.email || ""}
-                  readOnly
-                  className="mt-1 w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-rose-700">
-                  Company Name
-                </label>
-                <input
-                  name="companyName"
-                  value={form.companyName}
-                  onChange={onChange}
-                  placeholder="Company name"
-                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-rose-700">
-                  Company Address
-                </label>
-                <input
-                  name="companyAddress"
-                  value={form.companyAddress}
-                  onChange={onChange}
-                  placeholder="Company address"
-                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-rose-700">
-                  Contact Email
-                </label>
-                <input
-                  name="contactEmail"
-                  value={form.contactEmail}
-                  onChange={onChange}
-                  placeholder="Contact email"
-                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-rose-700">
-                  Contact Phone
-                </label>
-                <input
-                  name="contactPhone"
-                  value={form.contactPhone}
-                  onChange={onChange}
-                  placeholder="Contact phone"
-                  className="mt-1 w-full rounded-lg border border-rose-200 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                />
-              </div>
-              <div className="sm:col-span-2 mt-2 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white ring-1 ring-red-800 shadow-sm transition-all hover:bg-red-500 hover:shadow-md active:translate-y-[1px] disabled:opacity-50"
-                  disabled={saving}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<SaveRounded />}
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-3 py-2 text-sm font-medium text-white shadow-md hover:bg-green-500 active:translate-y-[1px] disabled:opacity-50"
                 >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Saving...
-                    </>
-                  ) : (
-                    <>Save Changes</>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
+                  {saving ? "Saving..." : "Save changes"}
+                </Button>
+              </Stack>
+            ) : (
+              <Button variant="contained" onClick={() => setIsEditing(true)}>
+                Edit profile
+              </Button>
+            )
+          }
+        >
+          <Stack spacing={2.5}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <Avatar
+                sx={{
+                  width: 64,
+                  height: 64,
+                  bgcolor: "var(--app-accent)",
+                  fontSize: 26,
+                  fontWeight: 800,
+                }}
+              >
+                {initial}
+              </Avatar>
+              <Box>
+                <Typography variant="h6" sx={{ color: "var(--app-text)" }}>
+                  {(user as any)?.username || user?.email || "Account"}
+                </Typography>
+                <Typography sx={{ color: "var(--app-text-muted)" }}>
+                  Member since {memberSince} · Last updated {lastUpdated}
+                </Typography>
+              </Box>
+            </Stack>
 
-        {/* Appraiser CV */}
-        <section className="rounded-2xl bg-white ring-1 ring-rose-100 p-5 shadow-[0_8px_24px_rgba(244,63,94,0.06)]">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-base font-semibold text-rose-900">Appraiser CV</h2>
-              <p className="mt-1 text-sm text-rose-700/80">
-                Upload your CV (.docx). It will be appended to the last pages of your reports.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl bg-rose-50/60 ring-1 ring-rose-100 p-3 shadow-inner">
-              <p className="text-[10px] uppercase tracking-wide text-rose-600">Current</p>
-              {((user as any)?.cvUrl) ? (
-                <div className="mt-1 text-sm text-rose-900 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate" title={(user as any)?.cvFilename || (user as any)?.cvUrl}>{(user as any)?.cvFilename || (user as any)?.cvUrl}</p>
-                    <a
-                      href={(user as any)?.cvUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-blue-700 hover:underline"
-                    >
-                      View CV
-                    </a>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleDeleteCv}
-                    disabled={uploadingCv}
-                    className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
-                </div>
-              ) : (
-                <p className="mt-1 text-sm text-rose-900">No CV uploaded</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-rose-700">Upload CV</label>
-              <div className="mt-1 flex items-center gap-2">
-                <input
-                  type="file"
-                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  onChange={handleCvChange}
-                  className="block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-rose-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-rose-500"
+            <Box
+              sx={{
+                display: "grid",
+                gap: 1.5,
+                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+              }}
+            >
+              {[
+                { key: "username", label: "Username", value: form.username, readOnly: !isEditing },
+                { key: "email", label: "Email", value: user?.email || "", readOnly: true },
+                { key: "companyName", label: "Company name", value: form.companyName, readOnly: !isEditing },
+                { key: "companyAddress", label: "Company address", value: form.companyAddress, readOnly: !isEditing },
+                { key: "contactEmail", label: "Contact email", value: form.contactEmail, readOnly: !isEditing },
+                { key: "contactPhone", label: "Contact phone", value: form.contactPhone, readOnly: !isEditing },
+              ].map((field) => (
+                <TextField
+                  key={field.key}
+                  name={field.key}
+                  label={field.label}
+                  value={field.value}
+                  onChange={onChange}
+                  fullWidth
+                  disabled={field.readOnly}
                 />
-                <button
-                  type="button"
+              ))}
+            </Box>
+          </Stack>
+        </SectionPanel>
+
+        <Stack spacing={2}>
+          <SectionPanel
+            title="Appraiser CV"
+            subtitle="Upload a `.docx` CV to append it to report packages."
+          >
+            <Stack spacing={2}>
+              <SurfaceCard sx={{ p: 2 }}>
+                <Typography sx={{ color: "var(--app-text)", fontWeight: 800 }}>
+                  Current file
+                </Typography>
+                {(user as any)?.cvUrl ? (
+                  <Stack spacing={1.25} sx={{ mt: 1.2 }}>
+                    <Typography sx={{ color: "var(--app-text-muted)" }}>
+                      {(user as any)?.cvFilename || (user as any)?.cvUrl}
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        component="a"
+                        href={(user as any)?.cvUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View CV
+                      </Button>
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        onClick={handleDeleteCv}
+                        disabled={uploadingCv}
+                      >
+                        Remove
+                      </Button>
+                    </Stack>
+                  </Stack>
+                ) : (
+                  <Typography sx={{ mt: 1.2, color: "var(--app-text-muted)" }}>
+                    No CV uploaded yet.
+                  </Typography>
+                )}
+              </SurfaceCard>
+
+              <Stack spacing={1.5}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<UploadFileRounded />}
+                >
+                  Select `.docx`
+                  <input hidden type="file" accept=".docx" onChange={handleCvChange} />
+                </Button>
+                {cvFile ? (
+                  <Alert severity="info">Selected file: {cvFile.name}</Alert>
+                ) : null}
+                <Button
+                  variant="contained"
                   onClick={handleUploadCv}
                   disabled={!cvFile || uploadingCv}
-                  className="rounded-xl bg-green-600 px-3 py-2 text-sm font-medium text-white ring-1 ring-green-800 shadow-sm transition-all hover:bg-green-500 hover:shadow-md active:translate-y-[1px] disabled:opacity-50"
                 >
-                  {uploadingCv ? (
-                    <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Uploading...</span>
-                  ) : (
-                    <>Upload</>
-                  )}
-                </button>
-              </div>
-              {cvFile && (
-                <p className="mt-1 text-xs text-gray-600">Selected: {cvFile.name}</p>
-              )}
-            </div>
-          </div>
-        </section>
+                  {uploadingCv ? "Uploading..." : "Upload CV"}
+                </Button>
+              </Stack>
+            </Stack>
+          </SectionPanel>
 
-        {/* Session */}
-        <section className="rounded-2xl bg-white ring-1 ring-rose-100 p-5 shadow-[0_8px_24px_rgba(244,63,94,0.06)]">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-rose-900">Session</h2>
-              <p className="mt-1 text-sm text-rose-700/80">
-                Sign out of your account on this device.
-              </p>
-            </div>
-            <button
-              type="button"
+          <SectionPanel
+            title="Session"
+            subtitle="Sign out of the current device."
+          >
+            <Button
+              variant="outlined"
+              color="warning"
+              startIcon={<LogoutRounded />}
               onClick={handleLogout}
               disabled={loggingOut}
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-rose-700 ring-1 ring-rose-200 shadow-sm transition-all hover:bg-rose-50 hover:shadow-md active:translate-y-[1px] disabled:opacity-50"
             >
-              {loggingOut ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Logging out...
-                </>
-              ) : (
-                <>Log out</>
-              )}
-            </button>
-          </div>
-        </section>
+              {loggingOut ? "Logging out..." : "Log out"}
+            </Button>
+          </SectionPanel>
+        </Stack>
+      </Box>
 
-        {/* Danger Zone */}
-        <section className="rounded-2xl ring-1 ring-rose-200 bg-rose-50 p-5 shadow-[0_8px_24px_rgba(244,63,94,0.06)]">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="flex items-center gap-2 text-base font-semibold text-rose-800">
-                <Trash2 className="h-4 w-4" /> Delete Account
-              </h2>
-              <p className="mt-1 text-sm text-rose-700">
-                This action is permanent. All your reports and data will be
-                removed.
-              </p>
-            </div>
-          </div>
+      <SectionPanel
+        title="Danger zone"
+        subtitle="This action is permanent and removes your account and related data."
+      >
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Deleting your account will permanently remove your profile, reports, and stored data.
+        </Alert>
+        <Button
+          color="error"
+          variant="contained"
+          startIcon={<DeleteOutlineRounded />}
+          onClick={() => {
+            setIsDeleteOpen(true);
+            setConfirmText("");
+            setDeletePassword("");
+            setError(null);
+          }}
+        >
+          Delete account
+        </Button>
+      </SectionPanel>
 
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={openDelete}
-              className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow-md hover:bg-rose-500"
-            >
-              <Trash2 className="h-4 w-4" /> Delete Account
-            </button>
-          </div>
-        </section>
-
-        {/* Delete Modal */}
-        {isDeleteOpen && (
-          <div className="fixed inset-0 z-50">
-            <div
-              className="absolute inset-0 bg-black/50"
-              onClick={closeDelete}
+      <Dialog open={isDeleteOpen} onClose={() => !deleting && setIsDeleteOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Delete account</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Alert severity="error">
+              Type <strong>DELETE</strong> to confirm permanent account removal.
+            </Alert>
+            <TextField
+              label="Type DELETE to confirm"
+              value={confirmText}
+              onChange={(event) => setConfirmText(event.target.value)}
+              fullWidth
             />
-            <div className="absolute inset-0 flex items-center justify-center p-4">
-              <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white ring-1 ring-rose-100 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
-                <div className="flex items-center justify-between border-b border-rose-100 px-4 py-3">
-                  <h3 className="text-base font-semibold text-gray-900">
-                    Confirm Deletion
-                  </h3>
-                  <button
-                    className="p-1 text-gray-500 hover:text-gray-700"
-                    onClick={closeDelete}
-                    aria-label="Close"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="px-4 py-4">
-                  <p className="text-sm text-gray-600">
-                    This action will permanently delete your account and all
-                    data. Type
-                    <span className="px-1 font-semibold text-gray-900">
-                      DELETE
-                    </span>
-                    to confirm.
-                  </p>
-                  <div className="mt-3">
-                    <label className="block text-xs font-medium text-gray-700">
-                      Type DELETE to confirm
-                    </label>
-                    <input
-                      value={confirmText}
-                      onChange={(e) => setConfirmText(e.target.value)}
-                      placeholder="DELETE"
-                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                    />
-                  </div>
-                  {needsPassword && (
-                    <div className="mt-3">
-                      <label className="block text-xs font-medium text-gray-700">
-                        Password
-                      </label>
-                      <input
-                        type="password"
-                        value={deletePassword}
-                        onChange={(e) => setDeletePassword(e.target.value)}
-                        placeholder="Enter your password"
-                        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-                      />
-                    </div>
-                  )}
-                  {error && (
-                    <div className="mt-3 rounded-md border border-rose-300 bg-rose-50 p-2 text-sm text-rose-700">
-                      {error}
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-end gap-2 border-t px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={closeDelete}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    disabled={deleting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={confirmDelete}
-                    disabled={
-                      deleting ||
-                      confirmText !== "DELETE" ||
-                      (needsPassword && !deletePassword)
-                    }
-                    className="inline-flex items-center gap-2 rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-rose-500 disabled:opacity-50"
-                  >
-                    {deleting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Deleting...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="h-4 w-4" /> Permanently Delete
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+            {needsPassword ? (
+              <TextField
+                label="Password"
+                type="password"
+                value={deletePassword}
+                onChange={(event) => setDeletePassword(event.target.value)}
+                fullWidth
+              />
+            ) : null}
+            {error ? <Alert severity="error">{error}</Alert> : null}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDeleteOpen(false)} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={confirmDelete}
+            disabled={
+              deleting ||
+              confirmText !== "DELETE" ||
+              (needsPassword && !deletePassword)
+            }
+          >
+            {deleting ? "Deleting..." : "Permanently delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Stack>
   );
 }

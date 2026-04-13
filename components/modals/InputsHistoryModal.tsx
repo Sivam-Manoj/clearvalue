@@ -1,14 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X, Clock, Trash2, FileText } from "lucide-react";
+import {
+  Avatar,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Stack,
+  Typography,
+} from "@mui/material";
+import {
+  ArticleRounded,
+  CloseRounded,
+  DeleteOutlineRounded,
+  HistoryRounded,
+} from "@mui/icons-material";
 import {
   SavedInputService,
-  type SavedInput,
-  type FormType,
   type AssetFormData,
+  type FormType,
   type RealEstateFormData,
+  type SavedInput,
 } from "@/services/savedInputs";
 import { toast } from "react-toastify";
 
@@ -16,7 +36,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onLoadInput: (savedInput: SavedInput) => void;
-  formType?: FormType; // Filter by form type, undefined shows all
+  formType?: FormType;
 };
 
 export default function InputsHistoryModal({
@@ -32,9 +52,9 @@ export default function InputsHistoryModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetchSavedInputs();
+      void fetchSavedInputs();
     }
-  }, [isOpen]);
+  }, [isOpen, formType]);
 
   const fetchSavedInputs = async () => {
     try {
@@ -52,7 +72,6 @@ export default function InputsHistoryModal({
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Delete "${name}"?`)) return;
-
     try {
       setDeleting(id);
       await SavedInputService.delete(id);
@@ -66,24 +85,26 @@ export default function InputsHistoryModal({
   };
 
   const handleLoad = (savedInput: SavedInput) => {
+    onLoadInput(savedInput);
     onClose();
-    // Navigate to dashboard first
     router.push("/dashboard");
-    // Dispatch custom event after a brief delay to ensure form is mounted
     setTimeout(() => {
       const eventName =
         savedInput.formType === "realEstate"
           ? "load-realestate-input"
           : "load-saved-input";
-      const event = new CustomEvent(eventName, { detail: savedInput });
-      window.dispatchEvent(event);
+      window.dispatchEvent(new CustomEvent(eventName, { detail: savedInput }));
     }, 300);
   };
 
-  const formatDateTime = (dateString: string) => {
+  const totalLabel = useMemo(
+    () => `${savedInputs.length} saved ${savedInputs.length === 1 ? "entry" : "entries"}`,
+    [savedInputs.length]
+  );
+
+  const formatDateTime = (value: string) => {
     try {
-      const date = new Date(dateString);
-      return date.toLocaleString("en-US", {
+      return new Date(value).toLocaleString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -91,150 +112,195 @@ export default function InputsHistoryModal({
         minute: "2-digit",
       });
     } catch {
-      return dateString;
+      return value;
     }
   };
 
-  if (!isOpen) return null;
+  const renderSummary = (item: SavedInput) => {
+    const asset = item.formData as AssetFormData;
+    const realEstate = item.formData as RealEstateFormData;
+    return (
+      <Stack spacing={0.5}>
+        {asset.clientName ? (
+          <Typography variant="body2" sx={{ color: "var(--app-text-muted)" }}>
+            Client: {asset.clientName}
+          </Typography>
+        ) : null}
+        {asset.contractNo ? (
+          <Typography variant="body2" sx={{ color: "var(--app-text-muted)" }}>
+            Contract: {asset.contractNo}
+          </Typography>
+        ) : null}
+        {realEstate.property_details?.address ? (
+          <Typography variant="body2" sx={{ color: "var(--app-text-muted)" }}>
+            Address: {realEstate.property_details.address}
+          </Typography>
+        ) : null}
+      </Stack>
+    );
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative w-full max-w-3xl max-h-[85vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-rose-50 to-white">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-rose-100 rounded-xl">
-              <FileText className="h-6 w-6 text-rose-600" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Drafts Inputs</h2>
-              <p className="text-sm text-gray-600 mt-0.5">
-                {savedInputs.length} saved {savedInputs.length === 1 ? "input" : "inputs"}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-          >
-            <X className="h-6 w-6 text-gray-500" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-rose-200 border-t-rose-600"></div>
-            </div>
-          ) : savedInputs.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No saved inputs yet</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Save form data to access it later
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {savedInputs.map((item) => (
-                <div
-                  key={item._id}
-                  className="group relative bg-white border border-gray-200 rounded-xl p-4 hover:border-rose-300 hover:shadow-md transition-all"
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 6,
+            border: "1px solid var(--app-border)",
+            bgcolor: "var(--app-panel)",
+            backgroundImage:
+              "radial-gradient(circle at top left, rgba(225,29,72,0.08), transparent 22%), radial-gradient(circle at bottom right, rgba(37,99,235,0.08), transparent 20%)",
+            boxShadow: "var(--app-shadow-modal)",
+          },
+        },
+      }}
+    >
+      <DialogTitle sx={{ px: 3, pt: 3, pb: 2 }}>
+        <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+            <Avatar
+              variant="rounded"
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: 4,
+                bgcolor: "var(--app-accent-soft)",
+                color: "var(--app-accent)",
+              }}
+            >
+              <HistoryRounded />
+            </Avatar>
+            <Stack>
+              <Typography variant="h6" sx={{ color: "var(--app-text)" }}>
+                Draft inputs
+              </Typography>
+              <Typography variant="body2" sx={{ color: "var(--app-text-muted)" }}>
+                {totalLabel}
+              </Typography>
+            </Stack>
+          </Stack>
+          <IconButton onClick={onClose}>
+            <CloseRounded />
+          </IconButton>
+        </Stack>
+      </DialogTitle>
+      <Divider sx={{ borderColor: "var(--app-border)" }} />
+      <DialogContent sx={{ px: 2, py: 2.5 }}>
+        {loading ? (
+          <Typography sx={{ color: "var(--app-text-muted)", p: 2 }}>
+            Loading saved drafts...
+          </Typography>
+        ) : savedInputs.length === 0 ? (
+          <Stack spacing={1.5} sx={{ py: 8, alignItems: "center" }}>
+            <Avatar
+              variant="rounded"
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: 5,
+                bgcolor: "rgba(148, 163, 184, 0.12)",
+                color: "var(--app-text-muted)",
+              }}
+            >
+              <ArticleRounded />
+            </Avatar>
+            <Typography variant="h6" sx={{ color: "var(--app-text)" }}>
+              No saved drafts yet
+            </Typography>
+            <Typography sx={{ color: "var(--app-text-muted)" }}>
+              Saved form inputs will appear here so you can resume work quickly.
+            </Typography>
+          </Stack>
+        ) : (
+          <List sx={{ p: 0 }}>
+            {savedInputs.map((item, index) => (
+              <ListItem
+                key={item._id}
+                disablePadding
+                secondaryAction={
+                  <IconButton
+                    edge="end"
+                    color="error"
+                    onClick={() => handleDelete(item._id, item.name)}
+                    disabled={deleting === item._id}
+                  >
+                    <DeleteOutlineRounded />
+                  </IconButton>
+                }
+                sx={{
+                  mb: index === savedInputs.length - 1 ? 0 : 1.25,
+                  border: "1px solid var(--app-border)",
+                  borderRadius: 4,
+                  bgcolor: "var(--app-panel-soft)",
+                }}
+              >
+                <ListItemButton
+                  onClick={() => handleLoad(item)}
+                  sx={{
+                    borderRadius: 4,
+                    py: 2,
+                    pr: 8,
+                    alignItems: "flex-start",
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div
-                      className="flex-1 cursor-pointer"
-                      onClick={() => handleLoad(item)}
-                    >
-                      <h3 className="font-semibold text-gray-900 text-lg mb-2 group-hover:text-rose-600 transition-colors">
-                        {item.name}
-                      </h3>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600">
-                        {/* Asset form fields */}
-                        {(item.formData as AssetFormData).clientName && (
-                          <div>
-                            <span className="font-medium">Client:</span>{" "}
-                            {(item.formData as AssetFormData).clientName}
-                          </div>
-                        )}
-                        {(item.formData as AssetFormData).contractNo && (
-                          <div>
-                            <span className="font-medium">Contract:</span>{" "}
-                            {(item.formData as AssetFormData).contractNo}
-                          </div>
-                        )}
-                        {(item.formData as AssetFormData).appraisalPurpose && (
-                          <div className="col-span-2">
-                            <span className="font-medium">Purpose:</span>{" "}
-                            {(item.formData as AssetFormData).appraisalPurpose}
-                          </div>
-                        )}
-                        {/* Real Estate form fields */}
-                        {(item.formData as RealEstateFormData).property_details
-                          ?.address && (
-                          <div className="col-span-2">
-                            <span className="font-medium">Address:</span>{" "}
-                            {
-                              (item.formData as RealEstateFormData)
-                                .property_details?.address
-                            }
-                          </div>
-                        )}
-                        {(item.formData as RealEstateFormData).property_type && (
-                          <div>
-                            <span className="font-medium">Type:</span>{" "}
-                            {(item.formData as RealEstateFormData).property_type}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span>{formatDateTime(item.createdAt)}</span>
-                        {item.formType && (
-                          <span
-                            className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  <ListItemText
+                    primary={
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1}
+                        sx={{ alignItems: { xs: "flex-start", sm: "center" } }}
+                      >
+                        <Typography sx={{ fontWeight: 800, color: "var(--app-text)" }}>
+                          {item.name}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            px: 1.25,
+                            py: 0.5,
+                            borderRadius: 99,
+                            bgcolor:
                               item.formType === "realEstate"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-blue-100 text-blue-700"
-                            }`}
-                          >
-                            {item.formType === "realEstate"
-                              ? "Real Estate"
-                              : "Asset"}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleDelete(item._id, item.name)}
-                      disabled={deleting === item._id}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                      title="Delete"
-                    >
-                      {deleting === item._id ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-red-600"></div>
-                      ) : (
-                        <Trash2 className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-xl transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+                                ? "rgba(5,150,105,0.12)"
+                                : "rgba(37,99,235,0.12)",
+                            color:
+                              item.formType === "realEstate" ? "#059669" : "#2563eb",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {item.formType === "realEstate" ? "Real Estate" : "Asset"}
+                        </Typography>
+                      </Stack>
+                    }
+                    secondary={
+                      <Stack spacing={1.25} sx={{ mt: 1 }}>
+                        {renderSummary(item)}
+                        <Typography variant="caption" sx={{ color: "var(--app-text-muted)" }}>
+                          Saved {formatDateTime(item.createdAt)}
+                        </Typography>
+                      </Stack>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </DialogContent>
+      <Divider sx={{ borderColor: "var(--app-border)" }} />
+      <Stack
+        direction="row"
+        spacing={1.5}
+        sx={{ px: 3, py: 2, justifyContent: "flex-end" }}
+      >
+        <Button onClick={onClose} variant="outlined">
+          Close
+        </Button>
+      </Stack>
+    </Dialog>
   );
 }

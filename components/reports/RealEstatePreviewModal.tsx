@@ -138,7 +138,7 @@ export default function RealEstatePreviewModal({
         </div>
       ) : (
         <>
-          <div className="space-y-6 max-w-5xl mx-auto">
+          <div className="space-y-6 max-w-5xl mx-auto pb-28">
             {/* Report Type Badge */}
             <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
               <Building2 className="h-6 w-6 text-emerald-600" />
@@ -149,7 +149,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* Property Details Section */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-emerald-600">🏠</span>
                 Property Details
@@ -219,7 +219,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* Report Dates Section */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-blue-600">📅</span>
                 Report Dates
@@ -262,7 +262,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* House Details Section */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-purple-600">🏢</span>
                 Building Details
@@ -344,7 +344,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* Valuation Section */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-green-600">💰</span>
                 Valuation
@@ -390,7 +390,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* Inspector Info Section */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-amber-600">👤</span>
                 Inspector Info
@@ -449,7 +449,7 @@ export default function RealEstatePreviewModal({
 
             {/* Farmland Details Section (if farmland) */}
             {propertyType === 'farmland' && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+              <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
                 <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <span className="text-green-600">🌾</span>
                   Farmland Details
@@ -552,7 +552,7 @@ export default function RealEstatePreviewModal({
 
             {/* Photo Preview Section */}
             {imageUrls.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mt-6">
+              <div className="mt-6 rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
                 <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Image className="h-5 w-5 text-emerald-600" />
                   Property Photos ({imageUrls.length})
@@ -626,7 +626,7 @@ export default function RealEstatePreviewModal({
           )}
 
           {/* Action Buttons */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-end gap-3 border-t border-gray-200 pt-6">
+          <div className="sticky bottom-0 z-10 mt-8 flex flex-col items-center justify-end gap-3 border-t border-[var(--app-border)] bg-[var(--app-panel)] pt-6 pb-1 backdrop-blur sm:flex-row">
             <button
               onClick={handleSaveChanges}
               disabled={saving || !hasChanges}

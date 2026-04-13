@@ -1,13 +1,12 @@
 "use client";
 
+import { ColorModeProvider, useColorMode } from "@/components/providers/ColorModeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastContainer } from "react-toastify";
 
-export default function AppProviders({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function ProvidersContent({ children }: { children: React.ReactNode }) {
+  const { resolvedTheme } = useColorMode();
+
   return (
     <AuthProvider>
       {children}
@@ -18,8 +17,20 @@ export default function AppProviders({
         newestOnTop
         closeOnClick
         pauseOnHover
-        theme="colored"
+        theme={resolvedTheme === "dark" ? "dark" : "colored"}
       />
     </AuthProvider>
+  );
+}
+
+export default function AppProviders({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ColorModeProvider>
+      <ProvidersContent>{children}</ProvidersContent>
+    </ColorModeProvider>
   );
 }

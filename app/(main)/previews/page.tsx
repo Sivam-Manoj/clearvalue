@@ -1,30 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Eye,
-  Edit,
-  Send,
-  AlertCircle,
-  Loader2,
-  Building2,
-  Package,
-  RefreshCw,
-  Clock,
-  CheckCircle,
-  FileText,
-  Download,
-  Trash2,
-  MoreVertical,
-  ListOrdered,
-} from "lucide-react";
-import { getAssetReports, getSubmittedReports, resubmitReport, deleteAssetReport, type AssetReport } from "@/services/assets";
-import { getLotListings, getSubmittedLotListings, resubmitLotListing, deleteLotListing, type LotListing } from "@/services/lotListing";
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Tab,
+  Tabs,
+  Typography,
+} from "@mui/material";
+import {
+  AutoAwesomeRounded,
+  DeleteOutlineRounded,
+  EditRounded,
+  RefreshRounded,
+  SendRounded,
+  VisibilityRounded,
+} from "@mui/icons-material";
+import { toast } from "react-toastify";
+import {
+  deleteAssetReport,
+  getAssetReports,
+  getSubmittedReports,
+  resubmitReport,
+  type AssetReport,
+} from "@/services/assets";
+import {
+  deleteLotListing,
+  getLotListings,
+  getSubmittedLotListings,
+  resubmitLotListing,
+  type LotListing,
+} from "@/services/lotListing";
 import {
   RealEstateService,
   type RealEstateReport,
 } from "@/services/realEstate";
-import { toast } from "react-toastify";
+import {
+  EmptyState,
+  PageHeader,
+  SectionPanel,
+  StatusPill,
+  SurfaceCard,
+} from "@/components/common/WorkspaceUI";
 import StatusBadge from "@/components/reports/StatusBadge";
 import PreviewModal from "@/components/reports/PreviewModal";
 import RealEstatePreviewModal from "@/components/reports/RealEstatePreviewModal";
@@ -36,6 +61,59 @@ type CombinedReport =
   | (LotListing & { reportType: "lotListing" });
 
 type TabType = "new" | "submitted";
+
+function summaryForReport(report: CombinedReport) {
+  if (report.reportType === "realEstate") {
+    return {
+      title:
+        (report as any).property_details?.address ||
+        (report as any).preview_data?.property_details?.address ||
+        "Real Estate Report",
+      typeLabel: "Real Estate",
+      accent: "#059669",
+      fields: [
+        ["Property Type", (report as any).property_type || "—"],
+        [
+          "Market Value",
+          (report as any).preview_data?.valuation?.fair_market_value ||
+            (report as any).valuation?.fair_market_value ||
+            "—",
+        ],
+        ["Images", String(report.imageUrls?.length || 0)],
+      ],
+    };
+  }
+  if (report.reportType === "lotListing") {
+    return {
+      title:
+        (report as any).details?.contract_no ||
+        (report as any).preview_data?.contract_no ||
+        "Lot Listing",
+      typeLabel: "Lot Listing",
+      accent: "#7c3aed",
+      fields: [
+        ["Lots", String((report as any).lots?.length || 0)],
+        [
+          "Currency",
+          (report as any).preview_data?.currency ||
+            (report as any).details?.currency ||
+            "CAD",
+        ],
+        ["Images", String(report.imageUrls?.length || 0)],
+      ],
+    };
+  }
+  return {
+    title: (report as any).client_name || "Asset Report",
+    typeLabel: "Asset",
+    accent: "#2563eb",
+    fields: [
+      ["Total Assets", String((report as any).lots?.length || 0)],
+      ["Grouping", (report as any).grouping_mode?.replace(/_/g, " ") || "—"],
+      ["Industry", report.preview_data?.industry || "Not specified"],
+    ],
+  };
+}
 
 export default function PreviewsPage() {
   const [activeTab, setActiveTab] = useState<TabType>("new");
@@ -49,15 +127,18 @@ export default function PreviewsPage() {
   const [lotListingModalOpen, setLotListingModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [isResubmitMode, setIsResubmitMode] = useState(false);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CombinedReport | null>(null);
 
-  // Load all reports
   const loadReports = async () => {
     try {
       setLoading(true);
-
-      // Fetch all in parallel
-      const [assetResponse, realEstateResponse, submittedAssetResponse, lotListingResponse, submittedLotListingResponse] = await Promise.all([
+      const [
+        assetResponse,
+        realEstateResponse,
+        submittedAssetResponse,
+        lotListingResponse,
+        submittedLotListingResponse,
+      ] = await Promise.all([
         getAssetReports().catch(() => ({ data: [] })),
         RealEstateService.getReports().catch(() => ({ data: [] })),
         getSubmittedReports().catch(() => ({ data: [] })),
@@ -65,56 +146,64 @@ export default function PreviewsPage() {
         getSubmittedLotListings().catch(() => ({ data: [] })),
       ]);
 
-      // Filter preview and declined reports for "New" tab
       const assetPreviews: CombinedReport[] = (assetResponse.data || [])
-        .filter((r) => {
-          const generationInProgress = Boolean((r as any).files_generating) || Boolean((r as any).files_regenerating);
-          return (r.status === "preview" || r.status === "declined") && !generationInProgress;
+        .filter((report) => {
+          const generating =
+            Boolean((report as any).files_generating) ||
+            Boolean((report as any).files_regenerating);
+          return (
+            (report.status === "preview" || report.status === "declined") &&
+            !generating
+          );
         })
-        .map((r) => ({ ...r, reportType: "asset" as const }));
+        .map((report) => ({ ...report, reportType: "asset" as const }));
 
       const realEstatePreviews: CombinedReport[] = (realEstateResponse.data || [])
-        .filter((r) => r.status === "preview" || r.status === "declined")
-        .map((r) => ({ ...r, reportType: "realEstate" as const }));
+        .filter(
+          (report) => report.status === "preview" || report.status === "declined"
+        )
+        .map((report) => ({ ...report, reportType: "realEstate" as const }));
 
       const lotListingPreviews: CombinedReport[] = (lotListingResponse.data || [])
-        .filter((r: LotListing) => r.status === "preview" || r.status === "declined")
-        .map((r: LotListing) => ({ ...r, reportType: "lotListing" as const }));
+        .filter(
+          (report) => report.status === "preview" || report.status === "declined"
+        )
+        .map((report) => ({ ...report, reportType: "lotListing" as const }));
 
-      // Combine new previews
-      const combinedNew = [...assetPreviews, ...realEstatePreviews, ...lotListingPreviews].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      const submittedAssets: CombinedReport[] = (submittedAssetResponse.data || []).map(
+        (report) => ({ ...report, reportType: "asset" as const })
       );
-
-      // Submitted reports (pending_approval and approved)
-      const submittedAssets: CombinedReport[] = (submittedAssetResponse.data || [])
-        .map((r) => ({ ...r, reportType: "asset" as const }));
-
-      // Also include real estate submitted reports
       const realEstateSubmitted: CombinedReport[] = (realEstateResponse.data || [])
-        .filter((r) => r.status === "pending_approval" || r.status === "approved")
-        .map((r) => ({ ...r, reportType: "realEstate" as const }));
+        .filter(
+          (report) =>
+            report.status === "pending_approval" || report.status === "approved"
+        )
+        .map((report) => ({ ...report, reportType: "realEstate" as const }));
+      const lotListingSubmitted: CombinedReport[] = (
+        submittedLotListingResponse.data || []
+      ).map((report) => ({ ...report, reportType: "lotListing" as const }));
 
-      // Also include lot listing submitted reports
-      const lotListingSubmitted: CombinedReport[] = (submittedLotListingResponse.data || [])
-        .map((r: LotListing) => ({ ...r, reportType: "lotListing" as const }));
-
-      const combinedSubmitted = [...submittedAssets, ...realEstateSubmitted, ...lotListingSubmitted].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      setNewReports(
+        [...assetPreviews, ...realEstatePreviews, ...lotListingPreviews].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
       );
-
-      setNewReports(combinedNew);
-      setSubmittedReports(combinedSubmitted);
-    } catch (err: any) {
-      console.error("Failed to load reports:", err);
-      toast.error(err.response?.data?.message || "Failed to load reports");
+      setSubmittedReports(
+        [...submittedAssets, ...realEstateSubmitted, ...lotListingSubmitted].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+      );
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load previews");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadReports();
+    void loadReports();
   }, []);
 
   const handleOpenPreview = (report: CombinedReport, resubmitMode = false) => {
@@ -138,537 +227,364 @@ export default function PreviewsPage() {
   };
 
   const handleSuccess = () => {
-    loadReports();
+    void loadReports();
     toast.success("Report submitted for approval!");
   };
 
-  const handleQuickResubmit = async (reportId: string, reportType: string) => {
+  const handleQuickResubmit = async (report: CombinedReport) => {
     try {
-      setResubmitting(reportId);
-      if (reportType === "lotListing") {
-        await resubmitLotListing(reportId);
+      setResubmitting(report._id);
+      if (report.reportType === "lotListing") {
+        await resubmitLotListing(report._id);
       } else {
-        await resubmitReport(reportId);
+        await resubmitReport(report._id);
       }
-      toast.success("Report resubmitted! Files are being regenerated.");
-      loadReports();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to resubmit report");
+      toast.success("Report resubmitted. Files are being regenerated.");
+      await loadReports();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to resubmit report");
     } finally {
       setResubmitting(null);
     }
   };
 
-  const handleDeleteReport = async (reportId: string, reportType: string) => {
+  const handleDeleteReport = async () => {
+    if (!deleteTarget) return;
     try {
-      setDeleting(reportId);
-      if (reportType === "asset") {
-        await deleteAssetReport(reportId);
-      } else if (reportType === "lotListing") {
-        await deleteLotListing(reportId);
+      setDeleting(deleteTarget._id);
+      if (deleteTarget.reportType === "asset") {
+        await deleteAssetReport(deleteTarget._id);
+      } else if (deleteTarget.reportType === "lotListing") {
+        await deleteLotListing(deleteTarget._id);
       } else {
-        await RealEstateService.deleteReport(reportId);
+        await RealEstateService.deleteReport(deleteTarget._id);
       }
       toast.success("Report deleted successfully");
-      setDeleteConfirmId(null);
-      loadReports();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to delete report");
+      setDeleteTarget(null);
+      await loadReports();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete report");
     } finally {
       setDeleting(null);
     }
   };
 
-  const isAssetFileGenerationInProgress = (report: CombinedReport) =>
-    report.reportType === "asset" &&
-    (Boolean((report as any).files_generating) || Boolean((report as any).files_regenerating));
-
   const reports = activeTab === "new" ? newReports : submittedReports;
+
+  const summary = useMemo(() => {
+    const all = [...newReports, ...submittedReports];
+    return {
+      newCount: newReports.length,
+      pendingCount: all.filter((report) => report.status === "pending_approval")
+        .length,
+      approvedCount: all.filter((report) => report.status === "approved").length,
+      declinedCount: all.filter((report) => report.status === "declined").length,
+    };
+  }, [newReports, submittedReports]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-rose-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading previews...</p>
-        </div>
-      </div>
+      <Box sx={{ minHeight: "60vh", display: "grid", placeItems: "center" }}>
+        <Stack spacing={2} sx={{ alignItems: "center" }}>
+          <CircularProgress />
+          <Typography sx={{ color: "var(--app-text-muted)" }}>
+            Loading previews...
+          </Typography>
+        </Stack>
+      </Box>
     );
   }
 
   return (
-    <div className="relative isolate">
-      <div
-        className="pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 bg-gradient-to-b from-blue-100/60 via-purple-100/40 to-transparent"
-        aria-hidden
+    <Stack spacing={3}>
+      <PageHeader
+        eyebrow="Review workspace"
+        title="Report previews"
+        description="Review new outputs, submit reports for approval, and manage already submitted preview packages from one responsive queue."
       />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent drop-shadow-sm">
-            Report Previews
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-slate-600">
-            Review, edit, and manage your reports
-          </p>
-        </div>
 
-        {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="-mb-px flex gap-6">
-            <button
-              onClick={() => setActiveTab("new")}
-              className={`flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === "new"
-                  ? "border-rose-500 text-rose-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <Eye className="h-4 w-4" />
-              New Previews
-              {newReports.length > 0 && (
-                <span className={`ml-1 px-2 py-0.5 text-xs rounded-full ${
-                  activeTab === "new" ? "bg-rose-100 text-rose-600" : "bg-gray-100 text-gray-600"
-                }`}>
-                  {newReports.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("submitted")}
-              className={`flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === "submitted"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <Send className="h-4 w-4" />
-              Submitted Previews
-              {submittedReports.length > 0 && (
-                <span className={`ml-1 px-2 py-0.5 text-xs rounded-full ${
-                  activeTab === "submitted" ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"
-                }`}>
-                  {submittedReports.length}
-                </span>
-              )}
-            </button>
-          </nav>
-        </div>
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, minmax(0, 1fr))",
+            xl: "repeat(4, minmax(0, 1fr))",
+          },
+        }}
+      >
+        {[
+          { label: "New", value: summary.newCount, color: "#2563eb" },
+          { label: "Pending approval", value: summary.pendingCount, color: "#d97706" },
+          { label: "Approved", value: summary.approvedCount, color: "#059669" },
+          { label: "Declined", value: summary.declinedCount, color: "#dc2626" },
+        ].map((item) => (
+          <SurfaceCard key={item.label} sx={{ p: 2.5 }}>
+            <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+              <Box>
+                <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
+                  {item.label}
+                </Typography>
+                <Typography variant="h4" sx={{ color: "var(--app-text)", mt: 1 }}>
+                  {item.value}
+                </Typography>
+              </Box>
+              <Avatar
+                variant="rounded"
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 4,
+                  bgcolor: `${item.color}1F`,
+                  color: item.color,
+                }}
+              >
+                <AutoAwesomeRounded />
+              </Avatar>
+            </Stack>
+          </SurfaceCard>
+        ))}
+      </Box>
 
-        {/* Empty State */}
-        {reports.length === 0 && (
-          <div className="mt-12 text-center p-12 bg-white rounded-2xl border-2 border-dashed border-gray-300">
-            {activeTab === "new" ? (
-              <>
-                <Eye className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No New Previews
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Submit a new report to see previews here.
-                </p>
-                <a
-                  href="/dashboard"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg hover:from-rose-600 hover:to-pink-700 font-medium shadow-lg transition-all"
-                >
-                  Create New Report
-                </a>
-              </>
-            ) : (
-              <>
-                <Send className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No Submitted Reports
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Submit a preview for approval to see it here.
-                </p>
-              </>
-            )}
-          </div>
-        )}
+      <SectionPanel
+        title="Preview queue"
+        subtitle="Switch between new previews and submitted items awaiting the next step."
+      >
+        <Tabs
+          value={activeTab}
+          onChange={(_, value) => setActiveTab(value)}
+          sx={{ mb: 2.5 }}
+        >
+          <Tab value="new" label={`New (${newReports.length})`} />
+          <Tab value="submitted" label={`Submitted (${submittedReports.length})`} />
+        </Tabs>
 
-        {/* Preview Cards */}
-        {reports.length > 0 && (
-          <div className="space-y-4">
+        {reports.length === 0 ? (
+          <EmptyState
+            title={
+              activeTab === "new" ? "No new previews" : "No submitted previews"
+            }
+            description={
+              activeTab === "new"
+                ? "Generate a new report to begin the review and submission flow."
+                : "Submitted previews and approvals will appear here."
+            }
+            action={
+              activeTab === "new" ? (
+                <Button href="/dashboard" variant="contained">
+                  Create new report
+                </Button>
+              ) : undefined
+            }
+          />
+        ) : (
+          <Stack spacing={2}>
             {reports.map((report) => {
-              const isRealEstate = report.reportType === "realEstate";
-              const isLotListing = report.reportType === "lotListing";
-              const assetFilesInProgress = isAssetFileGenerationInProgress(report);
-              const title = isRealEstate
-                ? (report as any).property_details?.address ||
-                  (report as any).preview_data?.property_details?.address ||
-                  "Real Estate Report"
-                : isLotListing
-                ? (report as any).details?.contract_no ||
-                  (report as any).preview_data?.contract_no ||
-                  "Lot Listing"
-                : (report as any).client_name || "Asset Report";
-              const typeLabel = isRealEstate ? "Real Estate" : isLotListing ? "Lot Listing" : "Asset";
-              const typeIcon = isRealEstate ? (
-                <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
-              ) : isLotListing ? (
-                <ListOrdered className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
-              ) : (
-                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-              );
+              const info = summaryForReport(report);
+              const filesGenerating =
+                report.reportType === "asset" &&
+                (Boolean((report as any).files_generating) ||
+                  Boolean((report as any).files_regenerating));
 
               return (
-                <div
-                  key={report._id}
-                  className={`bg-white rounded-xl sm:rounded-2xl border transition-all shadow-sm hover:shadow-md overflow-hidden ${
-                    isRealEstate
-                      ? "border-emerald-200 hover:border-emerald-400"
-                      : isLotListing
-                      ? "border-purple-200 hover:border-purple-400"
-                      : "border-gray-200 hover:border-blue-300"
-                  }`}
-                >
-                  <div className="p-4 sm:p-6">
-                    {/* Mobile: Stack layout / Desktop: Row layout */}
-                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                      {/* Report Info */}
-                      <div className="flex-1 min-w-0">
-                        {/* Header with type, title, status */}
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
-                          <span className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg bg-gray-100 text-xs font-medium text-gray-700">
-                            {typeIcon}
-                            <span className="hidden xs:inline">{typeLabel}</span>
-                          </span>
-                          <h3 className="text-base sm:text-xl font-bold text-gray-900 truncate max-w-[200px] sm:max-w-none">
-                            {title}
-                          </h3>
-                          <StatusBadge status={assetFilesInProgress ? "processing" : report.status} />
-                        </div>
+                <SurfaceCard key={report._id} sx={{ p: 2.5 }}>
+                  <Stack spacing={2}>
+                    <Stack
+                      direction={{ xs: "column", md: "row" }}
+                      spacing={2}
+                      sx={{ justifyContent: "space-between" }}
+                    >
+                      <Stack spacing={1.4} sx={{ minWidth: 0 }}>
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1}
+                          sx={{ alignItems: { xs: "flex-start", sm: "center" } }}
+                        >
+                          <StatusPill label={info.typeLabel} color="info" />
+                          <StatusBadge
+                            status={filesGenerating ? "processing" : (report.status as any)}
+                          />
+                        </Stack>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: "var(--app-text)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {info.title}
+                        </Typography>
+                        <Typography sx={{ color: "var(--app-text-muted)" }}>
+                          Created {new Date(report.createdAt).toLocaleDateString()}
+                        </Typography>
+                      </Stack>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
-                          {isRealEstate ? (
-                            <>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
-                                  Property Type
-                                </p>
-                                <p className="text-sm font-medium text-gray-700 capitalize">
-                                  {(report as any).property_type || 
-                                   (report as any).preview_data?.property_type || "—"}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
-                                  Market Value
-                                </p>
-                                <p className="text-sm font-bold text-emerald-600">
-                                  {(report as any).preview_data?.valuation?.fair_market_value || 
-                                   (report as any).valuation?.fair_market_value || "—"}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
-                                  {(report as any).property_type === 'farmland' ? 'Total Acres' : 'Square Feet'}
-                                </p>
-                                <p className="text-sm font-medium text-gray-700">
-                                  {(report as any).property_type === 'farmland' 
-                                    ? ((report as any).preview_data?.farmland_details?.total_title_acres || 
-                                       (report as any).farmland_details?.total_title_acres || "—")
-                                    : ((report as any).preview_data?.house_details?.square_footage || 
-                                       (report as any).house_details?.square_footage || "—")}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
-                                  Images
-                                </p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                  {report.imageUrls?.length || 0}
-                                </p>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
-                                  Total Assets
-                                </p>
-                                <p className="text-lg font-semibold text-gray-900">
-                                  {(report as any).lots?.length || 0}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
-                                  Grouping Mode
-                                </p>
-                                <p className="text-sm font-medium text-gray-700 capitalize">
-                                  {(report as any).grouping_mode?.replace(
-                                    /_/g,
-                                    " "
-                                  ) || "—"}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 mb-1">
-                                  Industry
-                                </p>
-                                <p className="text-sm font-medium text-gray-700">
-                                  {report.preview_data?.industry ||
-                                    "Not specified"}
-                                </p>
-                              </div>
-                            </>
-                          )}
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">
-                              Created
-                            </p>
-                            <p className="text-sm font-medium text-gray-700">
-                              {new Date(report.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1.25}
+                        sx={{ alignItems: { xs: "stretch", sm: "center" } }}
+                      >
+                        {report.status === "preview" ? (
+                          <Button
+                            variant="contained"
+                            startIcon={<VisibilityRounded />}
+                            onClick={() => handleOpenPreview(report)}
+                          >
+                            Review & submit
+                          </Button>
+                        ) : null}
 
-                        {/* Decline Reason */}
-                        {report.status === "declined" &&
-                          report.decline_reason && (
-                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="font-semibold text-red-900 text-sm">
-                                  Declined by Admin
-                                </p>
-                                <p className="text-sm text-red-700 mt-1">
-                                  {report.decline_reason}
-                                </p>
-                              </div>
-                            </div>
-                          )}
+                        {report.status === "declined" ? (
+                          <Button
+                            variant="contained"
+                            color="error"
+                            startIcon={<EditRounded />}
+                            onClick={() => handleOpenPreview(report)}
+                          >
+                            Edit & resubmit
+                          </Button>
+                        ) : null}
 
-                        {/* Preview Data Summary - Hidden on very small screens */}
-                        {report.preview_data && (
-                          <div className={`hidden sm:grid gap-3 p-3 rounded-lg ${isRealEstate ? 'grid-cols-2 lg:grid-cols-4 bg-emerald-50' : 'grid-cols-2 bg-gray-50'}`}>
-                            <div>
-                              <p className="text-xs text-gray-500">
-                                {isRealEstate ? "Owner" : "Client"}
-                              </p>
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {(report as any).owner_name ||
-                                  report.preview_data?.owner_name ||
-                                  report.preview_data?.property_details?.owner_name ||
-                                  report.preview_data?.client_name ||
-                                  "—"}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">Appraiser</p>
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {(report as any).inspector_name ||
-                                  report.preview_data?.inspector_name ||
-                                  report.preview_data?.inspector_info?.inspector_name ||
-                                  report.preview_data?.appraiser ||
-                                  "—"}
-                              </p>
-                            </div>
-                            {isRealEstate && (
+                        {(report.status === "pending_approval" ||
+                          report.status === "approved" ||
+                          filesGenerating) && (
+                          <>
+                            {!filesGenerating ? (
                               <>
-                                <div>
-                                  <p className="text-xs text-gray-500">
-                                    {(report as any).property_type === 'farmland' ? 'Cultivated Acres' : 'Bedrooms'}
-                                  </p>
-                                  <p className="text-sm font-medium text-gray-900 truncate">
-                                    {(report as any).property_type === 'farmland'
-                                      ? (report.preview_data as any)?.farmland_details?.cultivated_acres || "—"
-                                      : (report.preview_data as any)?.house_details?.number_of_rooms || "—"}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-500">
-                                    {(report as any).property_type === 'farmland' ? 'Soil Class' : 'Bathrooms'}
-                                  </p>
-                                  <p className="text-sm font-medium text-gray-900 truncate">
-                                    {(report as any).property_type === 'farmland'
-                                      ? (report.preview_data as any)?.farmland_details?.soil_class || "—"
-                                      : `${(report.preview_data as any)?.house_details?.number_of_full_bathrooms || 0} Full, ${(report.preview_data as any)?.house_details?.number_of_half_bathrooms || 0} Half`}
-                                  </p>
-                                </div>
-                              </>
-                            )}
-                            <div>
-                              <p className="text-xs text-gray-500">
-                                {isRealEstate ? "Effective Date" : "Currency"}
-                              </p>
-                              <p className="text-sm font-medium text-gray-900">
-                                {isRealEstate
-                                  ? report.preview_data.report_dates
-                                      ?.effective_date || "—"
-                                  : report.preview_data.currency || "CAD"}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Action Buttons - Responsive grid on mobile */}
-                      <div className="flex-shrink-0">
-                        <div className="flex flex-wrap gap-2 lg:flex-col">
-                          {/* New Preview Actions */}
-                          {report.status === "preview" && (
-                            <button
-                              onClick={() => handleOpenPreview(report)}
-                              className={`flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg sm:rounded-xl font-semibold shadow-lg transition-all hover:scale-105 text-sm sm:text-base flex-1 lg:flex-none ${
-                                isRealEstate
-                                  ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/30"
-                                  : isLotListing
-                                  ? "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-purple-500/30"
-                                  : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/30"
-                              }`}
-                            >
-                              <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
-                              <span className="hidden sm:inline">Review & Submit</span>
-                              <span className="sm:hidden">Review</span>
-                            </button>
-                          )}
-                          {report.status === "declined" && (
-                            <button
-                              onClick={() => handleOpenPreview(report)}
-                              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-lg sm:rounded-xl hover:from-rose-600 hover:to-rose-700 font-semibold shadow-lg shadow-rose-500/30 transition-all hover:scale-105 text-sm sm:text-base flex-1 lg:flex-none"
-                            >
-                              <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
-                              <span className="hidden sm:inline">Edit & Resubmit</span>
-                              <span className="sm:hidden">Edit</span>
-                            </button>
-                          )}
-
-                          {/* Submitted Report Actions */}
-                          {(report.status === "pending_approval" || report.status === "approved" || assetFilesInProgress) && (
-                            <>
-                              {assetFilesInProgress ? (
-                                <div className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-50 border-2 border-blue-200 text-blue-700 rounded-lg sm:rounded-xl text-sm font-medium flex-1 lg:flex-none">
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                  <span className="hidden sm:inline">Generating Files</span>
-                                  <span className="sm:hidden">Generating</span>
-                                </div>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => handleOpenPreview(report, true)}
-                                    className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-indigo-600 hover:to-indigo-700 font-semibold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 text-sm flex-1 lg:flex-none"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Edit & Resubmit</span>
-                                    <span className="sm:hidden">Edit</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleQuickResubmit(report._id, report.reportType)}
-                                    disabled={resubmitting === report._id}
-                                    className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-white border-2 border-indigo-300 text-indigo-700 rounded-lg sm:rounded-xl hover:bg-indigo-50 font-medium transition-all disabled:opacity-50 text-sm flex-1 lg:flex-none"
-                                  >
-                                    {resubmitting === report._id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <RefreshCw className="h-4 w-4" />
-                                    )}
-                                    <span className="hidden sm:inline">Quick Resubmit</span>
-                                    <span className="sm:hidden">Resubmit</span>
-                                  </button>
-                                </>
-                              )}
-                              {/* Download Links for submitted reports */}
-                              {!assetFilesInProgress && (report as any).preview_files?.docx && (
-                                <a
-                                  href={(report as any).preview_files.docx}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                                <Button
+                                  variant="outlined"
+                                  startIcon={<EditRounded />}
+                                  onClick={() => handleOpenPreview(report, true)}
                                 >
-                                  <Download className="h-4 w-4" />
-                                  <span className="hidden sm:inline">Download DOCX</span>
-                                  <span className="sm:hidden">DOCX</span>
-                                </a>
-                              )}
-                            </>
-                          )}
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="text"
+                                  startIcon={<RefreshRounded />}
+                                  onClick={() => handleQuickResubmit(report)}
+                                  disabled={resubmitting === report._id}
+                                >
+                                  {resubmitting === report._id
+                                    ? "Resubmitting..."
+                                    : "Quick resubmit"}
+                                </Button>
+                              </>
+                            ) : (
+                              <Button disabled startIcon={<RefreshRounded />}>
+                                Generating files
+                              </Button>
+                            )}
+                          </>
+                        )}
 
-                          {/* Delete Button */}
-                          {deleteConfirmId === report._id ? (
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleDeleteReport(report._id, report.reportType)}
-                                disabled={deleting === report._id}
-                                className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
-                              >
-                                {deleting === report._id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                                Confirm
-                              </button>
-                              <button
-                                onClick={() => setDeleteConfirmId(null)}
-                                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setDeleteConfirmId(report._id)}
-                              className="flex items-center justify-center gap-2 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm"
-                              title="Delete report"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="hidden sm:inline">Delete</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                        <Button
+                          color="error"
+                          variant="text"
+                          startIcon={<DeleteOutlineRounded />}
+                          onClick={() => setDeleteTarget(report)}
+                        >
+                          Delete
+                        </Button>
+                      </Stack>
+                    </Stack>
 
-                  {/* Status Footer */}
-                  {assetFilesInProgress && (
-                    <div className="px-6 pb-4">
-                      <div className="flex items-center gap-2 text-sm text-blue-600">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>
-                          {(report as any).files_regenerating
-                            ? "Files are being regenerated for resubmission"
-                            : "Submitted for approval. Files are being generated now"}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  {report.status === "preview" && !assetFilesInProgress && (
-                    <div className="px-6 pb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Send className="h-4 w-4" />
-                        <span>Ready to submit for admin approval</span>
-                      </div>
-                    </div>
-                  )}
-                  {report.status === "pending_approval" && (
-                    <div className="px-6 pb-4">
-                      <div className="flex items-center gap-2 text-sm text-amber-600">
-                        <Clock className="h-4 w-4" />
-                        <span>Awaiting admin approval</span>
-                      </div>
-                    </div>
-                  )}
-                  {report.status === "approved" && (
-                    <div className="px-6 pb-4">
-                      <div className="flex items-center gap-2 text-sm text-green-600">
-                        <CheckCircle className="h-4 w-4" />
-                        <span>Approved - You can still edit and resubmit if needed</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gap: 1.5,
+                        gridTemplateColumns: {
+                          xs: "1fr",
+                          sm: "repeat(2, minmax(0, 1fr))",
+                          xl: "repeat(4, minmax(0, 1fr))",
+                        },
+                      }}
+                    >
+                      {info.fields.map(([label, value]) => (
+                        <Box
+                          key={label}
+                          sx={{
+                            p: 1.6,
+                            borderRadius: 3,
+                            bgcolor: "rgba(148,163,184,0.08)",
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}
+                          >
+                            {label}
+                          </Typography>
+                          <Typography sx={{ mt: 0.5, color: "var(--app-text)" }}>
+                            {value}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+
+                    {report.status === "declined" && report.decline_reason ? (
+                      <Alert severity="error">{report.decline_reason}</Alert>
+                    ) : null}
+
+                    {report.status === "pending_approval" ? (
+                      <Alert severity="warning">
+                        Awaiting admin approval before files can move forward.
+                      </Alert>
+                    ) : null}
+                    {report.status === "approved" ? (
+                      <Alert severity="success">
+                        Approved. You can still edit and resubmit if needed.
+                      </Alert>
+                    ) : null}
+                    {filesGenerating ? (
+                      <Alert severity="info">
+                        Files are currently being generated or regenerated for this asset report.
+                      </Alert>
+                    ) : null}
+
+                    {!filesGenerating && (report as any).preview_files?.docx ? (
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          component="a"
+                          href={(report as any).preview_files.docx}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          size="small"
+                          startIcon={<SendRounded />}
+                        >
+                          Download DOCX
+                        </Button>
+                      </Stack>
+                    ) : null}
+                  </Stack>
+                </SurfaceCard>
               );
             })}
-          </div>
+          </Stack>
         )}
-      </div>
+      </SectionPanel>
 
-      {/* Asset Preview Modal */}
-      {selectedReportId && previewModalOpen && (
+      <Dialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
+        <DialogTitle>Delete preview?</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: "var(--app-text-muted)" }}>
+            This will permanently remove the selected preview and its associated data.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          <Button
+            color="error"
+            onClick={handleDeleteReport}
+            disabled={deleting === deleteTarget?._id}
+          >
+            {deleting === deleteTarget?._id ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {selectedReportId && previewModalOpen ? (
         <PreviewModal
           reportId={selectedReportId}
           isOpen={previewModalOpen}
@@ -676,20 +592,16 @@ export default function PreviewsPage() {
           onSuccess={handleSuccess}
           isResubmitMode={isResubmitMode}
         />
-      )}
-
-      {/* Real Estate Preview Modal */}
-      {selectedReportId && realEstateModalOpen && (
+      ) : null}
+      {selectedReportId && realEstateModalOpen ? (
         <RealEstatePreviewModal
           reportId={selectedReportId}
           isOpen={realEstateModalOpen}
           onClose={handleModalClose}
           onSuccess={handleSuccess}
         />
-      )}
-
-      {/* Lot Listing Preview Modal */}
-      {selectedReportId && lotListingModalOpen && (
+      ) : null}
+      {selectedReportId && lotListingModalOpen ? (
         <LotListingPreviewModal
           reportId={selectedReportId}
           isOpen={lotListingModalOpen}
@@ -697,7 +609,7 @@ export default function PreviewsPage() {
           onSuccess={handleSuccess}
           isResubmitMode={isResubmitMode}
         />
-      )}
-    </div>
+      ) : null}
+    </Stack>
   );
 }

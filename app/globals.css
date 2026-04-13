@@ -1,7 +1,71 @@
 @import "tailwindcss";
 
-html, body {
+html,
+body {
   -webkit-text-size-adjust: 100%;
-          text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
+:root {
+  --app-bg: #eef3f9;
+  --app-panel: #ffffff;
+  --app-panel-alt: #f8fafc;
+  --app-panel-soft: rgba(255, 255, 255, 0.82);
+  --app-text: #0f172a;
+  --app-text-muted: #475569;
+  --app-border: rgba(15, 23, 42, 0.08);
+  --app-accent: #e11d48;
+  --app-accent-soft: rgba(225, 29, 72, 0.08);
+  --app-shadow-shell: 0 20px 60px rgba(15, 23, 42, 0.08);
+  --app-shadow-card: 0 16px 40px rgba(15, 23, 42, 0.08);
+  --app-shadow-modal: 0 28px 90px rgba(15, 23, 42, 0.18);
+  --app-overlay: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.84) 0%,
+    rgba(238, 243, 249, 0.94) 100%
+  );
+}
+
+[data-theme="dark"] {
+  --app-bg: #07111f;
+  --app-panel: #0f1b2d;
+  --app-panel-alt: #132238;
+  --app-panel-soft: rgba(15, 27, 45, 0.78);
+  --app-text: #e5eefc;
+  --app-text-muted: #94a3b8;
+  --app-border: rgba(148, 163, 184, 0.16);
+  --app-accent: #fb7185;
+  --app-accent-soft: rgba(251, 113, 133, 0.16);
+  --app-shadow-shell: 0 22px 70px rgba(2, 6, 23, 0.48);
+  --app-shadow-card: 0 20px 45px rgba(2, 6, 23, 0.36);
+  --app-shadow-modal: 0 30px 90px rgba(2, 6, 23, 0.58);
+  --app-overlay: linear-gradient(
+    180deg,
+    rgba(7, 17, 31, 0.96) 0%,
+    rgba(7, 17, 31, 0.78) 100%
+  );
+}
+
+html {
+  background: var(--app-bg);
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(225, 29, 72, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 22%),
+    var(--app-bg);
+  color: var(--app-text);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}

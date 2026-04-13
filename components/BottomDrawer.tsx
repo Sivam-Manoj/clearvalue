@@ -1,7 +1,15 @@
 "use client";
 
-import { X } from "lucide-react";
-import { useEffect } from "react";
+import {
+  Box,
+  Drawer,
+  IconButton,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import { CloseRounded } from "@mui/icons-material";
 
 export default function BottomDrawer({
   open,
@@ -14,63 +22,81 @@ export default function BottomDrawer({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  // optional: prevent background scroll while open
-  useEffect(() => {
-    if (!open) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = original;
-    };
-  }, [open]);
+  const theme = useTheme();
+  const desktop = useMediaQuery(theme.breakpoints.up("md"));
 
   return (
-    <div
-      className={
-        open
-          ? "fixed inset-0 z-[60] block"
-          : "fixed inset-0 z-[60] hidden"
-      }
-      aria-hidden={!open}
+    <Drawer
+      anchor={desktop ? "right" : "bottom"}
+      open={open}
+      onClose={onClose}
+      ModalProps={{ keepMounted: true }}
+      slotProps={{
+        paper: {
+          sx: {
+            width: desktop ? "min(960px, 92vw)" : "100%",
+            maxHeight: desktop ? "100%" : "92vh",
+            borderTopLeftRadius: desktop ? 0 : 28,
+            borderTopRightRadius: desktop ? 0 : 28,
+            borderLeft: desktop ? "1px solid var(--app-border)" : undefined,
+            borderTop: desktop ? undefined : "1px solid var(--app-border)",
+            bgcolor: "var(--app-panel)",
+            backgroundImage:
+              "radial-gradient(circle at top left, rgba(225,29,72,0.08), transparent 24%), radial-gradient(circle at bottom right, rgba(37,99,235,0.08), transparent 24%)",
+            boxShadow: "var(--app-shadow-modal)",
+            overflow: "hidden",
+          },
+        },
+      }}
     >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        className={
-          "absolute inset-x-0 bottom-0 rounded-t-2xl bg-white shadow-2xl transition-transform duration-300 ease-out " +
-          (open ? "translate-y-0" : "translate-y-full")
-        }
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="mx-auto h-1.5 w-12 rounded-full bg-gray-200" />
+      <Stack sx={{ height: "100%" }}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            px: { xs: 2, md: 3 },
+            py: 2,
+            borderBottom: "1px solid var(--app-border)",
+            position: "sticky",
+            top: 0,
+            zIndex: 2,
+            bgcolor: "var(--app-panel-soft)",
+            backdropFilter: "blur(18px)",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
             {title ? (
-              <h3 className="text-base font-medium text-gray-900">{title}</h3>
+              <Typography variant="h6" sx={{ color: "var(--app-text)" }}>
+                {title}
+              </Typography>
             ) : null}
-          </div>
-          <button
-            type="button"
-            aria-label="Close"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
+            <Typography variant="body2" sx={{ color: "var(--app-text-muted)" }}>
+              Review and update details in a focused workspace.
+            </Typography>
+          </Box>
+          <IconButton
             onClick={onClose}
+            sx={{
+              border: "1px solid var(--app-border)",
+              bgcolor: "var(--app-panel)",
+            }}
           >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="max-h-[70vh] overflow-y-auto px-4 py-4">
+            <CloseRounded />
+          </IconButton>
+        </Stack>
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            px: { xs: 2, md: 3 },
+            py: { xs: 2, md: 3 },
+          }}
+        >
           {children}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Stack>
+    </Drawer>
   );
 }
