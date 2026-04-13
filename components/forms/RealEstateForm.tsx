@@ -667,8 +667,8 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
   }
 
   return (
-    <form className="space-y-2" onSubmit={onSubmit}>
-      <div className="relative space-y-2">
+    <form className="flex min-h-full flex-col" onSubmit={onSubmit}>
+      <div className="relative flex min-h-full flex-col gap-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
@@ -733,12 +733,12 @@ export default function RealEstateForm({ onSuccess, onCancel }: Props) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 pt-1">
-          <button type="button" className="rounded border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50" onClick={onCancel} disabled={submitting}>Cancel</button>
-          <button type="button" className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100" onClick={saveInputs} disabled={submitting}>
+        <div className="sticky bottom-0 z-10 mt-auto flex flex-col gap-2 border-t border-gray-200/80 bg-white/85 px-1 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur sm:flex-row sm:items-center">
+          <button type="button" className="rounded border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 hover:bg-gray-50" onClick={onCancel} disabled={submitting}>Cancel</button>
+          <button type="button" className="inline-flex items-center justify-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-100" onClick={saveInputs} disabled={submitting}>
             <Save className="h-3 w-3" />Save
           </button>
-          <button type="submit" className="inline-flex items-center gap-1 rounded bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50" disabled={submitting}>
+          <button type="submit" className="inline-flex items-center justify-center gap-1 rounded bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50 sm:ml-auto" disabled={submitting}>
             {submitting ? "..." : "Create"}{!submitting && <Check className="h-3 w-3" />}
           </button>
         </div>

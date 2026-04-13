@@ -1271,8 +1271,8 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
   }
 
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
-      <div className="relative">
+    <form className="flex min-h-full flex-col" onSubmit={onSubmit}>
+      <div className="relative flex min-h-full flex-col gap-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         {!submitting && error && (
           <div className="rounded-xl border border-red-200/70 bg-red-50/80 p-3 text-sm text-red-700 shadow ring-1 ring-black/5 backdrop-blur">
             {error}
@@ -1877,7 +1877,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
             </section>
 
             {/* Mixed mode only (contained) */}
-            <section className="space-y-3">
+            <section className="space-y-3 pb-6 sm:pb-8">
               <h3 className="text-sm font-medium text-gray-900">Mixed Lots</h3>
               <MixedSection
                 value={mixedLots}
@@ -1891,7 +1891,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                 )}
                 onImageCapture={triggerAutoSave}
                 actionButtons={
-                  <>
+                  <div className="grid w-full gap-2 sm:flex sm:flex-wrap sm:justify-end">
                     <button
                       type="button"
                       className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl border cursor-pointer border-gray-200 bg-white/80 px-3 py-2 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5"
@@ -1915,7 +1915,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                     >
                       {submitting ? "Creating..." : "Create Report"}
                     </button>
-                  </>
+                  </div>
                 }
               />
             </section>

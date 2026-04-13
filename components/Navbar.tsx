@@ -20,6 +20,7 @@ import {
 import {
   ChevronLeftRounded,
   ChevronRightRounded,
+  CloseRounded,
   DarkModeRounded,
   DashboardRounded,
   DescriptionRounded,
@@ -217,6 +218,7 @@ export default function Navbar({
     <Stack
       sx={{
         height: "100%",
+        overflowY: !desktop ? "auto" : "visible",
         px: isCollapsed ? 1 : 0,
         py: isCollapsed ? 1 : 0,
       }}
@@ -289,7 +291,22 @@ export default function Navbar({
               {collapsed ? <ChevronRightRounded /> : <ChevronLeftRounded />}
             </IconButton>
           </Tooltip>
-        ) : null}
+        ) : (
+          <Tooltip title="Close menu" placement="bottom">
+            <IconButton
+              onClick={() => setMobileOpen(false)}
+              sx={{
+                border: "1px solid var(--app-border)",
+                bgcolor: "var(--app-panel)",
+                width: 40,
+                height: 40,
+                boxShadow: "var(--app-shadow-card)",
+              }}
+            >
+              <CloseRounded />
+            </IconButton>
+          </Tooltip>
+        )}
       </Stack>
 
       <Box sx={{ px: isCollapsed ? 0 : 2 }}>
@@ -531,6 +548,9 @@ export default function Navbar({
           paper: {
             sx: {
               width: "min(86vw, 320px)",
+              height: "100dvh",
+              display: "flex",
+              flexDirection: "column",
               bgcolor: "var(--app-panel)",
               backgroundImage:
                 "radial-gradient(circle at top left, rgba(225,29,72,0.08), transparent 26%), radial-gradient(circle at bottom right, rgba(37,99,235,0.08), transparent 24%)",

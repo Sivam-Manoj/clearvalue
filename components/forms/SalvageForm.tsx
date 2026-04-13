@@ -310,8 +310,8 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
   }
 
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
-      <div className="relative">
+    <form className="flex min-h-full flex-col" onSubmit={onSubmit}>
+      <div className="relative flex min-h-full flex-col gap-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         {!submitting && error && (
           <div className="rounded-xl border border-red-200/70 bg-red-50/80 p-3 text-sm text-red-700 shadow ring-1 ring-black/5 backdrop-blur">
             {error}
@@ -537,7 +537,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
         </section>
 
         {/* Images */}
-        <section className="space-y-3">
+        <section className="space-y-3 pb-4 sm:pb-6">
           <h3 className="text-sm font-medium text-gray-900">Images (max 30)</h3>
           <input
             ref={fileInputRef}
@@ -553,7 +553,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           <div className="rounded-2xl border-2 border-dashed border-gray-300/70 bg-gradient-to-br from-white/70 to-gray-50/50 p-5 text-center backdrop-blur shadow-inner">
             <Upload className="mx-auto h-8 w-8 text-gray-400" />
             <p className="mt-2 text-sm text-gray-700">Add images</p>
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -565,7 +565,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
               <button
                 type="button"
                 onClick={() => setCameraOpen(true)}
-                className="ml-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_RGBA(190,18,60,0.5)] focus:outline-none cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] transition active:translate-y-0.5 active:shadow-[0_2px_0_0_RGBA(190,18,60,0.5)] focus:outline-none cursor-pointer"
               >
                 <Camera className="h-4 w-4" />
               Open Camera
@@ -574,7 +574,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
               type="button"
               onClick={downloadAllImagesZip}
               disabled={images.length === 0}
-              className="ml-2 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 border border-gray-200 shadow disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 border border-gray-200 shadow disabled:opacity-50 cursor-pointer"
               title="Download images as ZIP"
             >
               <Download className="h-4 w-4" />
@@ -630,7 +630,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           )}
         </section>
 
-        <div className="flex items-center gap-2 pt-2">
+        <div className="sticky bottom-0 z-10 mt-auto flex flex-col gap-2 border-t border-gray-200/80 bg-white/85 px-1 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur sm:flex-row sm:items-center">
           <button
             type="button"
             className="rounded-xl border border-gray-200 bg-white/80 px-4 py-2.5 text-sm text-gray-700 shadow hover:bg-white transition active:translate-y-0.5 cursor-pointer"
@@ -641,7 +641,7 @@ export default function SalvageForm({ onSuccess, onCancel }: Props) {
           </button>
           <button
             type="submit"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_0_0_rgba(190,18,60,0.5)] hover:from-rose-400 hover:to-rose-600 transition active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(190,18,60,0.5)] disabled:opacity-50 cursor-pointer sm:ml-auto"
             disabled={submitting}
           >
             {submitting ? "Creating..." : "Create Report"}

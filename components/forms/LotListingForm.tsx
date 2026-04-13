@@ -536,8 +536,8 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
   }
 
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
-      <div className="relative">
+    <form className="flex min-h-full flex-col" onSubmit={onSubmit}>
+      <div className="relative flex min-h-full flex-col gap-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         {!submitting && error && (
           <div className="rounded-xl border border-red-200/70 bg-red-50/80 p-3 text-sm text-red-700 shadow ring-1 ring-black/5 backdrop-blur">
             {error}
@@ -761,7 +761,7 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
             </section>
 
             {/* Lots Section with Camera */}
-            <section className="space-y-3 mt-4">
+            <section className="mt-4 space-y-3 pb-6 sm:pb-8">
               <h3 className="text-sm font-medium text-gray-900">
                 Lots & Images
               </h3>
@@ -773,8 +773,9 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
             </section>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-200">
-              <div className="flex items-center gap-2">
+            <div className="sticky bottom-0 z-10 mt-auto border-t border-gray-200/80 bg-white/85 px-1 pt-4 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={clearForm}
@@ -795,10 +796,11 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
               >
                 {submitting ? "Creating..." : "Create Lot Listing"}
               </button>
+              </div>
             </div>
           </>
         )}
