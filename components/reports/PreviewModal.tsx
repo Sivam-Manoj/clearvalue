@@ -304,7 +304,7 @@ export default function PreviewModal({
           {/* Report Details */}
           <div className="space-y-6 max-w-5xl mx-auto pb-28">
             {/* Basic Information Section */}
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-blue-600">👤</span>
                 Basic Information
@@ -365,7 +365,7 @@ export default function PreviewModal({
             </div>
 
             {/* Dates & Financial Section */}
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-green-600">📅</span>
                 Dates & Financial
@@ -425,7 +425,7 @@ export default function PreviewModal({
             </div>
 
             {/* Appraisal Details Section */}
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-purple-600">📋</span>
                 Appraisal Details
@@ -473,7 +473,7 @@ export default function PreviewModal({
             </div>
 
             {/* Additional Report Details */}
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-amber-600">📝</span>
                 Additional Details
@@ -1004,7 +1004,7 @@ export default function PreviewModal({
 
           {/* Summary */}
           <div className="mt-6 space-y-6 max-w-5xl mx-auto">
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[linear-gradient(135deg,rgba(225,29,72,0.10),rgba(37,99,235,0.06))] p-6 shadow-[var(--app-shadow-card)]">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[linear-gradient(135deg,rgba(225,29,72,0.10),rgba(37,99,235,0.06))] p-6 shadow-[var(--app-shadow-card)]">
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 Report Summary
               </h3>

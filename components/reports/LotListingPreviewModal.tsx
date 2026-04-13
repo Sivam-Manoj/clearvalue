@@ -158,7 +158,7 @@ export default function LotListingPreviewModal({
         <>
           {/* Listing Details */}
           <div className="space-y-6 max-w-5xl mx-auto pb-28">
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-purple-600">📋</span>
                 Listing Details
@@ -317,7 +317,7 @@ export default function LotListingPreviewModal({
                   };
 
                   return (
-                    <div key={idx} className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur">
+                    <div key={idx} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur">
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-sm font-semibold text-gray-900">
                           Lot #{lot.lot_number || idx + 1}

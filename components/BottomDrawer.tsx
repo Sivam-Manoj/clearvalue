@@ -36,8 +36,8 @@ export default function BottomDrawer({
           sx: {
             width: desktop ? "min(960px, 92vw)" : "100%",
             maxHeight: desktop ? "100%" : "92vh",
-            borderTopLeftRadius: desktop ? 0 : 28,
-            borderTopRightRadius: desktop ? 0 : 28,
+            borderTopLeftRadius: desktop ? 0 : 14,
+            borderTopRightRadius: desktop ? 0 : 14,
             borderLeft: desktop ? "1px solid var(--app-border)" : undefined,
             borderTop: desktop ? undefined : "1px solid var(--app-border)",
             bgcolor: "var(--app-panel)",

@@ -37,7 +37,7 @@ export function AppIcon({
         {
           width: size,
           height: size,
-          borderRadius: "20px",
+          borderRadius: "12px",
           display: "grid",
           placeItems: "center",
           color: accent,

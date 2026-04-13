@@ -149,7 +149,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* Property Details Section */}
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-emerald-600">🏠</span>
                 Property Details
@@ -219,7 +219,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* Report Dates Section */}
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-blue-600">📅</span>
                 Report Dates
@@ -262,7 +262,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* House Details Section */}
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-purple-600">🏢</span>
                 Building Details
@@ -344,7 +344,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* Valuation Section */}
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-green-600">💰</span>
                 Valuation
@@ -390,7 +390,7 @@ export default function RealEstatePreviewModal({
             </div>
 
             {/* Inspector Info Section */}
-            <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-amber-600">👤</span>
                 Inspector Info
@@ -449,7 +449,7 @@ export default function RealEstatePreviewModal({
 
             {/* Farmland Details Section (if farmland) */}
             {propertyType === 'farmland' && (
-              <div className="rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+              <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
                 <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <span className="text-green-600">🌾</span>
                   Farmland Details
@@ -552,7 +552,7 @@ export default function RealEstatePreviewModal({
 
             {/* Photo Preview Section */}
             {imageUrls.length > 0 && (
-              <div className="mt-6 rounded-[1.5rem] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
+              <div className="mt-6 rounded-xl border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 shadow-[var(--app-shadow-card)] backdrop-blur sm:p-6">
                 <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Image className="h-5 w-5 text-emerald-600" />
                   Property Photos ({imageUrls.length})

@@ -115,7 +115,7 @@ export function ColorModeProvider({
           : "rgba(15, 23, 42, 0.08)",
       },
       shape: {
-        borderRadius: 20,
+        borderRadius: 2,
       },
       typography: {
         fontFamily:
@@ -156,7 +156,7 @@ export function ColorModeProvider({
         MuiButton: {
           styleOverrides: {
             root: {
-              borderRadius: 16,
+              borderRadius: 10,
               boxShadow: "none",
             },
           },
@@ -171,14 +171,14 @@ export function ColorModeProvider({
         MuiChip: {
           styleOverrides: {
             root: {
-              borderRadius: 999,
+              borderRadius: 10,
             },
           },
         },
         MuiOutlinedInput: {
           styleOverrides: {
             root: {
-              borderRadius: 16,
+              borderRadius: 8,
             },
           },
         },
