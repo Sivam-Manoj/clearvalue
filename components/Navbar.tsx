@@ -66,21 +66,22 @@ function NavLinkItem({
   icon: typeof DashboardRounded;
   onClick?: () => void;
 }) {
-  return (
+  const content = (
     <Link href={href} onClick={onClick}>
       <Stack
         direction="row"
         spacing={collapsed ? 0 : 1.5}
         sx={{
-          px: collapsed ? 1 : 1.5,
-          py: 1.25,
-          borderRadius: 4,
+          px: collapsed ? 0.75 : 1.5,
+          py: collapsed ? 0.75 : 1.1,
+          minHeight: collapsed ? 52 : 56,
+          borderRadius: collapsed ? 3 : 4,
           alignItems: "center",
           justifyContent: collapsed ? "center" : "flex-start",
           color: active ? "var(--app-accent)" : "var(--app-text-muted)",
           bgcolor: active ? "var(--app-accent-soft)" : "transparent",
           border: active
-            ? "1px solid rgba(244, 63, 94, 0.16)"
+            ? "1px solid rgba(244, 63, 94, 0.18)"
             : "1px solid transparent",
           transition: "all 180ms ease",
           "&:hover": {
@@ -94,9 +95,9 @@ function NavLinkItem({
         <Avatar
           variant="rounded"
           sx={{
-            width: 38,
-            height: 38,
-            borderRadius: 3,
+            width: collapsed ? 34 : 38,
+            height: collapsed ? 34 : 38,
+            borderRadius: collapsed ? 2.5 : 3,
             bgcolor: active
               ? alpha("#e11d48", 0.14)
               : "rgba(148, 163, 184, 0.08)",
@@ -110,6 +111,79 @@ function NavLinkItem({
         ) : null}
       </Stack>
     </Link>
+  );
+
+  return collapsed ? (
+    <Tooltip title={label} placement="right">
+      {content}
+    </Tooltip>
+  ) : (
+    content
+  );
+}
+
+function RailAction({
+  collapsed,
+  label,
+  icon,
+  accentColor,
+  accentBg,
+  onClick,
+}: {
+  collapsed: boolean;
+  label: string;
+  icon: React.ReactNode;
+  accentColor: string;
+  accentBg: string;
+  onClick: () => void;
+}) {
+  const content = (
+    <Stack
+      direction="row"
+      spacing={collapsed ? 0 : 1.5}
+      sx={{
+        px: collapsed ? 0.75 : 1,
+        py: collapsed ? 0.75 : 1.05,
+        minHeight: collapsed ? 52 : 54,
+        borderRadius: collapsed ? 3 : 4,
+        alignItems: "center",
+        justifyContent: collapsed ? "center" : "flex-start",
+        color: "var(--app-text-muted)",
+        cursor: "pointer",
+        transition: "all 180ms ease",
+        "&:hover": {
+          bgcolor: "rgba(148, 163, 184, 0.08)",
+          color: "var(--app-text)",
+        },
+      }}
+      onClick={onClick}
+    >
+      <Avatar
+        variant="rounded"
+        sx={{
+          width: collapsed ? 34 : 38,
+          height: collapsed ? 34 : 38,
+          borderRadius: collapsed ? 2.5 : 3,
+          bgcolor: accentBg,
+          color: accentColor,
+        }}
+      >
+        {icon}
+      </Avatar>
+      {!collapsed ? (
+        <Box>
+          <Typography sx={{ fontWeight: 700 }}>{label}</Typography>
+        </Box>
+      ) : null}
+    </Stack>
+  );
+
+  return collapsed ? (
+    <Tooltip title={label} placement="right">
+      {content}
+    </Tooltip>
+  ) : (
+    content
   );
 }
 
@@ -127,7 +201,8 @@ export default function Navbar({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showInputsHistory, setShowInputsHistory] = useState(false);
 
-  const railWidth = collapsed ? 92 : 304;
+  const isCollapsed = collapsed && desktop;
+  const railWidth = isCollapsed ? 88 : 304;
   const title =
     Object.entries(pageTitles).find(([route]) => pathname?.startsWith(route))?.[1] ||
     "Workspace";
@@ -139,31 +214,37 @@ export default function Navbar({
   }, [pathname]);
 
   const sidebar = (
-    <Stack sx={{ height: "100%" }}>
+    <Stack
+      sx={{
+        height: "100%",
+        px: isCollapsed ? 1 : 0,
+        py: isCollapsed ? 1 : 0,
+      }}
+    >
       <Stack
-        direction="row"
-        spacing={collapsed && desktop ? 0 : 1.5}
+        direction={isCollapsed ? "column" : "row"}
+        spacing={isCollapsed ? 1.25 : 1.5}
         sx={{
-          px: collapsed && desktop ? 1.5 : 2.5,
-          pt: 2.5,
-          pb: 2,
+          px: isCollapsed ? 0 : 2.5,
+          pt: isCollapsed ? 0 : 2.5,
+          pb: isCollapsed ? 1.5 : 2,
           alignItems: "center",
-          justifyContent: collapsed && desktop ? "center" : "space-between",
+          justifyContent: isCollapsed ? "flex-start" : "space-between",
         }}
       >
         <Stack
           direction="row"
-          spacing={collapsed && desktop ? 0 : 1.5}
+          spacing={isCollapsed ? 0 : 1.5}
           sx={{
             alignItems: "center",
-            justifyContent: collapsed && desktop ? "center" : "flex-start",
+            justifyContent: "center",
           }}
         >
           <Box
             sx={{
-              width: 56,
-              height: 56,
-              borderRadius: 4,
+              width: isCollapsed ? 48 : 56,
+              height: isCollapsed ? 48 : 56,
+              borderRadius: isCollapsed ? 2.5 : 4,
               display: "grid",
               placeItems: "center",
               bgcolor: "rgba(255,255,255,0.9)",
@@ -176,10 +257,10 @@ export default function Navbar({
               alt="Asset Insight"
               width={52}
               height={52}
-              className="h-10 w-auto"
+              className={isCollapsed ? "h-7 w-auto" : "h-10 w-auto"}
             />
           </Box>
-          {!collapsed || !desktop ? (
+          {!isCollapsed ? (
             <Box>
               <Typography sx={{ fontWeight: 800, color: "var(--app-text)" }}>
                 Asset Insight
@@ -191,12 +272,18 @@ export default function Navbar({
           ) : null}
         </Stack>
         {desktop ? (
-          <Tooltip title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+          <Tooltip
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            placement={isCollapsed ? "right" : "bottom"}
+          >
             <IconButton
               onClick={() => setCollapsed((value) => !value)}
               sx={{
                 border: "1px solid var(--app-border)",
                 bgcolor: "var(--app-panel)",
+                width: isCollapsed ? 36 : 40,
+                height: isCollapsed ? 36 : 40,
+                boxShadow: isCollapsed ? "var(--app-shadow-card)" : "none",
               }}
             >
               {collapsed ? <ChevronRightRounded /> : <ChevronLeftRounded />}
@@ -205,22 +292,23 @@ export default function Navbar({
         ) : null}
       </Stack>
 
-      <Box sx={{ px: collapsed && desktop ? 1.5 : 2 }}>
+      <Box sx={{ px: isCollapsed ? 0 : 2 }}>
         <Typography
           variant="overline"
           sx={{
-            px: collapsed && desktop ? 0 : 1.5,
+            px: isCollapsed ? 0 : 1.5,
             color: "var(--app-text-muted)",
             letterSpacing: "0.18em",
+            display: isCollapsed ? "none" : "block",
           }}
         >
-          {!collapsed || !desktop ? "Navigation" : ""}
+          Navigation
         </Typography>
-        <Stack spacing={1} sx={{ mt: 1 }}>
+        <Stack spacing={isCollapsed ? 0.75 : 1} sx={{ mt: isCollapsed ? 0 : 1 }}>
           {navItems.map((item) => (
             <NavLinkItem
               key={item.href}
-              collapsed={collapsed && desktop}
+              collapsed={isCollapsed}
               active={pathname === item.href || pathname?.startsWith(item.href + "/")}
               href={item.href}
               label={item.label}
@@ -231,146 +319,123 @@ export default function Navbar({
         </Stack>
       </Box>
 
-      <Box sx={{ mt: 2, px: collapsed && desktop ? 1.5 : 2 }}>
+      <Box sx={{ mt: isCollapsed ? 1.25 : 2, px: isCollapsed ? 0 : 2 }}>
         <Stack
-          spacing={1}
+          spacing={isCollapsed ? 0.75 : 1}
           sx={{
-            p: collapsed && desktop ? 1 : 1.5,
-            borderRadius: 5,
-            border: "1px solid var(--app-border)",
-            bgcolor: "rgba(148, 163, 184, 0.06)",
+            p: isCollapsed ? 0 : 1.5,
+            borderRadius: isCollapsed ? 0 : 5,
+            border: isCollapsed ? "none" : "1px solid var(--app-border)",
+            bgcolor: isCollapsed ? "transparent" : "rgba(148, 163, 184, 0.06)",
           }}
         >
-          <Stack
-            direction="row"
-            spacing={collapsed && desktop ? 0 : 1.5}
-            sx={{
-              px: collapsed && desktop ? 0 : 1,
-              py: 1.1,
-              borderRadius: 4,
-              cursor: "pointer",
-              alignItems: "center",
-              justifyContent: collapsed && desktop ? "center" : "flex-start",
-              color: "var(--app-text-muted)",
-              "&:hover": { bgcolor: "rgba(148, 163, 184, 0.08)" },
-            }}
+          <RailAction
+            collapsed={isCollapsed}
+            label="Draft inputs"
+            icon={<ScheduleRounded fontSize="small" />}
+            accentBg="rgba(37, 99, 235, 0.12)"
+            accentColor="#2563eb"
             onClick={() => {
               setShowInputsHistory(true);
               if (!desktop) setMobileOpen(false);
             }}
-          >
-            <Avatar
-              variant="rounded"
-              sx={{
-                width: 38,
-                height: 38,
-                borderRadius: 3,
-                bgcolor: "rgba(37, 99, 235, 0.12)",
-                color: "#2563eb",
-              }}
-            >
-              <ScheduleRounded fontSize="small" />
-            </Avatar>
-            {!collapsed || !desktop ? (
-              <Box>
-                <Typography sx={{ fontWeight: 700 }}>Draft inputs</Typography>
-                <Typography variant="body2" sx={{ color: "var(--app-text-muted)" }}>
-                  Resume saved work
-                </Typography>
-              </Box>
-            ) : null}
-          </Stack>
-
-          <Stack
-            direction="row"
-            spacing={collapsed && desktop ? 0 : 1.5}
-            sx={{
-              px: collapsed && desktop ? 0 : 1,
-              py: 1.1,
-              borderRadius: 4,
-              cursor: "pointer",
-              alignItems: "center",
-              justifyContent: collapsed && desktop ? "center" : "flex-start",
-              color: "var(--app-text-muted)",
-              "&:hover": { bgcolor: "rgba(148, 163, 184, 0.08)" },
-            }}
-            onClick={toggleMode}
-          >
-            <Avatar
-              variant="rounded"
-              sx={{
-                width: 38,
-                height: 38,
-                borderRadius: 3,
-                bgcolor:
-                  resolvedTheme === "dark"
-                    ? "rgba(251,191,36,0.12)"
-                    : "rgba(15, 23, 42, 0.08)",
-                color: resolvedTheme === "dark" ? "#fbbf24" : "#0f172a",
-              }}
-            >
-              {resolvedTheme === "dark" ? (
+          />
+          <RailAction
+            collapsed={isCollapsed}
+            label={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+            icon={
+              resolvedTheme === "dark" ? (
                 <LightModeRounded fontSize="small" />
               ) : (
                 <DarkModeRounded fontSize="small" />
-              )}
-            </Avatar>
-            {!collapsed || !desktop ? (
-              <Box>
-                <Typography sx={{ fontWeight: 700 }}>
-                  {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+              )
+            }
+            accentBg={
+              resolvedTheme === "dark"
+                ? "rgba(251,191,36,0.12)"
+                : "rgba(15, 23, 42, 0.08)"
+            }
+            accentColor={resolvedTheme === "dark" ? "#fbbf24" : "#0f172a"}
+            onClick={toggleMode}
+          />
+        </Stack>
+      </Box>
+
+      <Box
+        sx={{
+          mt: "auto",
+          pt: isCollapsed ? 1.5 : 2,
+          px: isCollapsed ? 0 : 2,
+          borderTop: isCollapsed ? "1px solid var(--app-border)" : "none",
+        }}
+      >
+        <Tooltip
+          title={isCollapsed ? `${userLabel}${user?.email ? ` · ${user.email}` : ""}` : ""}
+          placement="right"
+        >
+          <Stack
+            direction="row"
+            spacing={isCollapsed ? 0 : 1.5}
+            sx={{
+              p: isCollapsed ? 0.5 : 1.25,
+              minHeight: isCollapsed ? 56 : "auto",
+              alignItems: "center",
+              justifyContent: isCollapsed ? "center" : "flex-start",
+              borderRadius: isCollapsed ? 3 : 5,
+              border: isCollapsed ? "none" : "1px solid var(--app-border)",
+              bgcolor: isCollapsed ? "transparent" : "var(--app-panel-soft)",
+              boxShadow: isCollapsed ? "none" : "var(--app-shadow-card)",
+            }}
+          >
+            <Box
+              sx={{
+                width: isCollapsed ? 48 : "auto",
+                height: isCollapsed ? 48 : "auto",
+                minWidth: isCollapsed ? 48 : 0,
+                display: "grid",
+                placeItems: "center",
+                borderRadius: isCollapsed ? 3 : 0,
+                border: isCollapsed ? "1px solid var(--app-border)" : "none",
+                bgcolor: isCollapsed ? "rgba(148, 163, 184, 0.06)" : "transparent",
+              }}
+            >
+              <Avatar
+                sx={{
+                  bgcolor: "var(--app-accent)",
+                  width: isCollapsed ? 38 : 42,
+                  height: isCollapsed ? 38 : 42,
+                  fontSize: isCollapsed ? 18 : 20,
+                }}
+              >
+                {initial}
+              </Avatar>
+            </Box>
+            {!isCollapsed ? (
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 800,
+                    color: "var(--app-text)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {userLabel}
                 </Typography>
-                <Typography variant="body2" sx={{ color: "var(--app-text-muted)" }}>
-                  Toggle appearance
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "var(--app-text-muted)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {user?.email}
                 </Typography>
               </Box>
             ) : null}
           </Stack>
-        </Stack>
-      </Box>
-
-      <Box sx={{ mt: "auto", p: collapsed && desktop ? 1.5 : 2 }}>
-        <Stack
-          direction="row"
-          spacing={collapsed && desktop ? 0 : 1.5}
-          sx={{
-            p: 1.25,
-            alignItems: "center",
-            justifyContent: collapsed && desktop ? "center" : "flex-start",
-            borderRadius: 5,
-            border: "1px solid var(--app-border)",
-            bgcolor: "var(--app-panel-soft)",
-            boxShadow: "var(--app-shadow-card)",
-          }}
-        >
-          <Avatar sx={{ bgcolor: "var(--app-accent)", width: 42, height: 42 }}>
-            {initial}
-          </Avatar>
-          {!collapsed || !desktop ? (
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontWeight: 800,
-                  color: "var(--app-text)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {userLabel}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "var(--app-text-muted)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {user?.email}
-              </Typography>
-            </Box>
-          ) : null}
-        </Stack>
+        </Tooltip>
       </Box>
     </Stack>
   );
@@ -383,16 +448,16 @@ export default function Navbar({
             display: { xs: "none", lg: "block" },
             width: railWidth,
             flexShrink: 0,
-            p: 2,
+            p: isCollapsed ? 0.75 : 2,
             transition: "width 180ms ease",
           }}
         >
           <Box
             sx={{
               position: "sticky",
-              top: 16,
-              height: "calc(100vh - 32px)",
-              borderRadius: 7,
+              top: isCollapsed ? 10 : 16,
+              height: isCollapsed ? "calc(100vh - 20px)" : "calc(100vh - 32px)",
+              borderRadius: isCollapsed ? 4 : 7,
               border: "1px solid var(--app-border)",
               background: "var(--app-overlay)",
               backdropFilter: "blur(20px)",
@@ -479,7 +544,7 @@ export default function Navbar({
       <InputsHistoryModal
         isOpen={showInputsHistory}
         onClose={() => setShowInputsHistory(false)}
-        onLoadInput={() => {}}
+        onLoadInput={() => { }}
       />
     </>
   );
