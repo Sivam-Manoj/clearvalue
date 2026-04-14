@@ -277,55 +277,67 @@ export default function DashboardPage() {
             "radial-gradient(circle at top left, rgba(225,29,72,0.08), transparent 24%), radial-gradient(circle at top right, rgba(37,99,235,0.08), transparent 28%), var(--app-panel)",
         }}
       >
-        <Box
-          sx={{
-            display: "grid",
-            gap: { xs: 2, xl: 2.5 },
-            gridTemplateColumns: {
-              xs: "1fr",
-              xl: "minmax(0, 1.15fr) minmax(420px, 0.85fr)",
-            },
-            alignItems: "center",
-          }}
-        >
-          <Stack spacing={{ xs: 1.5, md: 2 }}>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="overline" sx={{ color: "var(--app-accent)" }}>
-                Command center
-              </Typography>
-              <Typography
-                sx={{
-                  color: "var(--app-text)",
-                  fontWeight: 800,
-                  fontSize: { xs: "2.1rem", md: "2.6rem", xl: "3rem" },
-                  lineHeight: 1,
-                  letterSpacing: "-0.05em",
-                  mt: 0.5,
-                }}
-              >
-                {mounted ? greeting : "Welcome"},{" "}
-                {user?.username || user?.email || "there"}
-              </Typography>
-              <Typography
-                sx={{
-                  color: "var(--app-text-muted)",
-                  mt: 1,
-                  maxWidth: 760,
-                  fontSize: { xs: 15, md: 17 },
-                }}
-              >
-                Monitor appraisal activity, manage recent output, and keep reporting work moving from one responsive workspace.
-              </Typography>
-            </Box>
-
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={{ xs: 1.25, md: 2 }}
+        <Stack spacing={{ xs: 2, md: 2.5 }}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="overline" sx={{ color: "var(--app-accent)" }}>
+              Command center
+            </Typography>
+            <Typography
               sx={{
-                alignItems: { xs: "flex-start", md: "center" },
+                color: "var(--app-text)",
+                fontWeight: 800,
+                fontSize: { xs: "2rem", md: "2.6rem", xl: "3rem" },
+                lineHeight: 1,
+                letterSpacing: "-0.05em",
+                mt: 0.5,
               }}
             >
-              <Box sx={{ minWidth: 0 }}>
+              {mounted ? greeting : "Welcome"},{" "}
+              {user?.username || user?.email || "there"}
+            </Typography>
+            <Typography
+              sx={{
+                color: "var(--app-text-muted)",
+                mt: 1,
+                maxWidth: 760,
+                fontSize: { xs: 15, md: 17 },
+              }}
+            >
+              Monitor appraisal activity, manage recent output, and keep reporting
+              work moving from one responsive workspace.
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: "grid",
+              gap: { xs: 1.25, md: 1.5, xl: 2 },
+              gridTemplateColumns: {
+                xs: "1fr",
+                lg: "minmax(0, 1.15fr) minmax(320px, 0.85fr)",
+              },
+              alignItems: "stretch",
+            }}
+          >
+            <Box
+              sx={{
+                display: "grid",
+                gap: 1.25,
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  md: "minmax(0, 1.05fr) minmax(280px, 0.95fr)",
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  minWidth: 0,
+                  p: { xs: 1.5, md: 1.75 },
+                  borderRadius: 3,
+                  border: "1px solid var(--app-border)",
+                  bgcolor: "rgba(255,255,255,0.44)",
+                }}
+              >
                 <Typography variant="overline" sx={{ color: "var(--app-accent)" }}>
                   Today
                 </Typography>
@@ -333,7 +345,7 @@ export default function DashboardPage() {
                   sx={{
                     color: "var(--app-text)",
                     fontWeight: 800,
-                    fontSize: { xs: "1.75rem", md: "2rem" },
+                    fontSize: { xs: "1.65rem", md: "2rem" },
                     lineHeight: 1.02,
                     letterSpacing: "-0.04em",
                     mt: 0.25,
@@ -364,11 +376,11 @@ export default function DashboardPage() {
                 spacing={1.25}
                 sx={{
                   alignItems: "center",
-                  maxWidth: 360,
-                  p: 1.25,
+                  p: { xs: 1.5, md: 1.75 },
                   borderRadius: 3,
-                  bgcolor: "rgba(255,255,255,0.52)",
+                  bgcolor: "rgba(255,255,255,0.44)",
                   border: "1px solid var(--app-border)",
+                  minWidth: 0,
                 }}
               >
                 <Avatar
@@ -379,11 +391,12 @@ export default function DashboardPage() {
                     borderRadius: 3,
                     bgcolor: "rgba(225,29,72,0.12)",
                     color: "var(--app-accent)",
+                    flexShrink: 0,
                   }}
                 >
                   <CalendarMonthRounded />
                 </Avatar>
-                <Box>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography sx={{ color: "var(--app-text)", fontWeight: 800 }}>
                     Reporting cadence
                   </Typography>
@@ -392,63 +405,69 @@ export default function DashboardPage() {
                   </Typography>
                 </Box>
               </Stack>
-            </Stack>
-          </Stack>
+            </Box>
 
-          <Box
-          sx={{
-              display: "grid",
-              gap: 1,
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
-            }}
-          >
             <Box
               sx={{
-                p: 1.35,
-                borderRadius: 3,
-                bgcolor: "rgba(225,29,72,0.08)",
-                border: "1px solid rgba(225,29,72,0.12)",
+                display: "grid",
+                gap: 1,
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(3, minmax(0, 1fr))",
+                  lg: "1fr",
+                  xl: "repeat(3, minmax(0, 1fr))",
+                },
+                alignSelf: "stretch",
               }}
             >
-              <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
-                Active user
-              </Typography>
-              <Typography sx={{ mt: 0.5, color: "var(--app-text)", fontWeight: 800 }}>
-                {user?.username || user?.email || "Workspace"}
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                p: 1.35,
-                borderRadius: 3,
-                bgcolor: "rgba(37,99,235,0.08)",
-                border: "1px solid rgba(37,99,235,0.12)",
-              }}
-            >
-              <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
-                Last 5 outputs
-              </Typography>
-              <Typography sx={{ mt: 0.5, color: "var(--app-text)", fontWeight: 800 }}>
-                {recent.length}
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                p: 1.35,
-                borderRadius: 3,
-                bgcolor: "rgba(5,150,105,0.08)",
-                border: "1px solid rgba(5,150,105,0.12)",
-              }}
-            >
-              <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
-                Total reports
-              </Typography>
-              <Typography sx={{ mt: 0.5, color: "var(--app-text)", fontWeight: 800 }}>
-                {statsLoading ? "..." : stats?.totalReports ?? 0}
-              </Typography>
+              <Box
+                sx={{
+                  p: 1.35,
+                  borderRadius: 3,
+                  bgcolor: "rgba(225,29,72,0.08)",
+                  border: "1px solid rgba(225,29,72,0.12)",
+                }}
+              >
+                <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
+                  Active user
+                </Typography>
+                <Typography sx={{ mt: 0.5, color: "var(--app-text)", fontWeight: 800 }}>
+                  {user?.username || user?.email || "Workspace"}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  p: 1.35,
+                  borderRadius: 3,
+                  bgcolor: "rgba(37,99,235,0.08)",
+                  border: "1px solid rgba(37,99,235,0.12)",
+                }}
+              >
+                <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
+                  Last 5 outputs
+                </Typography>
+                <Typography sx={{ mt: 0.5, color: "var(--app-text)", fontWeight: 800 }}>
+                  {recent.length}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  p: 1.35,
+                  borderRadius: 3,
+                  bgcolor: "rgba(5,150,105,0.08)",
+                  border: "1px solid rgba(5,150,105,0.12)",
+                }}
+              >
+                <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
+                  Total reports
+                </Typography>
+                <Typography sx={{ mt: 0.5, color: "var(--app-text)", fontWeight: 800 }}>
+                  {statsLoading ? "..." : stats?.totalReports ?? 0}
+                </Typography>
+              </Box>
             </Box>
           </Box>
-        </Box>
+        </Stack>
       </SurfaceCard>
 
       <Box

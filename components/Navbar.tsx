@@ -231,6 +231,7 @@ export default function Navbar({
     <Stack
       sx={{
         height: "100%",
+        minHeight: 0,
         overflowY: !desktop ? "auto" : "visible",
         px: isCollapsed ? 1 : 0,
         py: isCollapsed ? 1 : 0,
@@ -322,7 +323,15 @@ export default function Navbar({
         )}
       </Stack>
 
-      <Box sx={{ px: isCollapsed ? 0 : 2 }}>
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          px: isCollapsed ? 0 : 2,
+          pb: 1.25,
+        }}
+      >
         <Typography
           variant="overline"
           sx={{
@@ -347,71 +356,71 @@ export default function Navbar({
             />
           ))}
         </Stack>
-      </Box>
 
-      <Box sx={{ mt: isCollapsed ? 1.25 : 2, px: isCollapsed ? 0 : 2 }}>
-        <Stack
-          spacing={isCollapsed ? 0.75 : 1}
-          sx={{
-            p: isCollapsed ? 0 : 1.5,
-            borderRadius: isCollapsed ? 0 : 5,
-            border: isCollapsed ? "none" : "1px solid var(--app-border)",
-            bgcolor: isCollapsed ? "transparent" : "rgba(148, 163, 184, 0.06)",
-          }}
-        >
-          <RailAction
-            collapsed={isCollapsed}
-            label="Draft inputs"
-            icon={<ScheduleRounded fontSize="small" />}
-            accentBg="rgba(37, 99, 235, 0.12)"
-            accentColor="#2563eb"
-            onClick={() => {
-              setShowInputsHistory(true);
-              if (!desktop) setMobileOpen(false);
+        <Box sx={{ mt: isCollapsed ? 1.25 : 2 }}>
+          <Stack
+            spacing={isCollapsed ? 0.75 : 1}
+            sx={{
+              p: isCollapsed ? 0 : 1.25,
+              borderRadius: isCollapsed ? 0 : 5,
+              border: isCollapsed ? "none" : "1px solid var(--app-border)",
+              bgcolor: isCollapsed ? "transparent" : "rgba(148, 163, 184, 0.06)",
             }}
-          />
-          <RailAction
-            collapsed={isCollapsed}
-            label={outlookStatus.connected ? "Outlook connected" : "Connect Outlook"}
-            icon={<CalendarMonthRounded fontSize="small" />}
-            accentBg={
-              outlookStatus.connected
-                ? "rgba(5,150,105,0.12)"
-                : "rgba(37, 99, 235, 0.12)"
-            }
-            accentColor={outlookStatus.connected ? "#059669" : "#2563eb"}
-            onClick={() => {
-              setShowOutlookDialog(true);
-              if (!desktop) setMobileOpen(false);
-            }}
-          />
-          <RailAction
-            collapsed={isCollapsed}
-            label={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
-            icon={
-              resolvedTheme === "dark" ? (
-                <LightModeRounded fontSize="small" />
-              ) : (
-                <DarkModeRounded fontSize="small" />
-              )
-            }
-            accentBg={
-              resolvedTheme === "dark"
-                ? "rgba(251,191,36,0.12)"
-                : "rgba(15, 23, 42, 0.08)"
-            }
-            accentColor={resolvedTheme === "dark" ? "#fbbf24" : "#0f172a"}
-            onClick={toggleMode}
-          />
-        </Stack>
+          >
+            <RailAction
+              collapsed={isCollapsed}
+              label="Draft inputs"
+              icon={<ScheduleRounded fontSize="small" />}
+              accentBg="rgba(37, 99, 235, 0.12)"
+              accentColor="#2563eb"
+              onClick={() => {
+                setShowInputsHistory(true);
+                if (!desktop) setMobileOpen(false);
+              }}
+            />
+            <RailAction
+              collapsed={isCollapsed}
+              label={outlookStatus.connected ? "Outlook connected" : "Connect Outlook"}
+              icon={<CalendarMonthRounded fontSize="small" />}
+              accentBg={
+                outlookStatus.connected
+                  ? "rgba(5,150,105,0.12)"
+                  : "rgba(37, 99, 235, 0.12)"
+              }
+              accentColor={outlookStatus.connected ? "#059669" : "#2563eb"}
+              onClick={() => {
+                setShowOutlookDialog(true);
+                if (!desktop) setMobileOpen(false);
+              }}
+            />
+            <RailAction
+              collapsed={isCollapsed}
+              label={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+              icon={
+                resolvedTheme === "dark" ? (
+                  <LightModeRounded fontSize="small" />
+                ) : (
+                  <DarkModeRounded fontSize="small" />
+                )
+              }
+              accentBg={
+                resolvedTheme === "dark"
+                  ? "rgba(251,191,36,0.12)"
+                  : "rgba(15, 23, 42, 0.08)"
+              }
+              accentColor={resolvedTheme === "dark" ? "#fbbf24" : "#0f172a"}
+              onClick={toggleMode}
+            />
+          </Stack>
+        </Box>
       </Box>
 
       <Box
         sx={{
-          mt: "auto",
-          pt: isCollapsed ? 1.5 : 2,
+          pt: isCollapsed ? 1 : 1.5,
           px: isCollapsed ? 0 : 2,
-          borderTop: isCollapsed ? "1px solid var(--app-border)" : "none",
+          borderTop: "1px solid var(--app-border)",
+          flexShrink: 0,
         }}
       >
         <Tooltip
@@ -487,21 +496,23 @@ export default function Navbar({
 
   return (
     <>
-      <Box sx={{ minHeight: "100vh", display: "flex" }}>
+      <Box sx={{ minHeight: "100dvh", display: "flex", alignItems: "stretch" }}>
         <Box
           sx={{
             display: { xs: "none", lg: "block" },
             width: railWidth,
             flexShrink: 0,
-            p: isCollapsed ? 0.75 : 2,
+            alignSelf: "stretch",
+            p: { lg: isCollapsed ? 0.75 : 1.25, xl: isCollapsed ? 0.75 : 1.75 },
             transition: "width 180ms ease",
           }}
         >
           <Box
             sx={{
               position: "sticky",
-              top: isCollapsed ? 10 : 16,
-              height: isCollapsed ? "calc(100vh - 20px)" : "calc(100vh - 32px)",
+              top: 12,
+              height: "calc(100dvh - 24px)",
+              maxHeight: "calc(100dvh - 24px)",
               borderRadius: isCollapsed ? 4 : 7,
               border: "1px solid var(--app-border)",
               background: "var(--app-overlay)",
@@ -514,7 +525,7 @@ export default function Navbar({
           </Box>
         </Box>
 
-        <Box sx={{ flex: 1, minWidth: 0, pb: 4 }}>
+        <Box sx={{ flex: 1, minWidth: 0, pb: { xs: 3, md: 4 } }}>
           <Stack
             direction="row"
             sx={{
@@ -577,7 +588,9 @@ export default function Navbar({
             </Stack>
           </Stack>
 
-          <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 } }}>{children}</Box>
+          <Box sx={{ px: { xs: 2, md: 3, xl: 4 }, pt: { xs: 2, md: 3 } }}>
+            {children}
+          </Box>
         </Box>
       </Box>
 
