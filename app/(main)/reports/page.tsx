@@ -83,11 +83,15 @@ function actionButtonSx(kind: "download" | "delete") {
   if (kind === "delete") {
     return {
       minWidth: 0,
-      px: 2.1,
-      py: 1.15,
+      px: 1.8,
+      py: 0.95,
       borderRadius: 999,
       fontWeight: 800,
+      fontSize: 13,
+      lineHeight: 1,
       textTransform: "none",
+      whiteSpace: "nowrap",
+      flexShrink: 0,
       borderColor: "rgba(244, 63, 94, 0.4)",
       color: "#fb7185",
       bgcolor: "transparent",
@@ -100,25 +104,29 @@ function actionButtonSx(kind: "download" | "delete") {
 
   return {
     minWidth: 0,
-    px: 2.15,
-    py: 1.15,
+    px: 1.8,
+    py: 0.95,
     borderRadius: 999,
     fontWeight: 800,
+    fontSize: 13,
+    lineHeight: 1,
     textTransform: "none",
-    color: "#06111f",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+    color: "#ecf6ff",
     border: "none",
     background:
-      "linear-gradient(135deg, #35c3ff 0%, #3888ff 100%)",
-    boxShadow: "0 10px 24px rgba(56, 136, 255, 0.28)",
+      "linear-gradient(135deg, #1d5fe2 0%, #0f4ccf 100%)",
+    boxShadow: "0 10px 24px rgba(15, 76, 207, 0.24)",
     "&:hover": {
       background:
-        "linear-gradient(135deg, #49cbff 0%, #4c95ff 100%)",
-      boxShadow: "0 12px 28px rgba(56, 136, 255, 0.34)",
+        "linear-gradient(135deg, #2a69eb 0%, #1556da 100%)",
+      boxShadow: "0 12px 28px rgba(15, 76, 207, 0.3)",
     },
     "&.Mui-disabled": {
-      color: "rgba(6, 17, 31, 0.42)",
+      color: "rgba(236, 246, 255, 0.68)",
       background:
-        "linear-gradient(135deg, rgba(53,195,255,0.35) 0%, rgba(56,136,255,0.35) 100%)",
+        "linear-gradient(135deg, rgba(29,95,226,0.38) 0%, rgba(15,76,207,0.38) 100%)",
       boxShadow: "none",
     },
   };
@@ -701,7 +709,7 @@ export default function ReportsPage() {
                         <Typography sx={{ color: "var(--app-text-muted)" }}>
                           {group.address || "No address provided"}
                         </Typography>
-                        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+                        <Stack direction="row" spacing={0.8} sx={{ flexWrap: "nowrap", overflowX: "auto", pb: 0.5 }}>
                           {(["pdf", "docx", "xlsx", "images"] as const).map((variant) => {
                             const file = group.variants[variant];
                             if (!file) return null;
@@ -811,8 +819,13 @@ export default function ReportsPage() {
                             <Box component="td" sx={{ px: 2.5, py: 2 }}>
                               <Stack
                                 direction="row"
-                                spacing={1}
-                                sx={{ justifyContent: "flex-end", flexWrap: "wrap" }}
+                                spacing={0.8}
+                                sx={{
+                                  justifyContent: "flex-end",
+                                  flexWrap: "nowrap",
+                                  overflowX: "auto",
+                                  pb: 0.5,
+                                }}
                               >
                                 {(["pdf", "docx", "xlsx", "images"] as const).map((variant) => {
                                   const file = group.variants[variant];
