@@ -17,15 +17,19 @@ import {
 } from "@mui/material";
 import {
   DeleteOutlineRounded,
+  CalendarMonthRounded,
   LogoutRounded,
   PersonRounded,
+  RefreshRounded,
   SaveRounded,
   UploadFileRounded,
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import API from "@/lib/api";
 import { UserService } from "@/services/user";
+import OutlookConnectionDialog from "@/components/outlook/OutlookConnectionDialog";
 import { useAuthContext } from "@/context/AuthContext";
+import { useOutlookCalendar } from "@/hooks/useOutlookCalendar";
 import { PageHeader, SectionPanel, SurfaceCard } from "@/components/common/WorkspaceUI";
 
 export default function SettingsPage() {
@@ -41,6 +45,16 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingCv, setUploadingCv] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [isOutlookDialogOpen, setIsOutlookDialogOpen] = useState(false);
+  const {
+    status: outlookStatus,
+    loading: outlookLoading,
+    busy: outlookBusy,
+    error: outlookError,
+    fetchStatus: refreshOutlookStatus,
+    connect: connectOutlook,
+    disconnect: disconnectOutlook,
+  } = useOutlookCalendar();
   const [form, setForm] = useState({
     username: (user as any)?.username || "",
     companyName: (user as any)?.companyName || "",
@@ -350,15 +364,71 @@ export default function SettingsPage() {
             title="Session"
             subtitle="Sign out of the current device."
           >
-            <Button
-              variant="outlined"
-              color="warning"
-              startIcon={<LogoutRounded />}
-              onClick={handleLogout}
-              disabled={loggingOut}
-            >
-              {loggingOut ? "Logging out..." : "Log out"}
-            </Button>
+            <Stack spacing={2}>
+              <Button
+                variant="outlined"
+                color="warning"
+                startIcon={<LogoutRounded />}
+                onClick={handleLogout}
+                disabled={loggingOut}
+              >
+                {loggingOut ? "Logging out..." : "Log out"}
+              </Button>
+            </Stack>
+          </SectionPanel>
+
+          <SectionPanel
+            title="Outlook calendar"
+            subtitle="Integration settings now live here, while quick connection access stays in the navbar."
+            action={
+              <Button
+                size="small"
+                startIcon={<RefreshRounded />}
+                onClick={() => void refreshOutlookStatus()}
+                disabled={outlookLoading || outlookBusy}
+              >
+                Refresh
+              </Button>
+            }
+          >
+            <Stack spacing={2}>
+              <SurfaceCard sx={{ p: 2 }}>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                  <Avatar
+                    variant="rounded"
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 3,
+                      bgcolor: outlookStatus.connected
+                        ? "rgba(5,150,105,0.12)"
+                        : "rgba(37,99,235,0.12)",
+                      color: outlookStatus.connected ? "#059669" : "#2563eb",
+                    }}
+                  >
+                    <CalendarMonthRounded />
+                  </Avatar>
+                  <Box>
+                    <Typography sx={{ color: "var(--app-text)", fontWeight: 800 }}>
+                      {outlookStatus.connected ? "Outlook connected" : "Outlook not connected"}
+                    </Typography>
+                    <Typography sx={{ color: "var(--app-text-muted)" }}>
+                      {outlookStatus.email || "Use the navbar calendar control or the button below to manage connection."}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </SurfaceCard>
+
+              {outlookError ? <Alert severity="error">{outlookError}</Alert> : null}
+
+              <Button
+                variant="contained"
+                onClick={() => setIsOutlookDialogOpen(true)}
+                disabled={outlookBusy}
+              >
+                Manage Outlook connection
+              </Button>
+            </Stack>
           </SectionPanel>
         </Stack>
       </Box>
@@ -428,6 +498,18 @@ export default function SettingsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <OutlookConnectionDialog
+        open={isOutlookDialogOpen}
+        onClose={() => setIsOutlookDialogOpen(false)}
+        status={outlookStatus}
+        loading={outlookLoading}
+        busy={outlookBusy}
+        error={outlookError}
+        onRefresh={() => void refreshOutlookStatus()}
+        onConnect={() => void connectOutlook()}
+        onDisconnect={() => void disconnectOutlook()}
+      />
     </Stack>
   );
 }

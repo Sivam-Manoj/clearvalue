@@ -17,9 +17,6 @@ import {
 import {
   ArrowForwardRounded,
   CalendarMonthRounded,
-  CheckCircleRounded,
-  RefreshRounded,
-  SyncRounded,
   TrendingUpRounded,
   TroubleshootRounded,
 } from "@mui/icons-material";
@@ -34,7 +31,6 @@ import {
   SurfaceCard,
 } from "@/components/common/WorkspaceUI";
 import { useAuthContext } from "@/context/AuthContext";
-import { OutlookService, type OutlookCalendarStatus } from "@/services/outlook";
 import {
   ReportsService,
   type PdfReport,
@@ -109,25 +105,6 @@ export default function DashboardPage() {
   const [recentError, setRecentError] = useState<string | null>(null);
   const [now, setNow] = useState<Date>(new Date());
   const [mounted, setMounted] = useState(false);
-  const [outlookStatus, setOutlookStatus] = useState<OutlookCalendarStatus>({
-    connected: false,
-    configured: false,
-  });
-  const [outlookLoading, setOutlookLoading] = useState(true);
-  const [outlookBusy, setOutlookBusy] = useState(false);
-  const [outlookPendingReturn, setOutlookPendingReturn] = useState(false);
-
-  const fetchOutlookStatus = useCallback(async () => {
-    try {
-      setOutlookLoading(true);
-      const status = await OutlookService.getStatus();
-      setOutlookStatus(status);
-    } catch {
-      setOutlookStatus({ connected: false, configured: false });
-    } finally {
-      setOutlookLoading(false);
-    }
-  }, []);
 
   const fetchRecent = useCallback(async () => {
     setRecentLoading(true);
@@ -161,10 +138,6 @@ export default function DashboardPage() {
       setRecentLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    fetchOutlookStatus();
-  }, [fetchOutlookStatus]);
 
   useEffect(() => {
     let cancelled = false;
@@ -236,53 +209,6 @@ export default function DashboardPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (!outlookPendingReturn) return;
-    const onWindowFocus = () => {
-      void fetchOutlookStatus();
-      setOutlookPendingReturn(false);
-    };
-    window.addEventListener("focus", onWindowFocus);
-    return () => window.removeEventListener("focus", onWindowFocus);
-  }, [fetchOutlookStatus, outlookPendingReturn]);
-
-  const connectOutlook = async () => {
-    if (outlookBusy) return;
-    try {
-      setOutlookBusy(true);
-      const authUrl = await OutlookService.getAuthUrl();
-      if (!authUrl) return;
-      setOutlookPendingReturn(true);
-      window.open(authUrl, "_blank", "noopener");
-    } catch (error: any) {
-      alert(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Failed to start Outlook connection."
-      );
-    } finally {
-      setOutlookBusy(false);
-    }
-  };
-
-  const disconnectOutlook = async () => {
-    if (outlookBusy) return;
-    if (!confirm("Disconnect your Outlook calendar from this account?")) return;
-    try {
-      setOutlookBusy(true);
-      await OutlookService.disconnect();
-      await fetchOutlookStatus();
-    } catch (error: any) {
-      alert(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Failed to disconnect Outlook calendar."
-      );
-    } finally {
-      setOutlookBusy(false);
-    }
-  };
 
   const timeAgo = (value: Date) => {
     const diff = value.getTime() - Date.now();
@@ -364,193 +290,138 @@ export default function DashboardPage() {
         }
       />
 
-      <Box
-        sx={{
-          display: "grid",
-          gap: 2,
-          gridTemplateColumns: {
-            xs: "1fr",
-            md: "repeat(2, minmax(0, 1fr))",
-            xl: "1.25fr 0.75fr",
-          },
-        }}
-      >
-        <SurfaceCard sx={{ p: 3 }}>
-          <Stack spacing={2.5}>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              sx={{ justifyContent: "space-between" }}
-            >
+      <SurfaceCard sx={{ p: { xs: 2.25, md: 2.5 } }}>
+        <Box
+          sx={{
+            display: "grid",
+            gap: 2,
+            gridTemplateColumns: {
+              xs: "1fr",
+              xl: "minmax(0, 1.2fr) minmax(360px, 0.8fr)",
+            },
+            alignItems: "center",
+          }}
+        >
+          <Stack
+            direction={{ xs: "column", lg: "row" }}
+            spacing={2}
+            sx={{
+              alignItems: { xs: "flex-start", lg: "center" },
+              justifyContent: "space-between",
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="overline" sx={{ color: "var(--app-accent)" }}>
+                Today
+              </Typography>
+              <Typography
+                sx={{
+                  color: "var(--app-text)",
+                  fontWeight: 800,
+                  fontSize: { xs: "2rem", lg: "2.5rem" },
+                  lineHeight: 1.02,
+                  letterSpacing: "-0.04em",
+                }}
+              >
+                {mounted
+                  ? now.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : "Loading date..."}
+              </Typography>
+              <Typography sx={{ color: "var(--app-text-muted)", mt: 0.75 }}>
+                {mounted
+                  ? now.toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })
+                  : ""}
+              </Typography>
+            </Box>
+
+            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", maxWidth: 360 }}>
+              <Avatar
+                variant="rounded"
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 3,
+                  bgcolor: "rgba(225,29,72,0.12)",
+                  color: "var(--app-accent)",
+                }}
+              >
+                <CalendarMonthRounded />
+              </Avatar>
               <Box>
-                <Typography variant="overline" sx={{ color: "var(--app-accent)" }}>
-                  Today
+                <Typography sx={{ color: "var(--app-text)", fontWeight: 800 }}>
+                  Reporting cadence
                 </Typography>
-                <Typography variant="h4" sx={{ color: "var(--app-text)" }}>
-                  {mounted
-                    ? now.toLocaleDateString("en-US", {
-                        weekday: "long",
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                      })
-                    : "Loading date..."}
-                </Typography>
-                <Typography sx={{ color: "var(--app-text-muted)", mt: 1 }}>
-                  {mounted
-                    ? now.toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })
-                    : ""}
+                <Typography sx={{ color: "var(--app-text-muted)" }}>
+                  Stay on top of approvals, downloads, and resubmissions.
                 </Typography>
               </Box>
-              <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
-                <Avatar
-                  variant="rounded"
-                  sx={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 4,
-                    bgcolor: "rgba(225,29,72,0.12)",
-                    color: "var(--app-accent)",
-                  }}
-                >
-                  <CalendarMonthRounded />
-                </Avatar>
-                <Box>
-                  <Typography sx={{ color: "var(--app-text)", fontWeight: 800 }}>
-                    Reporting cadence
-                  </Typography>
-                  <Typography sx={{ color: "var(--app-text-muted)" }}>
-                    Stay on top of approvals, downloads, and resubmissions.
-                  </Typography>
-                </Box>
-              </Stack>
             </Stack>
-            <Divider sx={{ borderColor: "var(--app-border)" }} />
+          </Stack>
+
+          <Box
+            sx={{
+              display: "grid",
+              gap: 1.25,
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+            }}
+          >
             <Box
               sx={{
-                display: "grid",
-                gap: 1.5,
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+                p: 1.6,
+                borderRadius: 3,
+                bgcolor: "rgba(225,29,72,0.08)",
+                border: "1px solid rgba(225,29,72,0.12)",
               }}
             >
-              <Box
-                sx={{
-                  p: 2,
-                  borderRadius: 4,
-                  bgcolor: "rgba(225,29,72,0.08)",
-                  border: "1px solid rgba(225,29,72,0.12)",
-                }}
-              >
-                <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
-                  Active user
-                </Typography>
-                <Typography sx={{ mt: 1, color: "var(--app-text)", fontWeight: 800 }}>
-                  {user?.username || user?.email || "Workspace"}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  p: 2,
-                  borderRadius: 4,
-                  bgcolor: "rgba(37,99,235,0.08)",
-                  border: "1px solid rgba(37,99,235,0.12)",
-                }}
-              >
-                <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
-                  Last 5 outputs
-                </Typography>
-                <Typography sx={{ mt: 1, color: "var(--app-text)", fontWeight: 800 }}>
-                  {recent.length}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  p: 2,
-                  borderRadius: 4,
-                  bgcolor: "rgba(5,150,105,0.08)",
-                  border: "1px solid rgba(5,150,105,0.12)",
-                }}
-              >
-                <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
-                  Outlook sync
-                </Typography>
-                <Typography sx={{ mt: 1, color: "var(--app-text)", fontWeight: 800 }}>
-                  {outlookStatus.connected ? "Connected" : "Not connected"}
-                </Typography>
-              </Box>
+              <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
+                Active user
+              </Typography>
+              <Typography sx={{ mt: 0.8, color: "var(--app-text)", fontWeight: 800 }}>
+                {user?.username || user?.email || "Workspace"}
+              </Typography>
             </Box>
-          </Stack>
-        </SurfaceCard>
-
-        <SectionPanel
-          title="Outlook calendar"
-          subtitle="Keep appointment and CRM scheduling aligned."
-          action={
-            <Button
-              size="small"
-              startIcon={<RefreshRounded />}
-              onClick={() => fetchOutlookStatus()}
-              disabled={outlookLoading || outlookBusy}
+            <Box
+              sx={{
+                p: 1.6,
+                borderRadius: 3,
+                bgcolor: "rgba(37,99,235,0.08)",
+                border: "1px solid rgba(37,99,235,0.12)",
+              }}
             >
-              Refresh
-            </Button>
-          }
-        >
-          <Stack spacing={2}>
-            {outlookLoading ? (
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                <CircularProgress size={18} />
-                <Typography sx={{ color: "var(--app-text-muted)" }}>
-                  Checking connection...
-                </Typography>
-              </Stack>
-            ) : (
-              <Alert
-                severity={outlookStatus.connected ? "success" : "info"}
-                sx={{ borderRadius: 4 }}
-              >
-                {outlookStatus.connected
-                  ? `Connected${outlookStatus.email ? ` as ${outlookStatus.email}` : ""}`
-                  : "Calendar is not connected yet."}
-              </Alert>
-            )}
-            <Typography sx={{ color: "var(--app-text-muted)" }}>
-              Use Outlook integration to keep call windows, appointments, and reminders visible alongside report operations.
-            </Typography>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-              {outlookStatus.connected ? (
-                <Button
-                  color="error"
-                  variant="outlined"
-                  onClick={disconnectOutlook}
-                  disabled={outlookBusy}
-                >
-                  Disconnect
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  onClick={connectOutlook}
-                  disabled={outlookBusy}
-                >
-                  Connect Outlook
-                </Button>
-              )}
-              <Button
-                variant="text"
-                startIcon={<SyncRounded />}
-                onClick={() => router.push("/settings")}
-              >
-                Open settings
-              </Button>
-            </Stack>
-          </Stack>
-        </SectionPanel>
-      </Box>
+              <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
+                Last 5 outputs
+              </Typography>
+              <Typography sx={{ mt: 0.8, color: "var(--app-text)", fontWeight: 800 }}>
+                {recent.length}
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                p: 1.6,
+                borderRadius: 3,
+                bgcolor: "rgba(5,150,105,0.08)",
+                border: "1px solid rgba(5,150,105,0.12)",
+              }}
+            >
+              <Typography sx={{ color: "var(--app-text-muted)", fontWeight: 700 }}>
+                Total reports
+              </Typography>
+              <Typography sx={{ mt: 0.8, color: "var(--app-text)", fontWeight: 800 }}>
+                {statsLoading ? "..." : stats?.totalReports ?? 0}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </SurfaceCard>
 
       <Box
         sx={{

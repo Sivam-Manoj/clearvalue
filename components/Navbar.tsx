@@ -18,6 +18,7 @@ import {
   useTheme,
 } from "@mui/material";
 import {
+  CalendarMonthRounded,
   ChevronLeftRounded,
   ChevronRightRounded,
   CloseRounded,
@@ -31,7 +32,9 @@ import {
   VisibilityRounded,
 } from "@mui/icons-material";
 import { useColorMode } from "@/components/providers/ColorModeProvider";
+import OutlookConnectionDialog from "@/components/outlook/OutlookConnectionDialog";
 import { useAuthContext } from "@/context/AuthContext";
+import { useOutlookCalendar } from "@/hooks/useOutlookCalendar";
 
 const InputsHistoryModal = dynamic(
   () => import("@/components/modals/InputsHistoryModal"),
@@ -198,9 +201,19 @@ export default function Navbar({
   const desktop = useMediaQuery(theme.breakpoints.up("lg"));
   const { resolvedTheme, toggleMode } = useColorMode();
   const { user } = useAuthContext();
+  const {
+    status: outlookStatus,
+    loading: outlookLoading,
+    busy: outlookBusy,
+    error: outlookError,
+    fetchStatus: refreshOutlookStatus,
+    connect: connectOutlook,
+    disconnect: disconnectOutlook,
+  } = useOutlookCalendar();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showInputsHistory, setShowInputsHistory] = useState(false);
+  const [showOutlookDialog, setShowOutlookDialog] = useState(false);
 
   const isCollapsed = collapsed && desktop;
   const railWidth = isCollapsed ? 88 : 304;
@@ -354,6 +367,21 @@ export default function Navbar({
             accentColor="#2563eb"
             onClick={() => {
               setShowInputsHistory(true);
+              if (!desktop) setMobileOpen(false);
+            }}
+          />
+          <RailAction
+            collapsed={isCollapsed}
+            label={outlookStatus.connected ? "Outlook connected" : "Connect Outlook"}
+            icon={<CalendarMonthRounded fontSize="small" />}
+            accentBg={
+              outlookStatus.connected
+                ? "rgba(5,150,105,0.12)"
+                : "rgba(37, 99, 235, 0.12)"
+            }
+            accentColor={outlookStatus.connected ? "#059669" : "#2563eb"}
+            onClick={() => {
+              setShowOutlookDialog(true);
               if (!desktop) setMobileOpen(false);
             }}
           />
@@ -522,19 +550,31 @@ export default function Navbar({
                 </Typography>
               </Box>
             </Stack>
-            <IconButton
-              onClick={toggleMode}
-              sx={{
-                border: "1px solid var(--app-border)",
-                bgcolor: "var(--app-panel)",
-              }}
-            >
-              {resolvedTheme === "dark" ? (
-                <LightModeRounded />
-              ) : (
-                <DarkModeRounded />
-              )}
-            </IconButton>
+            <Stack direction="row" spacing={1}>
+              <IconButton
+                onClick={() => setShowOutlookDialog(true)}
+                sx={{
+                  border: "1px solid var(--app-border)",
+                  bgcolor: "var(--app-panel)",
+                  color: outlookStatus.connected ? "#059669" : "var(--app-text)",
+                }}
+              >
+                <CalendarMonthRounded />
+              </IconButton>
+              <IconButton
+                onClick={toggleMode}
+                sx={{
+                  border: "1px solid var(--app-border)",
+                  bgcolor: "var(--app-panel)",
+                }}
+              >
+                {resolvedTheme === "dark" ? (
+                  <LightModeRounded />
+                ) : (
+                  <DarkModeRounded />
+                )}
+              </IconButton>
+            </Stack>
           </Stack>
 
           <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 } }}>{children}</Box>
@@ -565,6 +605,17 @@ export default function Navbar({
         isOpen={showInputsHistory}
         onClose={() => setShowInputsHistory(false)}
         onLoadInput={() => { }}
+      />
+      <OutlookConnectionDialog
+        open={showOutlookDialog}
+        onClose={() => setShowOutlookDialog(false)}
+        status={outlookStatus}
+        loading={outlookLoading}
+        busy={outlookBusy}
+        error={outlookError}
+        onRefresh={() => void refreshOutlookStatus()}
+        onConnect={() => void connectOutlook()}
+        onDisconnect={() => void disconnectOutlook()}
       />
     </>
   );
