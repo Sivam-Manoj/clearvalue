@@ -34,7 +34,7 @@ export default function WelcomePage() {
         </section>
 
         <FeatureGrid reveal={reveal} />
-        
+
         <CredibilitySection reveal={reveal} />
 
         <CallToAction />

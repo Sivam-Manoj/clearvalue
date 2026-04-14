@@ -19,8 +19,8 @@ import {
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { ReportsService, type PdfReport } from "@/services/reports";
-import { getAssetReports, type AssetReport } from "@/services/assets";
-import { getLotListings, type LotListing } from "@/services/lotListing";
+import { deleteAssetReport, getAssetReports, type AssetReport } from "@/services/assets";
+import { deleteLotListing, getLotListings, type LotListing } from "@/services/lotListing";
 import {
   RealEstateService,
   type RealEstateReport,
@@ -72,11 +72,64 @@ function statusTone(status?: string) {
   };
 }
 
+function actionLabel(variant: "pdf" | "docx" | "xlsx" | "images") {
+  if (variant === "pdf") return "Data";
+  if (variant === "docx") return "DOCX";
+  if (variant === "xlsx") return "Excel";
+  return "Images";
+}
+
+function actionButtonSx(kind: "download" | "delete") {
+  if (kind === "delete") {
+    return {
+      minWidth: 0,
+      px: 2.1,
+      py: 1.15,
+      borderRadius: 999,
+      fontWeight: 800,
+      textTransform: "none",
+      borderColor: "rgba(244, 63, 94, 0.4)",
+      color: "#fb7185",
+      bgcolor: "transparent",
+      "&:hover": {
+        borderColor: "#fb7185",
+        bgcolor: "rgba(244, 63, 94, 0.08)",
+      },
+    };
+  }
+
+  return {
+    minWidth: 0,
+    px: 2.15,
+    py: 1.15,
+    borderRadius: 999,
+    fontWeight: 800,
+    textTransform: "none",
+    color: "#06111f",
+    border: "none",
+    background:
+      "linear-gradient(135deg, #35c3ff 0%, #3888ff 100%)",
+    boxShadow: "0 10px 24px rgba(56, 136, 255, 0.28)",
+    "&:hover": {
+      background:
+        "linear-gradient(135deg, #49cbff 0%, #4c95ff 100%)",
+      boxShadow: "0 12px 28px rgba(56, 136, 255, 0.34)",
+    },
+    "&.Mui-disabled": {
+      color: "rgba(6, 17, 31, 0.42)",
+      background:
+        "linear-gradient(135deg, rgba(53,195,255,0.35) 0%, rgba(56,136,255,0.35) 100%)",
+      boxShadow: "none",
+    },
+  };
+}
+
 export default function ReportsPage() {
   const [reports, setReports] = useState<PdfReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -88,55 +141,87 @@ export default function ReportsPage() {
   const [realEstateReports, setRealEstateReports] = useState<RealEstateReport[]>([]);
   const [lotListingReports, setLotListingReports] = useState<LotListing[]>([]);
 
+  const loadReports = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [legacy, assetResponse, realEstateResponse, lotListingResponse] =
+        await Promise.all([
+          ReportsService.getMyReports(),
+          getAssetReports().catch(() => ({ data: [] })),
+          RealEstateService.getReports().catch(() => ({ data: [] })),
+          getLotListings().catch(() => ({ data: [] })),
+        ]);
+
+      setReports(legacy);
+      setAssetReports(
+        assetResponse.data.filter(
+          (report) =>
+            report.status === "approved" || report.status === "pending_approval"
+        )
+      );
+      setRealEstateReports(
+        realEstateResponse.data.filter(
+          (report) =>
+            report.status === "approved" || report.status === "pending_approval"
+        )
+      );
+      setLotListingReports(
+        lotListingResponse.data.filter(
+          (report) =>
+            report.status === "approved" || report.status === "pending_approval"
+        )
+      );
+    } catch (loadError: any) {
+      setError(
+        loadError?.response?.data?.message ||
+          loadError?.message ||
+          "Failed to load reports"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [legacy, assetResponse, realEstateResponse, lotListingResponse] =
-          await Promise.all([
-            ReportsService.getMyReports(),
-            getAssetReports().catch(() => ({ data: [] })),
-            RealEstateService.getReports().catch(() => ({ data: [] })),
-            getLotListings().catch(() => ({ data: [] })),
-          ]);
+    void loadReports();
 
-        setReports(legacy);
-        setAssetReports(
-          assetResponse.data.filter(
-            (report) =>
-              report.status === "approved" || report.status === "pending_approval"
-          )
-        );
-        setRealEstateReports(
-          realEstateResponse.data.filter(
-            (report) =>
-              report.status === "approved" || report.status === "pending_approval"
-          )
-        );
-        setLotListingReports(
-          lotListingResponse.data.filter(
-            (report) =>
-              report.status === "approved" || report.status === "pending_approval"
-          )
-        );
-      } catch (loadError: any) {
-        setError(
-          loadError?.response?.data?.message ||
-            loadError?.message ||
-            "Failed to load reports"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
-
-    const handler = () => void load();
+    const handler = () => void loadReports();
     window.addEventListener("cv:report-created", handler as any);
     return () => window.removeEventListener("cv:report-created", handler as any);
   }, []);
+
+  async function handleDelete(group: ReportGroup) {
+    if (deletingKey) return;
+    const label = group.contract_no || group.address || typeLabel(group.type);
+    if (!confirm(`Delete ${label}? This action cannot be undone.`)) return;
+
+    try {
+      setDeletingKey(group.key);
+      const normalized = String(group.type || "").toLowerCase();
+
+      if (normalized === "asset") {
+        await deleteAssetReport(group.key);
+      } else if (normalized === "realestate" || normalized.includes("real")) {
+        await RealEstateService.deleteReport(group.key);
+      } else if (normalized === "lotlisting" || normalized.includes("lot")) {
+        await deleteLotListing(group.key);
+      } else {
+        await ReportsService.deleteReport(group.key);
+      }
+
+      toast.success("Report deleted");
+      await loadReports();
+    } catch (deleteError: any) {
+      toast.error(
+        deleteError?.response?.data?.message ||
+          deleteError?.message ||
+          "Failed to delete report"
+      );
+    } finally {
+      setDeletingKey(null);
+    }
+  }
 
   const groups = useMemo<ReportGroup[]>(() => {
     const map = new Map<string, ReportGroup>();
@@ -627,15 +712,23 @@ export default function ReportsPage() {
                               <Button
                                 key={variant}
                                 size="small"
-                                variant="outlined"
-                                startIcon={<DownloadRounded />}
                                 onClick={() => handleDownload(file._id)}
                                 disabled={disabled}
+                                sx={actionButtonSx("download")}
                               >
-                                {variant === "images" ? "Images" : variant.toUpperCase()}
+                                {actionLabel(variant)}
                               </Button>
                             );
                           })}
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleDelete(group)}
+                            disabled={deletingKey === group.key}
+                            sx={actionButtonSx("delete")}
+                          >
+                            {deletingKey === group.key ? "Deleting..." : "Delete"}
+                          </Button>
                         </Stack>
                       </Stack>
                     </SurfaceCard>
@@ -732,17 +825,23 @@ export default function ReportsPage() {
                                     <Button
                                       key={variant}
                                       size="small"
-                                      variant="outlined"
-                                      startIcon={<DownloadRounded />}
                                       onClick={() => handleDownload(file._id)}
                                       disabled={disabled}
+                                      sx={actionButtonSx("download")}
                                     >
-                                      {variant === "images"
-                                        ? "Images"
-                                        : variant.toUpperCase()}
+                                      {actionLabel(variant)}
                                     </Button>
                                   );
                                 })}
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  onClick={() => handleDelete(group)}
+                                  disabled={deletingKey === group.key}
+                                  sx={actionButtonSx("delete")}
+                                >
+                                  {deletingKey === group.key ? "Deleting..." : "Delete"}
+                                </Button>
                               </Stack>
                             </Box>
                           </Box>
