@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "react-toastify";
-import { Check, RotateCcw } from "lucide-react";
+import { Check, RotateCcw, Save, X } from "lucide-react";
 import API from "@/lib/api";
 
 const MixedSection = dynamic(() => import("./mixed/MixedSection"), {
@@ -399,6 +399,18 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
     }
   };
 
+  const handleSaveDraft = async () => {
+    const hasImages = mixedLots.some(
+      (lot) => lot.files.length > 0 || lot.extraFiles.length > 0
+    );
+    if (!hasImages) {
+      toast.info("Add at least one lot image before saving a draft.");
+      return;
+    }
+    await autoSaveDraft();
+    toast.success("Draft saved");
+  };
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -773,13 +785,21 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
             </section>
 
             {/* Action Buttons */}
-            <div className="sticky bottom-0 z-10 mt-auto border-t border-gray-200/80 bg-white/85 px-1 pt-4 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="sticky bottom-0 z-10 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.35rem)]">
+              <div className="flex flex-col gap-3 rounded-2xl border border-gray-200/80 bg-white/95 p-2.5 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
+                  onClick={handleSaveDraft}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100 active:translate-y-0.5"
+                >
+                  <Save className="h-4 w-4" />
+                  Save
+                </button>
+                <button
+                  type="button"
                   onClick={clearForm}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:translate-y-0.5"
                 >
                   Clear
                 </button>
@@ -787,8 +807,9 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
                   <button
                     type="button"
                     onClick={onCancel}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:translate-y-0.5"
                   >
+                    <X className="h-4 w-4" />
                     Cancel
                   </button>
                 )}
@@ -796,7 +817,7 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
+                className="w-full min-h-11 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
               >
                 {submitting ? "Creating..." : "Create Lot Listing"}
               </button>
