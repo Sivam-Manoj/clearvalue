@@ -1653,7 +1653,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                         Damage Analysis
                       </label>
                       <p className="mt-1 text-[11px] text-gray-600">
-                        Include generalized AI damage analysis in the report and Excel export.
+                        Damage Analysis
                       </p>
                     </div>
                     <button
