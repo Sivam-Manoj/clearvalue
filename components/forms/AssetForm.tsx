@@ -1653,7 +1653,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                         Damage Analysis
                       </label>
                       <p className="mt-1 text-[11px] text-gray-600">
-                        Damage Analysis
+                        Generalized Damage Analysis
                       </p>
                     </div>
                     <button
