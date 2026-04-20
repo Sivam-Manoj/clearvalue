@@ -148,6 +148,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
   const [factorsAgeCondition, setFactorsAgeCondition] = useState("");
   const [factorsQuality, setFactorsQuality] = useState("");
   const [factorsAnalysis, setFactorsAnalysis] = useState("");
+  const [includeDamageAnalysis, setIncludeDamageAnalysis] = useState(true);
 
   // Draft state
   const [hasDraft, setHasDraft] = useState(false);
@@ -335,6 +336,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         currency,
         includeValuationTable,
         selectedValuationMethods,
+        includeDamageAnalysis,
         preparedFor,
         factorsAgeCondition,
         factorsQuality,
@@ -452,6 +454,8 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
     if (formData.currency) setCurrency(formData.currency);
     if (typeof formData.includeValuationTable === "boolean") setIncludeValuationTable(formData.includeValuationTable);
     if (formData.selectedValuationMethods) setSelectedValuationMethods(formData.selectedValuationMethods);
+    if (typeof formData.includeDamageAnalysis === "boolean")
+      setIncludeDamageAnalysis(formData.includeDamageAnalysis);
     if (formData.preparedFor) setPreparedFor(formData.preparedFor);
     if (formData.factorsAgeCondition) setFactorsAgeCondition(formData.factorsAgeCondition);
     if (formData.factorsQuality) setFactorsQuality(formData.factorsQuality);
@@ -714,6 +718,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
       setCurrency("");
       setCurrencyTouched(false);
       setCurrencyLoading(false);
+      setIncludeDamageAnalysis(true);
       currencyPromptedRef.current = false;
       setIncludeValuationTable(false);
       setSelectedValuationMethods(["FML"]);
@@ -798,6 +803,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         currency,
         includeValuationTable,
         selectedValuationMethods,
+        includeDamageAnalysis,
         groupingMode: grouping,
         combinedModes,
         preparedFor,
@@ -847,6 +853,8 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         setIncludeValuationTable(fd.includeValuationTable);
       if (Array.isArray(fd.selectedValuationMethods))
         setSelectedValuationMethods(fd.selectedValuationMethods as any);
+      if (typeof fd.includeDamageAnalysis === "boolean")
+        setIncludeDamageAnalysis(fd.includeDamageAnalysis);
       if (Array.isArray(fd.combinedModes))
         setCombinedModes(fd.combinedModes as any);
       if (typeof fd.preparedFor === "string") setPreparedFor(fd.preparedFor);
@@ -1173,6 +1181,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         valuation_methods: includeValuationTable
           ? selectedValuationMethods
           : [],
+        include_damage_analysis: includeDamageAnalysis,
         progress_id: jobId,
         ...(preparedFor.trim() && { prepared_for: preparedFor.trim() }),
         ...(factorsAgeCondition.trim() && {
@@ -1637,6 +1646,35 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
                 Factors Affecting Value
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <div className="space-y-2 lg:col-span-3 rounded-xl border border-amber-200 bg-white/80 px-3 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">
+                        Damage Analysis
+                      </label>
+                      <p className="mt-1 text-[11px] text-gray-600">
+                        Include generalized AI damage analysis in the report and Excel export.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIncludeDamageAnalysis(!includeDamageAnalysis)
+                      }
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        includeDamageAnalysis ? "bg-amber-500" : "bg-gray-300"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          includeDamageAnalysis
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
                 <div className="space-y-1">
                   <label className="text-xs text-gray-600">
                     Age & Condition

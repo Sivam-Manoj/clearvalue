@@ -21,6 +21,7 @@ export type AssetFormData = {
   factorsAgeCondition?: string;
   factorsQuality?: string;
   factorsAnalysis?: string;
+  includeDamageAnalysis?: boolean;
 };
 
 // Real Estate form data

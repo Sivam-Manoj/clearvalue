@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Save, Send, AlertCircle, Image, ChevronLeft, ChevronRight, X, RefreshCw } from "lucide-react";
 import { toast } from "react-toastify";
 import { 
@@ -20,6 +20,10 @@ interface PreviewModalProps {
   isResubmitMode?: boolean; // If true, this is for editing/resubmitting an already submitted report
 }
 
+type FocusableFormElement =
+  | HTMLInputElement
+  | HTMLTextAreaElement
+  | HTMLSelectElement;
 
 export default function PreviewModal({
   reportId,
@@ -44,12 +48,81 @@ export default function PreviewModal({
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   // For lot-specific gallery view
   const [galleryLotImages, setGalleryLotImages] = useState<{ urls: string[]; currentIdx: number } | null>(null);
+  const focusStateRef = useRef<{
+    fieldId: string | null;
+    selectionStart: number | null;
+    selectionEnd: number | null;
+  }>({
+    fieldId: null,
+    selectionStart: null,
+    selectionEnd: null,
+  });
 
   useEffect(() => {
     if (isOpen && reportId) {
       loadPreviewData();
     }
-  }, [isOpen, reportId]);
+  }, [isOpen, reportId, isResubmitMode]);
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    const { fieldId, selectionStart, selectionEnd } = focusStateRef.current;
+    if (!fieldId || typeof document === "undefined") return;
+
+    const activeElement = document.activeElement as HTMLElement | null;
+    if (activeElement?.dataset.focusId === fieldId) return;
+
+    const target = document.querySelector<FocusableFormElement>(
+      `[data-focus-id="${fieldId}"]`
+    );
+    if (!target) return;
+
+    target.focus({ preventScroll: true });
+
+    if (
+      typeof selectionStart === "number" &&
+      typeof selectionEnd === "number" &&
+      "setSelectionRange" in target
+    ) {
+      try {
+        target.setSelectionRange(selectionStart, selectionEnd);
+      } catch {
+        // Ignore inputs that don't support text selection.
+      }
+    }
+  }, [isOpen, previewData]);
+
+  const rememberFocusState = (element: FocusableFormElement) => {
+    const fieldId = element.dataset.focusId;
+    if (!fieldId) return;
+
+    focusStateRef.current = {
+      fieldId,
+      selectionStart:
+        element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement
+          ? element.selectionStart
+          : null,
+      selectionEnd:
+        element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement
+          ? element.selectionEnd
+          : null,
+    };
+  };
+
+  const getFocusTrackingProps = (fieldId: string) => ({
+    "data-focus-id": fieldId,
+    onFocusCapture: (event: React.SyntheticEvent<FocusableFormElement>) =>
+      rememberFocusState(event.currentTarget),
+    onChangeCapture: (event: React.SyntheticEvent<FocusableFormElement>) =>
+      rememberFocusState(event.currentTarget),
+    onSelectCapture: (event: React.SyntheticEvent<FocusableFormElement>) =>
+      rememberFocusState(event.currentTarget),
+    onClickCapture: (event: React.SyntheticEvent<FocusableFormElement>) =>
+      rememberFocusState(event.currentTarget),
+    onKeyUpCapture: (event: React.SyntheticEvent<FocusableFormElement>) =>
+      rememberFocusState(event.currentTarget),
+  });
 
   const loadPreviewData = async () => {
     try {
@@ -316,6 +389,7 @@ export default function PreviewModal({
                   </label>
                   <input
                     type="text"
+                    {...getFocusTrackingProps("client_name")}
                     value={previewData?.client_name || ""}
                     onChange={(e) => updateField("client_name", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -331,6 +405,7 @@ export default function PreviewModal({
                   </label>
                   <input
                     type="text"
+                    {...getFocusTrackingProps("owner_name")}
                     value={previewData?.owner_name || ""}
                     onChange={(e) => updateField("owner_name", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -343,6 +418,7 @@ export default function PreviewModal({
                   </label>
                   <input
                     type="text"
+                    {...getFocusTrackingProps("contract_no")}
                     value={previewData?.contract_no || ""}
                     onChange={(e) => updateField("contract_no", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -355,6 +431,7 @@ export default function PreviewModal({
                   </label>
                   <input
                     type="text"
+                    {...getFocusTrackingProps("industry")}
                     value={previewData?.industry || ""}
                     onChange={(e) => updateField("industry", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -377,6 +454,7 @@ export default function PreviewModal({
                   </label>
                   <input
                     type="date"
+                    {...getFocusTrackingProps("effective_date")}
                     value={previewData?.effective_date?.split("T")[0] || ""}
                     onChange={(e) => updateField("effective_date", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -388,6 +466,7 @@ export default function PreviewModal({
                   </label>
                   <input
                     type="date"
+                    {...getFocusTrackingProps("inspection_date")}
                     value={previewData?.inspection_date?.split("T")[0] || ""}
                     onChange={(e) => updateField("inspection_date", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -398,6 +477,7 @@ export default function PreviewModal({
                     Currency
                   </label>
                   <select
+                    {...getFocusTrackingProps("currency")}
                     value={previewData?.currency || "CAD"}
                     onChange={(e) => handleCurrencyChange(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -415,6 +495,7 @@ export default function PreviewModal({
                   </label>
                   <input
                     type="text"
+                    {...getFocusTrackingProps("total_appraised_value")}
                     value={previewData?.total_appraised_value || previewData?.total_value || ""}
                     onChange={(e) => updateField("total_appraised_value", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -437,6 +518,7 @@ export default function PreviewModal({
                   </label>
                   <input
                     type="text"
+                    {...getFocusTrackingProps("appraisal_purpose")}
                     value={previewData?.appraisal_purpose || ""}
                     onChange={(e) => updateField("appraisal_purpose", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -450,6 +532,7 @@ export default function PreviewModal({
                     </label>
                     <input
                       type="text"
+                      {...getFocusTrackingProps("appraiser")}
                       value={previewData?.appraiser || ""}
                       onChange={(e) => updateField("appraiser", e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -462,6 +545,7 @@ export default function PreviewModal({
                     </label>
                     <input
                       type="text"
+                      {...getFocusTrackingProps("appraisal_company")}
                       value={previewData?.appraisal_company || ""}
                       onChange={(e) => updateField("appraisal_company", e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -485,6 +569,7 @@ export default function PreviewModal({
                   </label>
                   <input
                     type="text"
+                    {...getFocusTrackingProps("prepared_for")}
                     value={previewData?.prepared_for || ""}
                     onChange={(e) => updateField("prepared_for", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
@@ -496,6 +581,7 @@ export default function PreviewModal({
                     Factors Affecting Value - Age & Condition
                   </label>
                   <textarea
+                    {...getFocusTrackingProps("factors_age_condition")}
                     value={previewData?.factors_age_condition || ""}
                     onChange={(e) => updateField("factors_age_condition", e.target.value)}
                     rows={3}
@@ -508,6 +594,7 @@ export default function PreviewModal({
                     Factors Affecting Value - Quality
                   </label>
                   <textarea
+                    {...getFocusTrackingProps("factors_quality")}
                     value={previewData?.factors_quality || ""}
                     onChange={(e) => updateField("factors_quality", e.target.value)}
                     rows={3}
@@ -520,6 +607,7 @@ export default function PreviewModal({
                     Factors Affecting Value - Analysis
                   </label>
                   <textarea
+                    {...getFocusTrackingProps("factors_analysis")}
                     value={previewData?.factors_analysis || ""}
                     onChange={(e) => updateField("factors_analysis", e.target.value)}
                     rows={3}
@@ -698,6 +786,7 @@ export default function PreviewModal({
                                 <label className="block text-xs text-gray-600 mb-1">Title</label>
                                 <input
                                   type="text"
+                                  {...getFocusTrackingProps(`lot-${idx}-title-mobile`)}
                                   value={lot.title || ""}
                                   onChange={(e) => updateLot(idx, "title", e.target.value)}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
@@ -707,6 +796,7 @@ export default function PreviewModal({
                               <div>
                                 <label className="block text-xs text-gray-600 mb-1">Description</label>
                                 <textarea
+                                  {...getFocusTrackingProps(`lot-${idx}-description-mobile`)}
                                   value={lot.description || ""}
                                   onChange={(e) => updateLot(idx, "description", e.target.value)}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-y min-h-[120px]"
@@ -717,6 +807,7 @@ export default function PreviewModal({
                               <div>
                                 <label className="block text-xs text-gray-600 mb-1">Details</label>
                                 <textarea
+                                  {...getFocusTrackingProps(`lot-${idx}-details-mobile`)}
                                   value={lot.details || ""}
                                   onChange={(e) => updateLot(idx, "details", e.target.value)}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-y min-h-[120px]"
@@ -728,6 +819,7 @@ export default function PreviewModal({
                                 <label className="block text-xs text-gray-600 mb-1">Value</label>
                                 <input
                                   type="text"
+                                  {...getFocusTrackingProps(`lot-${idx}-estimated_value-mobile`)}
                                   value={lot.estimated_value || ""}
                                   onChange={(e) => updateLot(idx, "estimated_value", e.target.value)}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
@@ -803,6 +895,7 @@ export default function PreviewModal({
                               <td className="px-3 py-2 align-top">
                                 <input
                                   type="text"
+                                  {...getFocusTrackingProps(`lot-${idx}-title-desktop`)}
                                   value={lot.title || ""}
                                   onChange={(e) => updateLot(idx, "title", e.target.value)}
                                   className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
@@ -811,6 +904,7 @@ export default function PreviewModal({
                               </td>
                               <td className="px-3 py-2 align-top">
                                 <textarea
+                                  {...getFocusTrackingProps(`lot-${idx}-description-desktop`)}
                                   value={lot.description || ""}
                                   onChange={(e) => updateLot(idx, "description", e.target.value)}
                                   className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-y min-h-[100px]"
@@ -820,6 +914,7 @@ export default function PreviewModal({
                               </td>
                               <td className="px-3 py-2 align-top">
                                 <textarea
+                                  {...getFocusTrackingProps(`lot-${idx}-details-desktop`)}
                                   value={lot.details || ""}
                                   onChange={(e) => updateLot(idx, "details", e.target.value)}
                                   className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm leading-5 resize-y min-h-[100px]"
@@ -830,6 +925,7 @@ export default function PreviewModal({
                               <td className="px-3 py-2 align-top">
                                 <input
                                   type="text"
+                                  {...getFocusTrackingProps(`lot-${idx}-estimated_value-desktop`)}
                                   value={lot.estimated_value || ""}
                                   onChange={(e) => updateLot(idx, "estimated_value", e.target.value)}
                                   className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
@@ -902,6 +998,7 @@ export default function PreviewModal({
                       <input
                         type="number"
                         min={0}
+                        {...getFocusTrackingProps("valuation-baseFMV")}
                         value={Number(previewData.valuation_data.baseFMV || 0)}
                         onChange={(e) => updateValuationBase(Number(e.target.value))}
                         className="w-56 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all tabular-nums"
@@ -930,6 +1027,7 @@ export default function PreviewModal({
                                 <div className="mb-1">
                                   <input
                                     type="text"
+                                    {...getFocusTrackingProps(`valuation-${i}-fullName`)}
                                     value={m.fullName || ""}
                                     onChange={(e) => updateValuationMethod(i, "fullName", e.target.value)}
                                     className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
@@ -941,6 +1039,7 @@ export default function PreviewModal({
                                   <span className="text-[11px] text-gray-500">Code</span>
                                 </div>
                                 <textarea
+                                  {...getFocusTrackingProps(`valuation-${i}-description`)}
                                   value={m.description || ""}
                                   onChange={(e) => updateValuationMethod(i, "description", e.target.value)}
                                   className="mt-1 w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-xs leading-5 resize-none min-h-[56px]"
@@ -954,6 +1053,7 @@ export default function PreviewModal({
                                   <input
                                     type="number"
                                     min={0}
+                                    {...getFocusTrackingProps(`valuation-${i}-value`)}
                                     value={Number(m.value || 0)}
                                     onChange={(e) => updateValuationMethod(i, "value", Number(e.target.value))}
                                     className="w-44 px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm tabular-nums"
@@ -962,6 +1062,7 @@ export default function PreviewModal({
                               </td>
                               <td className="px-3 py-2 align-top">
                                 <textarea
+                                  {...getFocusTrackingProps(`valuation-${i}-saleConditions`)}
                                   value={m.saleConditions || ""}
                                   onChange={(e) => updateValuationMethod(i, "saleConditions", e.target.value)}
                                   className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-xs leading-5 resize-none min-h-[56px]"
@@ -972,6 +1073,7 @@ export default function PreviewModal({
                               <td className="px-3 py-2 align-top">
                                 <input
                                   type="text"
+                                  {...getFocusTrackingProps(`valuation-${i}-timeline`)}
                                   value={m.timeline || ""}
                                   onChange={(e) => updateValuationMethod(i, "timeline", e.target.value)}
                                   className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
@@ -981,6 +1083,7 @@ export default function PreviewModal({
                               <td className="px-3 py-2 align-top">
                                 <input
                                   type="text"
+                                  {...getFocusTrackingProps(`valuation-${i}-useCase`)}
                                   value={m.useCase || ""}
                                   onChange={(e) => updateValuationMethod(i, "useCase", e.target.value)}
                                   className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm"
