@@ -72,7 +72,7 @@ export default function LotListingPreviewModal({
   const handleSaveChanges = async () => {
     try {
       setSaving(true);
-      await updateLotListingPreview(reportId, { lots: previewData?.lots, details: previewData });
+      await updateLotListingPreview(reportId, { preview_data: previewData });
       setHasChanges(false);
       toast.success("Changes saved successfully!");
     } catch (error: any) {

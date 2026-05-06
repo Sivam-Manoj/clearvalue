@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Check, RotateCcw, Save, X } from "lucide-react";
 import API from "@/lib/api";
@@ -24,7 +25,10 @@ type Props = {
   onCancel?: () => void;
 };
 
-const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+const isoDate = (d: Date) => {
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+};
 
 // Auto-save draft storage keys
 const DRAFT_KEY = "cv_lotlisting_draft";
@@ -41,6 +45,7 @@ type LocalDraftImage = {
 };
 
 export default function LotListingForm({ onSuccess, onCancel }: Props) {
+  const router = useRouter();
   const [mixedLots, setMixedLots] = useState<MixedLot[]>([]);
   const [contractNo, setContractNo] = useState("");
   const [salesDate, setSalesDate] = useState(isoDate(new Date()));
@@ -364,7 +369,7 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
     return true;
   }
 
-  function clearForm() {
+  function clearForm(showToast = true) {
     setMixedLots([]);
     setContractNo("");
     setSalesDate(isoDate(new Date()));
@@ -383,7 +388,7 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
       pollIntervalRef.current = null;
     }
     clearDraft();
-    toast.info("Form cleared.");
+    if (showToast) toast.info("Form cleared.");
   }
 
   // Handle restore draft button click
@@ -484,31 +489,42 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
       };
       formData.append("details", JSON.stringify(details));
 
-      const startPolling = () => {
-        if (!jobIdRef.current) return;
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = setInterval(async () => {
-          try {
-            const res = await API.get(`/lot-listing/progress/${jobIdRef.current}`);
-            const rec = res.data;
-            const clientW = PROG_WEIGHTS.client_upload;
-            const server01 = Math.max(0, Math.min(1, rec?.serverProgress01 ?? 0));
-            const overall = (clientW + server01 * (1 - clientW)) * 100;
-            setProgressPhase(
-              rec.phase === "error" ? "error" : rec.phase === "done" ? "done" : "processing"
-            );
-            setProgressPercent((prev) => (overall > prev ? overall : prev));
-            if (rec.phase === "done" || rec.phase === "error") {
-              clearInterval(pollIntervalRef.current);
-              pollIntervalRef.current = null;
-            }
-          } catch {
-            // Keep polling
+      const waitForPreviewReady = () =>
+        new Promise<any>((resolve, reject) => {
+          if (!jobIdRef.current) {
+            reject(new Error("Missing progress id"));
+            return;
           }
-        }, 800);
-      };
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+          const poll = async () => {
+            try {
+              const res = await API.get(`/lot-listing/progress/${jobIdRef.current}`);
+              const rec = res.data;
+              const clientW = PROG_WEIGHTS.client_upload;
+              const server01 = Math.max(0, Math.min(1, rec?.serverProgress01 ?? 0));
+              const overall = (clientW + server01 * (1 - clientW)) * 100;
+              setProgressPhase(
+                rec.phase === "error" ? "error" : rec.phase === "done" ? "done" : "processing"
+              );
+              setProgressPercent((prev) => (overall > prev ? overall : prev));
+              if (rec.phase === "done" || rec.phase === "error") {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+                if (rec.phase === "done") {
+                  resolve(rec);
+                } else {
+                  reject(new Error(rec.message || "Error processing lot listing"));
+                }
+              }
+            } catch {
+              // Keep polling
+            }
+          };
+          pollIntervalRef.current = setInterval(poll, 800);
+          void poll();
+        });
 
-      const res = await API.post("/lot-listing", formData, {
+      await API.post("/lot-listing", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent: any) => {
           const pct = progressEvent.total
@@ -523,19 +539,20 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
         },
       });
 
-      startPolling();
-
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      const finalProgress = await waitForPreviewReady();
       const msg =
-        res?.data?.message ||
-        "Your lot listing is being processed. You will receive an email when it's ready.";
-      toast.info(msg);
+        finalProgress?.message ||
+        "Your lot listing preview is ready for review.";
+      setProgressPercent(100);
+      setProgressPhase("done");
+      toast.success(msg);
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("cv:report-created"));
       }
+      router.push("/previews");
       onSuccess?.(msg);
       setSubmitting(false);
-      clearForm();
+      clearForm(false);
     } catch (err: any) {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       setProgressPhase("error");
@@ -798,7 +815,7 @@ export default function LotListingForm({ onSuccess, onCancel }: Props) {
                 </button>
                 <button
                   type="button"
-                  onClick={clearForm}
+                  onClick={() => clearForm()}
                   className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:translate-y-0.5"
                 >
                   Clear

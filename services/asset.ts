@@ -76,6 +76,11 @@ export type AssetProgress = {
     durationMs?: number;
   }>;
   message?: string;
+  result?: {
+    reportId?: string;
+    reportType?: string;
+    status?: string;
+  };
 };
 
 export const AssetService = {

@@ -65,8 +65,14 @@ export interface LotListing {
 
 export interface LotListingProgress {
   phase: string;
-  percent: number;
+  percent?: number;
+  serverProgress01?: number;
   message?: string;
+  result?: {
+    reportId?: string;
+    reportType?: string;
+    status?: string;
+  };
 }
 
 // Get all lot listings for current user
@@ -103,7 +109,7 @@ export async function getLotListingSubmittedPreview(id: string): Promise<LotList
 // Update lot listing preview
 export async function updateLotListingPreview(
   id: string,
-  data: { lots?: LotListingLot[]; details?: LotListing["details"] }
+  data: { preview_data?: any; lots?: LotListingLot[]; details?: LotListing["details"] }
 ): Promise<LotListing> {
   const response = await API.put<LotListing>(`/lot-listing/${id}/preview`, data);
   return response.data;
