@@ -7,6 +7,7 @@ export type UpdateUserPayload = {
   contactEmail?: string;
   contactPhone?: string;
   companyAddress?: string;
+  crmAddress?: string;
 };
 
 export const UserService = {

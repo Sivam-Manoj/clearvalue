@@ -59,6 +59,7 @@ export default function SettingsPage() {
     username: (user as any)?.username || "",
     companyName: (user as any)?.companyName || "",
     companyAddress: (user as any)?.companyAddress || "",
+    crmAddress: (user as any)?.crmAddress || "",
     contactEmail: (user as any)?.contactEmail || "",
     contactPhone: (user as any)?.contactPhone || "",
   });
@@ -69,6 +70,7 @@ export default function SettingsPage() {
         username: (user as any)?.username || "",
         companyName: (user as any)?.companyName || "",
         companyAddress: (user as any)?.companyAddress || "",
+        crmAddress: (user as any)?.crmAddress || "",
         contactEmail: (user as any)?.contactEmail || "",
         contactPhone: (user as any)?.contactPhone || "",
       });
@@ -152,6 +154,7 @@ export default function SettingsPage() {
         username: form.username || undefined,
         companyName: form.companyName || undefined,
         companyAddress: form.companyAddress || undefined,
+        crmAddress: form.crmAddress || undefined,
         contactEmail: form.contactEmail || undefined,
         contactPhone: form.contactPhone || undefined,
       });
@@ -279,6 +282,9 @@ export default function SettingsPage() {
                 { key: "email", label: "Email", value: user?.email || "", readOnly: true },
                 { key: "companyName", label: "Company name", value: form.companyName, readOnly: !isEditing },
                 { key: "companyAddress", label: "Company address", value: form.companyAddress, readOnly: !isEditing },
+                ...(user as any)?.isCrmAgent
+                  ? [{ key: "crmAddress", label: "CRM service address", value: form.crmAddress, readOnly: !isEditing }]
+                  : [],
                 { key: "contactEmail", label: "Contact email", value: form.contactEmail, readOnly: !isEditing },
                 { key: "contactPhone", label: "Contact phone", value: form.contactPhone, readOnly: !isEditing },
               ].map((field) => (
