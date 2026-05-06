@@ -9,7 +9,6 @@ import {
   forwardRef,
 } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import {
   AssetService,
   type AssetCreateDetails,
@@ -104,7 +103,6 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
   { onSuccess, onCancel },
   ref
 ) {
-  const router = useRouter();
   const { user } = useAuthContext();
   const [grouping, setGrouping] = useState<AssetGroupingMode>("mixed" as any);
   const [images, setImages] = useState<File[]>([]);
@@ -1205,50 +1203,7 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
           : {}),
       };
 
-      // Poll until the background job has created the editable preview.
-      const waitForPreviewReady = () =>
-        new Promise<any>((resolve, reject) => {
-          if (!jobIdRef.current) {
-            reject(new Error("Missing progress id"));
-            return;
-          }
-          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-          const poll = async () => {
-            try {
-              const rec = await AssetService.progress(jobIdRef.current!);
-              // Map server 0..1 progress (server-side only) to overall 0..100 using client weight
-              const clientW = PROG_WEIGHTS.client_upload;
-              const server01 = Math.max(
-                0,
-                Math.min(1, rec?.serverProgress01 ?? 0)
-              );
-              const overall = (clientW + server01 * (1 - clientW)) * 100;
-              setProgressPhase(
-                rec.phase === "error"
-                  ? "error"
-                  : rec.phase === "done"
-                  ? "done"
-                  : "processing"
-              );
-              setProgressPercent((prev) => (overall > prev ? overall : prev));
-              if (rec.phase === "done" || rec.phase === "error") {
-                clearInterval(pollIntervalRef.current);
-                pollIntervalRef.current = null;
-                if (rec.phase === "done") {
-                  resolve(rec);
-                } else {
-                  reject(new Error(rec.message || "Error processing request"));
-                }
-              }
-            } catch (e: any) {
-              // 404/Network during early phase: ignore and keep polling
-            }
-          };
-          pollIntervalRef.current = setInterval(poll, 800);
-          void poll();
-        });
-
-      await AssetService.create(
+      const createResponse = await AssetService.create(
         payload,
         filesToSend,
         videosToSend,
@@ -1267,23 +1222,19 @@ const AssetForm = forwardRef<AssetFormHandle, Props>(function AssetForm(
         }
       );
 
-      const finalProgress = await waitForPreviewReady();
       const msg =
-        finalProgress?.message ||
-        "Your report preview is ready for review.";
+        createResponse?.message ||
+        "Your report is being processed. You will receive an email when the preview is ready.";
       setProgressPercent(100);
       setProgressPhase("done");
-      toast.success(msg);
-      // Clear draft after successful submission
-      clearDraft();
+      toast.info(msg);
+      await clearDraft();
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("cv:report-created"));
       }
-      router.push("/previews");
-      onSuccess?.(msg);
-      setSubmitting(false);
-      // Clear all fields after submit
       clearFieldsAfterSubmit();
+      setSubmitting(false);
+      onSuccess?.(msg);
     } catch (err: any) {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
       setProgressPhase("error");

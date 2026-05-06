@@ -1,6 +1,6 @@
 import API from "@/lib/api";
 
-export type ReportStatus = 'draft' | 'preview' | 'pending_approval' | 'approved' | 'declined';
+export type ReportStatus = 'draft' | 'processing' | 'preview' | 'pending_approval' | 'approved' | 'declined' | 'error';
 
 export interface AssetReport {
   _id: string;
@@ -10,6 +10,9 @@ export interface AssetReport {
   status: ReportStatus;
   files_generating?: boolean;
   files_regenerating?: boolean;
+  job_id?: string;
+  job_status?: "queued" | "processing" | "done" | "error";
+  job_error?: string;
   preview_data?: any;
   preview_files?: {
     pdf?: string;

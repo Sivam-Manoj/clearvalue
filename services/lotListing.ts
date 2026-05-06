@@ -35,7 +35,13 @@ export interface LotListingPreviewFiles {
 export interface LotListing {
   _id: string;
   user: string;
-  status: "processing" | "preview" | "pending_approval" | "approved" | "declined";
+  status: "processing" | "preview" | "pending_approval" | "approved" | "declined" | "error";
+  job_id?: string;
+  job_status?: "queued" | "processing" | "done" | "error";
+  job_error?: string;
+  error_message?: string;
+  files_generating?: boolean;
+  files_regenerating?: boolean;
   progress?: {
     phase: string;
     percent: number;
@@ -138,7 +144,10 @@ export async function getSubmittedLotListings(): Promise<{ data: LotListing[] }>
   // Server returns { message, data }, so extract the data array
   const listings = Array.isArray(response.data) ? response.data : (response.data?.data || []);
   const submitted = listings.filter(
-    (r) => r.status === "pending_approval" || r.status === "approved"
+    (r) =>
+      r.status === "pending_approval" ||
+      r.status === "approved" ||
+      (r.status === "processing" && (r.files_generating || r.files_regenerating))
   );
   return { data: submitted };
 }

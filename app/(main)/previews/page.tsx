@@ -152,7 +152,10 @@ export default function PreviewsPage() {
             Boolean((report as any).files_generating) ||
             Boolean((report as any).files_regenerating);
           return (
-            (report.status === "preview" || report.status === "declined") &&
+            (report.status === "processing" ||
+              report.status === "error" ||
+              report.status === "preview" ||
+              report.status === "declined") &&
             !generating
           );
         })
@@ -165,9 +168,17 @@ export default function PreviewsPage() {
         .map((report) => ({ ...report, reportType: "realEstate" as const }));
 
       const lotListingPreviews: CombinedReport[] = (lotListingResponse.data || [])
-        .filter(
-          (report) => report.status === "preview" || report.status === "declined"
-        )
+        .filter((report) => {
+          const generating =
+            Boolean((report as any).files_generating) ||
+            Boolean((report as any).files_regenerating);
+          return (
+            ((report.status === "processing" && !generating) ||
+              report.status === "error" ||
+              report.status === "preview" ||
+              report.status === "declined")
+          );
+        })
         .map((report) => ({ ...report, reportType: "lotListing" as const }));
 
       const submittedAssets: CombinedReport[] = (submittedAssetResponse.data || []).map(
@@ -383,9 +394,16 @@ export default function PreviewsPage() {
             {reports.map((report) => {
               const info = summaryForReport(report);
               const filesGenerating =
-                report.reportType === "asset" &&
-                (Boolean((report as any).files_generating) ||
-                  Boolean((report as any).files_regenerating));
+                Boolean((report as any).files_generating) ||
+                Boolean((report as any).files_regenerating);
+              const jobActive =
+                report.status === "processing" ||
+                (report as any).job_status === "queued" ||
+                (report as any).job_status === "processing" ||
+                filesGenerating;
+              const jobFailed =
+                report.status === "error" ||
+                (report as any).job_status === "error";
 
               return (
                 <SurfaceCard key={report._id} sx={{ p: 2.5 }}>
@@ -403,7 +421,7 @@ export default function PreviewsPage() {
                         >
                           <StatusPill label={info.typeLabel} color="info" />
                           <StatusBadge
-                            status={filesGenerating ? "processing" : (report.status as any)}
+                            status={jobActive ? "processing" : jobFailed ? "error" : (report.status as any)}
                           />
                         </Stack>
                         <Typography
@@ -426,7 +444,7 @@ export default function PreviewsPage() {
                         spacing={1.25}
                         sx={{ alignItems: { xs: "stretch", sm: "center" } }}
                       >
-                        {report.status === "preview" ? (
+                        {report.status === "preview" && !jobActive ? (
                           <Button
                             variant="contained"
                             startIcon={<VisibilityRounded />}
@@ -449,9 +467,9 @@ export default function PreviewsPage() {
 
                         {(report.status === "pending_approval" ||
                           report.status === "approved" ||
-                          filesGenerating) && (
+                          jobActive) && (
                           <>
-                            {!filesGenerating ? (
+                            {!jobActive ? (
                               <>
                                 <Button
                                   variant="outlined"
@@ -473,7 +491,7 @@ export default function PreviewsPage() {
                               </>
                             ) : (
                               <Button disabled startIcon={<RefreshRounded />}>
-                                Generating files
+                                {activeTab === "new" ? "Generating preview" : "Generating files"}
                               </Button>
                             )}
                           </>
@@ -537,13 +555,22 @@ export default function PreviewsPage() {
                         Approved. You can still edit and resubmit if needed.
                       </Alert>
                     ) : null}
-                    {filesGenerating ? (
+                    {jobActive ? (
                       <Alert severity="info">
-                        Files are currently being generated or regenerated for this asset report.
+                        {activeTab === "new"
+                          ? "Preview generation is running in the background. You will receive an email when it is ready."
+                          : "Files are currently being generated or regenerated in the background."}
+                      </Alert>
+                    ) : null}
+                    {jobFailed ? (
+                      <Alert severity="error">
+                        {(report as any).job_error ||
+                          (report as any).error_message ||
+                          "This report failed to process. Please try again or contact an admin."}
                       </Alert>
                     ) : null}
 
-                    {!filesGenerating && (report as any).preview_files?.docx ? (
+                    {!jobActive && (report as any).preview_files?.docx ? (
                       <Stack direction="row" spacing={1}>
                         <Button
                           component="a"

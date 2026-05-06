@@ -15,7 +15,8 @@ export type ReportStatus =
   | "preview"
   | "pending_approval"
   | "approved"
-  | "declined";
+  | "declined"
+  | "error";
 
 interface StatusBadgeProps {
   status: ReportStatus;
@@ -50,6 +51,11 @@ const statusConfig = {
   },
   declined: {
     label: "Declined",
+    color: "error" as const,
+    icon: <ErrorOutlineRounded fontSize="small" />,
+  },
+  error: {
+    label: "Error",
     color: "error" as const,
     icon: <ErrorOutlineRounded fontSize="small" />,
   },

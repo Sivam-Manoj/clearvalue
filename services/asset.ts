@@ -54,6 +54,8 @@ export type AssetCreateResponse = {
   message: string;
   // Background job ack fields (202 Accepted)
   jobId?: string;
+  reportId?: string;
+  status?: "processing" | "preview" | "error";
   phase?: "upload" | "processing" | "done" | "error";
   // Legacy immediate response fields (if any)
   filePath?: string;
